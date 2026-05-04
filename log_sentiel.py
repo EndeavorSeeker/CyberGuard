@@ -1,1 +1,1 @@
-lhjojlhjhnmhmprint('walo')
+lhjojlhjhnmhmprint('walo')print('walo')
