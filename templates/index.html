@@ -1,19 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimal Flask App</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberGuard AI</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-    <div class="container">
-        <h1>Flask Starte twstr</h1>
-        <p id="status">Client-side JS is ready.</p>
-        <button id="action-btn">Click Me</button>
+  <nav class="navbar">
+    <div class="nav-logo">
+      <span class="logo-icon">🛡️</span>
+      <span class="logo-text">CyberGuard AI</span>
     </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showModule('url')">
+        🔗 URL Shield
+      </button>
+      <button class="nav-tab" onclick="showModule('log')">
+        📋 Log Sentinel
+      </button>
+      <button class="nav-tab" onclick="showModule('trust')">
+        💬 TrustCheck
+      </button>
+    </div>
+  </nav>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <!-- ═══════════════════════════════════════
+       HERO
+  ═══════════════════════════════════════ -->
+  <section class="hero">
+    <h1 class="hero-title">Detect. Analyze. Protect.</h1>
+    <p class="hero-sub">
+      AI-powered threat detection for phishing URLs,<br/>
+      log anomalies, and social engineering attacks.
+    </p>
+    <div class="hero-badges">
+      <span class="badge badge-blue">🔗 URL Shield</span>
+      <span class="badge badge-orange">📋 Log Sentinel</span>
+      <span class="badge badge-green">💬 TrustCheck</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       MODULES
+  ═══════════════════════════════════════ -->
+  <main class="main">
+
+    <!-- MODULE 1 : URL Shield -->
+    <section class="module active" id="module-url">
+      <div class="module-header">
+        <span class="module-icon blue">🔗</span>
+        <div>
+          <h2 class="module-title">URL Shield</h2>
+          <p class="module-desc">Paste a URL to detect if it's a phishing link</p>
+        </div>
+      </div>
+
+      <div class="input-row">
+        <input
+          type="text"
+          id="url-input"
+          class="input-field"
+          placeholder="https://example.com/login"
+        />
+        <button class="btn btn-blue" onclick="analyzeURL()">
+          Analyze →
+        </button>
+      </div>
+
+      <div class="result-zone" id="url-result">
+        <!-- result appears here -->
+      </div>
+    </section>
+
+    <!-- MODULE 2 : Log Sentinel -->
+    <section class="module" id="module-log">
+      <div class="module-header">
+        <span class="module-icon orange">📋</span>
+        <div>
+          <h2 class="module-title">Log Sentinel</h2>
+          <p class="module-desc">Paste server logs to detect anomalies</p>
+        </div>
+      </div>
+
+      <textarea
+        id="log-input"
+        class="input-textarea"
+        placeholder="2024-01-15 02:43:17 FAILED_LOGIN user=admin ip=185.220.101.55&#10;2024-01-15 02:43:18 FAILED_LOGIN user=admin ip=185.220.101.55"
+      ></textarea>
+
+      <div style="text-align:right; margin-top: 10px;">
+        <button class="btn btn-orange" onclick="analyzeLog()">
+          Run Analysis →
+        </button>
+      </div>
+
+      <div class="result-zone" id="log-result">
+        <!-- result appears here -->
+      </div>
+    </section>
+
+    <!-- MODULE 3 : TrustCheck -->
+    <section class="module" id="module-trust">
+      <div class="module-header">
+        <span class="module-icon green">💬</span>
+        <div>
+          <h2 class="module-title">TrustCheck</h2>
+          <p class="module-desc">Paste a message to detect social engineering</p>
+        </div>
+      </div>
+
+      <textarea
+        id="trust-input"
+        class="input-textarea"
+        placeholder="Your account has been compromised. Click here immediately..."
+      ></textarea>
+
+      <div style="text-align:right; margin-top: 10px;">
+        <button class="btn btn-green" onclick="analyzeTrust()">
+          Check Message →
+        </button>
+      </div>
+
+      <div class="result-zone" id="trust-result">
+        <!-- result appears here -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════ -->
+  <footer class="footer">
+    <p>CyberGuard AI — Powered by Flask + AI</p>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
