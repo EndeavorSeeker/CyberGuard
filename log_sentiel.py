@@ -1,6 +1,5 @@
-lhjojlhjhnmhmprint('walo')print('walo')print('walo')print('walo')# log_sentinel.py
-
 from sklearn.ensemble import IsolationForest
+
 import numpy as np
 
 # =========================
