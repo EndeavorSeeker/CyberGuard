@@ -617,25 +617,165 @@ function scrollToTool() {
 }
 
 /* ───────────────────────────────────────────────────────────
-   STAT COUNTER ANIMATION (on page load)
+   AUTH FORM HANDLING
 ─────────────────────────────────────────────────────────── */
 /**
- * Animates all .stat-number elements from 0 to their target.
+ * Handles signup/signin form submission.
  */
+async function handleAuthForm(e, endpoint) {
+  e.preventDefault();
+
+  const form = e.target;
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const errorEl = document.getElementById('authError');
+
+  const email = form.email.value.trim().toLowerCase();
+  const password = form.password.value;
+  const confirmPassword = form.confirmPassword?.value;
+
+  if (confirmPassword !== undefined && password !== confirmPassword) {
+    errorEl.textContent = 'Passwords do not match.';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Processing...';
+  errorEl.classList.add('hidden');
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      if (endpoint.includes('signin')) {
+        window.location.href = '/';
+      } else {
+        // Signup: show message to check email
+        errorEl.textContent = data.message;
+        errorEl.classList.remove('hidden');
+        errorEl.style.color = 'green';
+      }
+    } else {
+      errorEl.textContent = data.message;
+      errorEl.classList.remove('hidden');
+    }
+  } catch (err) {
+    errorEl.textContent = 'Network error. Please try again.';
+    errorEl.classList.remove('hidden');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = endpoint.includes('signin') ? 'Sign In' : 'Create account';
+  }
+}
+
+/**
+ * Signs out the user.
+ */
+async function signOut() {
+  try {
+    await fetch('/api/auth/signout', { method: 'POST' });
+  } catch (err) {
+    console.warn('Signout error:', err);
+  }
+  window.location.href = '/';
+}
+
+/* ───────────────────────────────────────────────────────────
+   HISTORY LOADING
+─────────────────────────────────────────────────────────── */
+/**
+ * Loads user scan history and populates the table.
+ */
+async function loadHistory() {
+  try {
+    const response = await fetch('/api/history');
+    if (response.status === 401) {
+      // Not logged in, but since @login_required, shouldn't happen
+      return;
+    }
+    if (!response.ok) throw new Error('Failed to load history');
+
+    const data = await response.json();
+    const history = data.history || [];
+    const table = document.getElementById('historyTable');
+    const empty = document.getElementById('historyEmpty');
+
+    if (history.length === 0) {
+      table.style.display = 'none';
+      empty.style.display = 'block';
+      empty.textContent = 'aucune activité';
+      return;
+    }
+
+    table.style.display = 'table';
+    empty.style.display = 'none';
+
+    const tbody = table.querySelector('tbody') || table.appendChild(document.createElement('tbody'));
+    tbody.innerHTML = '';
+
+    history.forEach(scan => {
+      const row = document.createElement('tr');
+      const date = new Date(scan.created_at).toLocaleDateString();
+      row.innerHTML = `
+        <td><a href="${scan.url}" target="_blank" rel="noopener">${scan.url}</a></td>
+        <td>${scan.category}</td>
+        <td>${scan.score}%</td>
+        <td>${date}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch (err) {
+    console.error('Failed to load history:', err);
+    document.getElementById('historyEmpty').textContent = 'Failed to load history.';
+    document.getElementById('historyEmpty').style.display = 'block';
+    document.getElementById('historyTable').style.display = 'none';
+  }
+}
+/**
+ * Fetches real stats from API and animates counters.
+ */
+async function loadAndAnimateStats() {
+  try {
+    const response = await fetch('/api/stats');
+    if (response.ok) {
+      const data = await response.json();
+      document.getElementById('userCount').dataset.target = data.users;
+      document.getElementById('scanCount').dataset.target = data.scans;
+    }
+  } catch (err) {
+    console.warn('Failed to load stats:', err);
+    // Fallback to 0
+    document.getElementById('userCount').dataset.target = 0;
+    document.getElementById('scanCount').dataset.target = 0;
+  }
+
+  // Now animate
+  animateStats();
+}
+
+/* ───────────────────────────────────────────────────────────
+   STAT COUNTER ANIMATION
+─────────────────────────────────────────────────────────── */
 function animateStats() {
-  document.querySelectorAll('.stat-number[data-target]').forEach(el => {
-    const target   = parseFloat(el.dataset.target);
-    const suffix   = el.dataset.suffix || '';
-    const isFloat  = !Number.isInteger(target);
+  document.querySelectorAll('.stat-value[data-target]').forEach(el => {
+    const target = parseFloat(el.dataset.target) || 0;
+    const suffix = el.dataset.suffix || '';
+    const isFloat = !Number.isInteger(target);
     const duration = 1600;
-    const start    = performance.now();
+    const start = performance.now();
 
     function tick(now) {
-      const elapsed  = now - start;
+      const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      const eased    = easeOutCubic(progress);
-      const val      = target * eased;
-      el.textContent = (isFloat ? val.toFixed(1) : Math.round(val)) + suffix;
+      const eased = easeOutCubic(progress);
+      const value = target * eased;
+      el.textContent = (isFloat ? value.toFixed(1) : Math.round(value)) + suffix;
       if (progress < 1) requestAnimationFrame(tick);
     }
 
@@ -688,8 +828,8 @@ document.addEventListener('keydown', e => {
    INIT
 ─────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
-  // Animate hero stats on load
-  setTimeout(animateStats, 300);
+  // Load and animate hero stats on load
+  setTimeout(loadAndAnimateStats, 300);
 
   // Close mobile menu on outside click
   document.addEventListener('click', e => {
@@ -709,6 +849,18 @@ document.addEventListener('DOMContentLoaded', () => {
       this.style.height = Math.min(this.scrollHeight, 300) + 'px';
     });
   });
+
+  // Load history if on history page
+  if (document.getElementById('historyTable')) {
+    loadHistory();
+  }
+
+  // Auth form handlers
+  const authForm = document.getElementById('authForm');
+  if (authForm) {
+    const endpoint = window.location.pathname.includes('signup') ? '/api/auth/signup' : '/api/auth/signin';
+    authForm.addEventListener('submit', (e) => handleAuthForm(e, endpoint));
+  }
 
   console.log('%c🛡️ CyberGuard AI loaded', 'color:#3B82F6; font-weight:bold; font-size:14px');
   console.log('%cFlask endpoints ready at /api/url-shield · /api/log-sentinel · /api/trustcheck', 'color:#9CA3AF; font-size:11px');

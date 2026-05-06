@@ -9,23 +9,14 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
-
-  <!-- ═══════════════════════════════════════
-       NAVBAR
-  ═══════════════════════════════════════ -->
-  <nav class="navbar" id="navbar">
+  <nav class="navbar">
     <div class="nav-inner">
-
-      <!-- Logo -->
-      <a href="#" class="nav-logo">
+      <a href="{{ url_for('home') }}" class="nav-logo">
         <div class="nav-logo-icon">
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z"
-              fill="url(#shieldFill)" />
-            <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z"
-              stroke="#3B82F6" stroke-width="1.2" fill="none" />
-            <path d="M11 17L14.5 20.5L21 14" stroke="#06B6D4" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" fill="url(#shieldFill)" />
+            <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" stroke="#3B82F6" stroke-width="1.2" fill="none" />
+            <path d="M11 17L14.5 20.5L21 14" stroke="#06B6D4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             <defs>
               <linearGradient id="shieldFill" x1="3" y1="2" x2="29" y2="34" gradientUnits="userSpaceOnUse">
                 <stop offset="0%" stop-color="#1e3a5f" />
@@ -36,60 +27,16 @@
         </div>
         <span class="nav-logo-text">CyberGuard AI</span>
       </a>
-
-      <!-- Center Tabs -->
-      <div class="nav-tabs" role="tablist">
-        <button class="nav-tab active" role="tab" data-module="url" onclick="switchModule('url', this)">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M2 8h12M8 2C6.5 4 5.5 6 5.5 8s1 4 2.5 6M8 2c1.5 2 2.5 4 2.5 6s-1 4-2.5 6"
-              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-          URL Shield
-        </button>
-        <button class="nav-tab" role="tab" data-module="logs" onclick="switchModule('logs', this)">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-          Log Sentinel
-        </button>
-        <button class="nav-tab" role="tab" data-module="msg" onclick="switchModule('msg', this)">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v7a1 1 0 01-1 1H8L5 14v-3H3a1 1 0 01-1-1V3z"
-              stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-          </svg>
-          TrustCheck
-        </button>
-        <div class="nav-tab-indicator" id="navIndicator"></div>
-      </div>
-
-      <!-- Right Actions -->
       <div class="nav-actions">
-        <a href="#" class="nav-link">Dashboard</a>
-        <button class="btn btn-primary nav-cta" onclick="scrollToTool()">Get Started</button>
+        <a href="{{ url_for('home') }}" class="nav-link">Home</a>
+        <a href="{{ url_for('api_history') }}" class="nav-link">History</a>
+        <a href="{{ url_for('signin') }}" class="btn btn-primary">Sign In</a>
+        <a href="{{ url_for('signup') }}" class="btn btn-primary">Sign Up</a>
       </div>
-
-      <!-- Mobile Hamburger -->
-      <button class="nav-hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
-        <span></span><span></span><span></span>
-      </button>
-
     </div>
   </nav>
 
-  <!-- Mobile Menu Drawer -->
-  <div class="mobile-menu" id="mobileMenu">
-    <button class="mobile-tab" onclick="switchModule('url', this); toggleMobileMenu()">URL Shield</button>
-    <button class="mobile-tab" onclick="switchModule('logs', this); toggleMobileMenu()">Log Sentinel</button>
-    <button class="mobile-tab" onclick="switchModule('msg', this); toggleMobileMenu()">TrustCheck</button>
-  </div>
-
-  <!-- ═══════════════════════════════════════
-       HERO / TOOL SPLIT SECTION
-  ═══════════════════════════════════════ -->
   <main class="main-section" id="main">
-
-    <!-- Background decorations -->
     <div class="bg-decoration">
       <div class="bg-orb bg-orb-1"></div>
       <div class="bg-orb bg-orb-2"></div>
@@ -97,344 +44,154 @@
     </div>
 
     <div class="main-inner">
-
-      <!-- ── LEFT: HERO ── -->
       <section class="hero-col">
-
         <div class="hero-badge">
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M5 1L6.2 3.8L9 4.2L7 6.2L7.5 9L5 7.7L2.5 9L3 6.2L1 4.2L3.8 3.8L5 1Z"
-              fill="#3B82F6"/>
+            <path d="M5 1L6.2 3.8L9 4.2L7 6.2L7.5 9L5 7.7L2.5 9L3 6.2L1 4.2L3.8 3.8L5 1Z" fill="#3B82F6"/>
           </svg>
-          AI-Powered Platform
+          Secure account-based scanning
         </div>
 
         <h1 class="hero-title">
-          AI-Powered<br />
-          <span class="hero-gradient">Cybersecurity</span><br />
-          Detection
+          Turn URLs into<br />
+          <span class="hero-gradient">actionable security</span><br />
+          with real data.
         </h1>
 
         <p class="hero-subtitle">
-          Detect phishing, log anomalies, and social engineering attacks —
-          in real time, with AI precision.
+          Scan suspicious links, save your history, and track real usage metrics.
+          Sign in to keep every scan in your secure account.
         </p>
 
-        <!-- Stats -->
-        <div class="hero-stats">
-          <div class="stat-item">
-            <span class="stat-number" data-target="99.2" data-suffix="%">0%</span>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-value stat-number" id="userCount" data-target="0">0</span>
+            <span class="stat-label">Registered users</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value stat-number" id="scanCount" data-target="0">0</span>
+            <span class="stat-label">Saved scans</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value accuracy-stat">99.2%</span>
             <span class="stat-label">Accuracy</span>
           </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-number" data-target="50" data-suffix="K+">0</span>
-            <span class="stat-label">Users</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-number" data-target="2" data-suffix="M+">0</span>
-            <span class="stat-label">Scans</span>
-          </div>
         </div>
-
-        <!-- Trust Badges -->
-        <div class="trust-badges">
-          <span class="trust-badge">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path d="M7 1L2 3.5V7C2 10.2 4.1 13.1 7 14C9.9 13.1 12 10.2 12 7V3.5L7 1Z"
-                stroke="#22C55E" stroke-width="1.3"/>
-            </svg>
-            Privacy First
-          </span>
-          <span class="trust-badge">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path d="M7 1v4l2.5 1.5" stroke="#F59E0B" stroke-width="1.3" stroke-linecap="round"/>
-              <circle cx="7" cy="7" r="5.5" stroke="#F59E0B" stroke-width="1.3"/>
-            </svg>
-            Real-time
-          </span>
-          <span class="trust-badge">
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path d="M2 9C2 5.7 4.7 3 8 3" stroke="#8B5CF6" stroke-width="1.3" stroke-linecap="round"/>
-              <path d="M5 7C5 9.2 6.8 11 9 11" stroke="#8B5CF6" stroke-width="1.3" stroke-linecap="round"/>
-              <circle cx="9" cy="5" r="1.5" fill="#8B5CF6"/>
-              <circle cx="5" cy="10" r="1.5" fill="#8B5CF6"/>
-            </svg>
-            AI Explained
-          </span>
-        </div>
-
       </section>
 
-      <!-- ── RIGHT: TOOL CARD ── -->
       <section class="tool-col" id="tool-section">
         <div class="tool-card" id="toolCard">
-
-          <!-- Glow border top -->
           <div class="card-glow-line"></div>
 
-          <!-- Inner Tabs -->
           <div class="card-tabs" role="tablist">
-            <button class="card-tab active" id="ctab-url" role="tab"
-              onclick="switchCardTab('url', this)">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/>
-                <path d="M2 8h12M8 2c-1.5 2-2.5 4-2.5 6s1 4 2.5 6M8 2c1.5 2 2.5 4 2.5 6s-1 4-2.5 6"
-                  stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-              </svg>
-              URL
-            </button>
-            <button class="card-tab" id="ctab-logs" role="tab"
-              onclick="switchCardTab('logs', this)">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              Logs
-            </button>
-            <button class="card-tab" id="ctab-msg" role="tab"
-              onclick="switchCardTab('msg', this)">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                <path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v7a1 1 0 01-1 1H8L5 14v-3H3a1 1 0 01-1-1V3z"
-                  stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-              </svg>
-              Message
-            </button>
+            <button class="card-tab active" id="ctab-url" role="tab" onclick="switchCardTab('url', this)">URL</button>
+            <button class="card-tab" id="ctab-logs" role="tab" onclick="switchCardTab('logs', this)">Logs</button>
+            <button class="card-tab" id="ctab-msg" role="tab" onclick="switchCardTab('msg', this)">Message</button>
           </div>
 
-          <!-- ── URL PANE ── -->
           <div class="tool-pane active" id="pane-url">
-            <label class="input-label">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <circle cx="6" cy="6" r="5" stroke="#3B82F6" stroke-width="1.2"/>
-                <path d="M4 6h4M6 4v4" stroke="#3B82F6" stroke-width="1.2" stroke-linecap="round"/>
-              </svg>
-              Enter URL to scan
-            </label>
-            <input
-              type="url"
-              id="url-input"
-              class="tool-input"
-              placeholder="https://suspicious-site.example.com/login"
-              autocomplete="off"
-              spellcheck="false"
-            />
+            <label class="input-label" for="url-input">Enter URL to scan</label>
+            <input id="url-input" class="tool-input" type="url" placeholder="https://example.com/login" autocomplete="off" spellcheck="false" />
             <div class="example-chips">
               <span class="chips-label">Try:</span>
-              <button class="chip chip-danger" onclick="loadExample('url','phishing')">
-                ⚠ Phishing URL
-              </button>
-              <button class="chip chip-safe" onclick="loadExample('url','safe')">
-                ✓ Safe URL
-              </button>
+              <button class="chip chip-danger" onclick="loadExample('url', 'phishing')">⚠ Phishing URL</button>
+              <button class="chip chip-safe" onclick="loadExample('url', 'safe')">✓ Safe URL</button>
             </div>
           </div>
 
-          <!-- ── LOGS PANE ── -->
           <div class="tool-pane" id="pane-logs">
-            <label class="input-label">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M2 3h8M2 6h6M2 9h4" stroke="#06B6D4" stroke-width="1.2" stroke-linecap="round"/>
-              </svg>
-              Paste server logs
-            </label>
-            <textarea
-              id="log-input"
-              class="tool-textarea tool-mono"
-              rows="6"
-              placeholder="[2024-01-15 03:42:17] WARN  Failed login: user=admin ip=192.168.1.1&#10;[2024-01-15 03:42:18] WARN  Failed login: user=admin ip=192.168.1.1&#10;..."
-            ></textarea>
+            <label class="input-label" for="log-input">Paste server logs</label>
+            <textarea id="log-input" class="tool-textarea tool-mono" rows="6" placeholder="[2024-01-15 03:42:17] WARN Failed login: user=admin ip=192.168.1.1&#10;[2024-01-15 03:42:18] WARN Failed login: user=admin ip=192.168.1.1"></textarea>
             <div class="example-chips">
               <span class="chips-label">Try:</span>
-              <button class="chip chip-danger" onclick="loadExample('logs','suspicious')">
-                ⚠ Suspicious Log
-              </button>
-              <button class="chip chip-safe" onclick="loadExample('logs','normal')">
-                ✓ Normal Log
-              </button>
+              <button class="chip chip-danger" onclick="loadExample('logs','suspicious')">⚠ Suspicious Log</button>
+              <button class="chip chip-safe" onclick="loadExample('logs','normal')">✓ Normal Log</button>
             </div>
           </div>
 
-          <!-- ── MESSAGE PANE ── -->
           <div class="tool-pane" id="pane-msg">
-            <label class="input-label">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M1 2.5A.5.5 0 011.5 2h9a.5.5 0 01.5.5v6a.5.5 0 01-.5.5H6.5L4 12V9H1.5a.5.5 0 01-.5-.5v-6z"
-                  stroke="#8B5CF6" stroke-width="1.2" stroke-linejoin="round"/>
-              </svg>
-              Paste message or email
-            </label>
-            <textarea
-              id="msg-input"
-              class="tool-textarea"
-              rows="5"
-              placeholder="Paste any suspicious message, email, or social media post here..."
-            ></textarea>
+            <label class="input-label" for="msg-input">Paste message or email</label>
+            <textarea id="msg-input" class="tool-textarea" rows="5" placeholder="Your account is suspended. Click here to verify instantly."></textarea>
             <div class="example-chips">
               <span class="chips-label">Try:</span>
-              <button class="chip chip-danger" onclick="loadExample('msg','fake')">
-                ⚠ Fake Message
-              </button>
-              <button class="chip chip-safe" onclick="loadExample('msg','legit')">
-                ✓ Legit Message
-              </button>
+              <button class="chip chip-danger" onclick="loadExample('msg','fake')">⚠ Fake Message</button>
+              <button class="chip chip-safe" onclick="loadExample('msg','legit')">✓ Legit Message</button>
             </div>
           </div>
 
-          <!-- Analyze CTA -->
           <button class="btn btn-analyze" id="analyzeBtn" onclick="analyzeNow()">
-            <span class="btn-analyze-content" id="btnContent">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/>
-                <path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M5 7l1.5 1.5L10 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              Analyze Threat
-            </span>
-            <span class="btn-spinner hidden" id="btnSpinner">
-              <svg class="spinner-ring" width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <circle cx="9" cy="9" r="7" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
-                <path d="M9 2a7 7 0 017 7" stroke="white" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              Analyzing…
-            </span>
+            <span class="btn-analyze-content" id="btnContent">Analyze Threat</span>
+            <span class="btn-spinner hidden" id="btnSpinner">Analyzing…</span>
           </button>
 
-        </div><!-- /tool-card -->
-
-        <!-- ── RESULT CARD ── -->
-        <div class="result-card hidden" id="resultCard">
-          <div class="result-card-glow" id="resultGlow"></div>
-
-          <!-- Header row -->
-          <div class="result-header">
-            <div class="result-title-group">
-              <h3 class="result-title">Analysis Complete</h3>
-              <span class="result-category" id="resultCategory">—</span>
+          <div class="result-card hidden" id="resultCard">
+            <div class="result-card-glow" id="resultGlow"></div>
+            <div class="result-header">
+              <div class="result-title-group">
+                <h3 class="result-title">Analysis Complete</h3>
+                <span class="result-category" id="resultCategory">—</span>
+              </div>
+              <div class="threat-badge" id="threatBadge">
+                <span class="threat-dot" id="threatDot"></span>
+                <span id="threatLabel">—</span>
+              </div>
             </div>
-            <div class="threat-badge" id="threatBadge">
-              <span class="threat-dot" id="threatDot"></span>
-              <span id="threatLabel">—</span>
+
+            <div class="result-score-section">
+              <div class="score-ring-wrap">
+                <svg class="score-ring" width="110" height="110" viewBox="0 0 110 110">
+                  <circle class="ring-track" cx="55" cy="55" r="44" />
+                  <circle class="ring-fill" id="ringFill" cx="55" cy="55" r="44" />
+                </svg>
+                <div class="ring-center">
+                  <span class="ring-number" id="ringNumber">0</span>
+                  <span class="ring-unit">%</span>
+                </div>
+              </div>
+              <div class="score-details">
+                <div class="score-label-row">
+                  <span class="score-label">Risk Score</span>
+                  <span class="score-value" id="scoreText">0%</span>
+                </div>
+                <div class="score-bar-track">
+                  <div class="score-bar-fill" id="scoreBar"></div>
+                </div>
+                <div class="score-scale">
+                  <span class="scale-safe">Safe</span>
+                  <span class="scale-suspicious">Suspicious</span>
+                  <span class="scale-dangerous">Dangerous</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="result-explanation" id="resultExplanation">
+              <div class="explain-header">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <circle cx="7" cy="7" r="6" stroke="#3B82F6" stroke-width="1.2"/>
+                  <path d="M7 4v3.5L9 9" stroke="#3B82F6" stroke-width="1.2" stroke-linecap="round"/>
+                </svg>
+                AI Explanation
+              </div>
+              <p class="explain-text" id="explainText">—</p>
             </div>
           </div>
 
-          <!-- Score Ring + Bar -->
-          <div class="result-score-section">
-            <!-- SVG Ring -->
-            <div class="score-ring-wrap">
-              <svg class="score-ring" width="110" height="110" viewBox="0 0 110 110">
-                <circle class="ring-track" cx="55" cy="55" r="44" />
-                <circle class="ring-fill" id="ringFill" cx="55" cy="55" r="44" />
-              </svg>
-              <div class="ring-center">
-                <span class="ring-number" id="ringNumber">0</span>
-                <span class="ring-unit">%</span>
-              </div>
-            </div>
-
-            <!-- Score info -->
-            <div class="score-details">
-              <div class="score-label-row">
-                <span class="score-label">Risk Score</span>
-                <span class="score-value" id="scoreText">0%</span>
-              </div>
-              <div class="score-bar-track">
-                <div class="score-bar-fill" id="scoreBar"></div>
-              </div>
-              <div class="score-scale">
-                <span class="scale-safe">Safe</span>
-                <span class="scale-suspicious">Suspicious</span>
-                <span class="scale-dangerous">Dangerous</span>
-              </div>
-            </div>
+          <div class="error-toast hidden" id="errorToast">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="6" stroke="#EF4444" stroke-width="1.5"/>
+              <path d="M8 5v3M8 10v.5" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span id="errorMsg">Something went wrong. Please try again.</span>
           </div>
-
-          <!-- AI Explanation -->
-          <div class="result-explanation" id="resultExplanation">
-            <div class="explain-header">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <circle cx="7" cy="7" r="6" stroke="#3B82F6" stroke-width="1.2"/>
-                <path d="M7 4v3.5L9 9" stroke="#3B82F6" stroke-width="1.2" stroke-linecap="round"/>
-              </svg>
-              AI Explanation
-              <button class="explain-toggle" id="explainToggle" onclick="toggleExplanation()">
-                🧠 Explain like I'm human
-              </button>
-            </div>
-            <p class="explain-text" id="explainText">—</p>
-          </div>
-
-        </div><!-- /result-card -->
-
-        <!-- Error message -->
-        <div class="error-toast hidden" id="errorToast">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="6" stroke="#EF4444" stroke-width="1.5"/>
-            <path d="M8 5v3M8 10v.5" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-          <span id="errorMsg">Something went wrong. Please try again.</span>
         </div>
-
       </section>
-    </div><!-- /main-inner -->
+    </div>
   </main>
 
-  <!-- ═══════════════════════════════════════
-       FEATURES STRIP
-  ═══════════════════════════════════════ -->
-  <section class="features-strip">
-    <div class="features-inner">
-      <div class="feature-item">
-        <div class="feature-icon feature-icon-blue">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <circle cx="10" cy="10" r="8" stroke="#3B82F6" stroke-width="1.5"/>
-            <path d="M4 10c0-3.3 2.7-6 6-6" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round"/>
-            <circle cx="10" cy="10" r="2.5" fill="#3B82F6"/>
-          </svg>
-        </div>
-        <div>
-          <div class="feature-name">URL Shield</div>
-          <div class="feature-desc">Detect malicious & phishing URLs with ML pattern analysis</div>
-        </div>
-      </div>
-      <div class="feature-divider"></div>
-      <div class="feature-item">
-        <div class="feature-icon feature-icon-cyan">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M3 5h14M3 10h9M3 15h6" stroke="#06B6D4" stroke-width="1.5" stroke-linecap="round"/>
-            <circle cx="16" cy="14" r="3" stroke="#06B6D4" stroke-width="1.5"/>
-          </svg>
-        </div>
-        <div>
-          <div class="feature-name">Log Sentinel</div>
-          <div class="feature-desc">Spot anomalies, intrusions and brute-force attacks in logs</div>
-        </div>
-      </div>
-      <div class="feature-divider"></div>
-      <div class="feature-item">
-        <div class="feature-icon feature-icon-purple">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v8a1 1 0 01-1 1H11L8 17v-4H4a1 1 0 01-1-1V4z"
-              stroke="#8B5CF6" stroke-width="1.5" stroke-linejoin="round"/>
-            <path d="M7 8h6M7 10.5h4" stroke="#8B5CF6" stroke-width="1.2" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div>
-          <div class="feature-name">TrustCheck</div>
-          <div class="feature-desc">Identify social engineering, fake messages and manipulation</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════
-       FOOTER
-  ═══════════════════════════════════════ -->
   <footer class="footer">
     <div class="footer-inner">
       <span class="footer-logo">CyberGuard AI</span>
-      <span class="footer-copy">Built by Ayman · Flask + Vanilla JS</span>
-      <span class="footer-note">AI-Powered · Real-time · Secure</span>
+      <span class="footer-copy">© 2026 CyberGuard AI. Advanced AI-powered cybersecurity solutions for modern threats.</span>
     </div>
   </footer>
 
