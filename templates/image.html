@@ -7,13 +7,22 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
+    <a href="/">Url Search</a>
     <div class="container">
         <h1>This is image Search</h1>
         <p id="status">Client-side JS is ready.</p>
         <button id="action-btn">Click Me</button>
     </div>
+    <form action="/img" method="POST" enctype="multipart/form-data">
+        <div id="drop-zone" class="upload-container">
+            <p>Drag & Drop your file here or click to browse</p>
+            <!-- The actual input is often hidden but active -->
+         <input type="file" id="file-input" name="file-upload">
+        </div>
+        <button type="submit">Submit</button>
+    </form>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', filename='upload.js') }}"></script>
 </body>
 </html>
