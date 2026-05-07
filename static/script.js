@@ -85,6 +85,13 @@ const EXAMPLES = {
 /* ─────────────────────────────────────
    OPEN / CLOSE MODULE PANEL
 ───────────────────────────────────── */
+function scrollToModules() {
+  const toolSection = document.getElementById('tool-section');
+  if (toolSection) {
+    toolSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 function openModule(mod) {
   state.currentModule = mod;
 
@@ -324,6 +331,9 @@ function renderResult(r) {
   const badge = document.getElementById('threatBadge');
   const bar   = document.getElementById('scoreBar');
 
+  // Save to history
+  saveToHistory(r);
+
   // Reset classes
   ['level-safe','level-suspicious','level-dangerous'].forEach(c => {
     card.classList.remove(c);
@@ -350,6 +360,40 @@ function renderResult(r) {
   });
 
   setTimeout(() => card.scrollIntoView({ behavior:'smooth', block:'nearest' }), 200);
+}
+
+/* ─────────────────────────────────────
+   SAVE TO HISTORY
+───────────────────────────────────── */
+function saveToHistory(result) {
+  try {
+    const mod = state.currentModule;
+    let content = '';
+
+    if (mod === 'url') {
+      content = document.getElementById('url-input').value.trim();
+    } else if (mod === 'image') {
+      content = state.imageFile?.name || 'Unnamed image';
+    } else if (mod === 'msg') {
+      const msg = document.getElementById('msg-input').value.trim();
+      content = msg.substring(0, 200);
+    }
+
+    const scan = {
+      type: mod,
+      content: content,
+      score: result.score,
+      level: result.level,
+      category: result.category,
+      timestamp: new Date().toISOString()
+    };
+
+    const history = JSON.parse(localStorage.getItem('cg_scanHistory') || '[]');
+    history.push(scan);
+    localStorage.setItem('cg_scanHistory', JSON.stringify(history));
+  } catch (err) {
+    console.error('Error saving to history:', err);
+  }
 }
 
 /* ─────────────────────────────────────
@@ -486,9 +530,11 @@ async function handleAuthForm(e, endpoint) {
 /* ─────────────────────────────────────
    SIGN OUT
 ───────────────────────────────────── */
-async function signOut() {
-  try { await fetch('/api/auth/signout', { method:'POST' }); } catch {}
-  window.location.href = '/';
+function signOut() {
+  try { 
+    localStorage.removeItem('cg_currentUser');
+  } catch {}
+  window.location.href = '{{ url_for("home") }}';
 }
 
 /* ─────────────────────────────────────
@@ -500,10 +546,8 @@ async function loadHistory() {
   if (!table) return;
 
   try {
-    const res  = await fetch('/api/history');
-    if (!res.ok) throw new Error('Failed');
-    const data = await res.json();
-    const list = data.history || [];
+    const history = JSON.parse(localStorage.getItem('cg_scanHistory') || '[]');
+    const list = history.slice().reverse(); // Show newest first
 
     if (list.length === 0) {
       table.style.display = 'none';
@@ -518,12 +562,44 @@ async function loadHistory() {
 
     list.forEach(scan => {
       const row = document.createElement('tr');
-      const date = new Date(scan.created_at).toLocaleDateString();
+      const date = new Date(scan.timestamp).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      const levelColors = {
+        'safe': '#22C55E',
+        'suspicious': '#F59E0B',
+        'dangerous': '#EF4444'
+      };
+
+      const content = scan.content.length > 60 
+        ? scan.content.substring(0, 60) + '…' 
+        : scan.content;
+
       row.innerHTML = `
-        <td><a href="${scan.url}" target="_blank" rel="noopener noreferrer">${scan.url}</a></td>
-        <td>${scan.category}</td>
-        <td>${scan.score}%</td>
-        <td>${date}</td>
+        <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <span style="word-break: break-all; font-family: monospace; font-size: 0.85rem;">
+            ${content}
+          </span>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+            ${scan.type === 'url' ? '🔗 URL' : scan.type === 'image' ? '🖼️ Image' : '💬 Message'}
+          </div>
+        </td>
+        <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-sub);">
+          ${scan.category}
+        </td>
+        <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+          <span style="display: inline-block; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; background: rgba(${scan.level === 'safe' ? '34,197,94' : scan.level === 'suspicious' ? '245,158,11' : '239,68,68'},0.15); color: ${levelColors[scan.level]};">
+            ${scan.score}%
+          </span>
+        </td>
+        <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; font-size: 0.85rem; color: var(--text-muted);">
+          ${date}
+        </td>
       `;
       tbody.appendChild(row);
     });
@@ -584,6 +660,9 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 ───────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
 
+  // Update user profile in navbar
+  updateUserProfile();
+
   // Stats counter
   setTimeout(loadStats, 400);
 
@@ -601,3 +680,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
   console.log('%c🛡️ CyberGuard AI ready', 'color:#3B82F6;font-weight:bold;font-size:14px');
 });
+
+/* ─────────────────────────────────────
+   UPDATE USER PROFILE
+───────────────────────────────────── */
+function updateUserProfile() {
+  try {
+    const user = JSON.parse(localStorage.getItem('cg_currentUser') || 'null');
+    const signInLink = document.getElementById('signInLink');
+    const profileMenu = document.getElementById('profileMenu');
+
+    if (user && user.email) {
+      // User is logged in
+      if (signInLink) signInLink.style.display = 'none';
+      if (profileMenu) profileMenu.style.display = 'block';
+
+      // Update profile info
+      const profileEmail = document.getElementById('profileEmail');
+      const profileEmailFull = document.getElementById('profileEmailFull');
+      if (profileEmail) profileEmail.textContent = user.email.split('@')[0];
+      if (profileEmailFull) profileEmailFull.textContent = user.email;
+
+      // Setup profile button toggle
+      const profileBtn = document.getElementById('profileBtn');
+      const profileDropdown = document.getElementById('profileDropdown');
+      if (profileBtn && profileDropdown) {
+        profileBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          profileDropdown.style.display = profileDropdown.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+          profileDropdown.style.display = 'none';
+        });
+      }
+    } else {
+      // User not logged in
+      if (signInLink) signInLink.style.display = 'block';
+      if (profileMenu) profileMenu.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Error updating user profile:', err);
+  }
+}

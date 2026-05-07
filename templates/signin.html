@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — CyberGuard AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════
+       NAVBAR (simplified)
+  ═══════════════════════════════ -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="{{ url_for('home') }}" class="nav-logo">
+        <svg class="nav-logo-icon" width="34" height="34" viewBox="0 0 32 32" fill="none">
+          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" fill="url(#sf1)"/>
+          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" stroke="#3B82F6" stroke-width="1.2" fill="none"/>
+          <path d="M11 17L14.5 20.5L21 14" stroke="#06B6D4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="sf1" x1="3" y1="2" x2="29" y2="34" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#1e3a5f"/>
+              <stop offset="100%" stop-color="#0D1117"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="nav-logo-text">CyberGuard AI</span>
+      </a>
+      <div class="nav-actions">
+        <a href="{{ url_for('home') }}" class="nav-link">Home</a>
+        <a href="{{ url_for('signup') }}" class="btn btn-primary">Create Account</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════
+       AUTH WRAPPER
+  ═══════════════════════════════ -->
+  <div class="auth-wrapper">
+    <div class="auth-panel">
+      <div class="auth-logo" style="text-align: center; margin-bottom: 32px;">
+        <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
+          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" fill="url(#sf2)"/>
+          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" stroke="#3B82F6" stroke-width="1.2" fill="none"/>
+          <path d="M11 17L14.5 20.5L21 14" stroke="#06B6D4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="sf2" x1="3" y1="2" x2="29" y2="34" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#1e3a5f"/>
+              <stop offset="100%" stop-color="#0D1117"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <h1 class="auth-title">Welcome back</h1>
+      <p class="auth-sub">Sign in to your account to continue protecting against cyber threats</p>
+
+      <form id="authForm" class="auth-form">
+        <div class="form-field">
+          <label class="input-label">Email</label>
+          <input type="email" name="email" class="tool-input" 
+                 placeholder="you@example.com" required/>
+        </div>
+
+        <div class="form-field">
+          <label class="input-label">Password</label>
+          <input type="password" name="password" class="tool-input" 
+                 placeholder="••••••••" required/>
+        </div>
+
+        <div id="authError" class="form-error hidden"></div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; margin-top: 20px; font-size: 0.95rem;">
+          Sign In
+        </button>
+      </form>
+
+      <p class="form-note" style="margin-top: 24px;">
+        Don't have an account? <a href="{{ url_for('signup') }}">Create one now</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script>
+    // Sign in form handler
+    document.getElementById('authForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const btn = form.querySelector('button[type="submit"]');
+      const errorEl = document.getElementById('authError');
+
+      const email = form.email.value.trim().toLowerCase();
+      const password = form.password.value;
+
+      errorEl.classList.add('hidden');
+
+      btn.disabled = true;
+      btn.textContent = 'Signing in…';
+
+      try {
+        // Mock: store in localStorage for demo
+        const users = JSON.parse(localStorage.getItem('cg_users') || '[]');
+        const user = users.find(u => u.email === email && u.password === password);
+
+        if (user) {
+          localStorage.setItem('cg_currentUser', JSON.stringify(user));
+          // Redirect to home after a brief delay
+          setTimeout(() => {
+            window.location.href = '{{ url_for("home") }}';
+          }, 500);
+        } else {
+          errorEl.textContent = 'Invalid email or password.';
+          errorEl.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorEl.textContent = 'An error occurred. Please try again.';
+        errorEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    });
+  </script>
+</body>
+</html>
