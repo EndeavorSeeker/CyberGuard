@@ -232,20 +232,31 @@ def check_qr_codes(filepath):
                 data = qr.data.decode('utf-8')
                 details.append(f"QR Content: {data}")
 
-                # 🔥 unified analysis
-                s, d = check_url(data)
+                # 🔍 content QR
+                content = data.lower()
 
-                details.append("Content analysis:")
+                # 🌐 URL
+                if "http" in content or "www" in content:
+                    details.append("Detected: URL")
+                    s, d = check_url(data)
+                # 📝 TEXT
+                else:
+                    details.append("Detected: TEXT")
+                    s, d = check_text(data)
+
                 score += s
                 details.extend(d)
 
         else:
             details.append("No QR codes found")
 
+        details.append(f"Image: {os.path.basename(filepath)}")
+
     except Exception as e:
         details.append(f"QR error: {e}")
 
-    return score, details'''
+    return score, details
+'''
 
 
 # ============================================================
@@ -291,21 +302,44 @@ def analyze_image(filepath):
             "details": [str(e)]
         }
 
+# ============================================================
+# affichage
+# ============================================================
+def print_report(result):
+
+    print("\n" + "="*20 + " RESULT " + "="*20 + "\n")
+
+    # 🟢 STATUS
+    print(f"STATUS : {result['status']}")
+    print(f"SCORE  : {result['score']}\n")
+
+    print("DETAILS:\n")
+
+    qr_details = []
+    other_details = []
+
+    for d in result["details"]:
+        if "QR" in d:
+            qr_details.append(d)
+        else:
+            other_details.append(d)
+
+    for d in other_details:
+        print(f"- {d}")
+
+    if qr_details:
+        print("\n=== QR Analysis ===")
+        for d in qr_details:
+            print(f"- {d}")
+
 
 # ============================================================
 # TEST
 # ============================================================
-
 if __name__ == "__main__":
 
-    file_path = "test.png"  # 🔁 photo de test
+    file_path = "test.png"
 
     result = analyze_image(file_path)
 
-    print("\n","=="*10 ,"RESULT", "=="*10,"\n")
-    print("STATUS :", result["status"])
-    print("SCORE  :", result["score"])
-
-    print("\nDETAILS:\n")
-    for d in result["details"]:
-        print("-", d)
+    print_report(result)  
