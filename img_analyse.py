@@ -1,17 +1,15 @@
-def img_analyse(file):
-    if file:
-        return True
-    else:
-        return False
-# ============================================================
-# CYBERGUARD AI — FINAL VERSION 🔥
-# ============================================================
 
 from PIL import Image
 from pyzbar.pyzbar import decode
 import hashlib
 import requests
 import os
+
+'''# 🔗 URL SHIELD IMPORT
+from url_shield import check_url
+# 🔗 TEXT CHECK IMPORT
+from url_shield import check_text'''
+
 
 # ============================================================
 # CONFIG
@@ -25,7 +23,6 @@ VIRUSTOTAL_API_KEY = os.getenv("VIRUSTOTAL_API_KEY")
 # ============================================================
 
 def generate_sha256(filepath):
-
     sha256 = hashlib.sha256()
 
     with open(filepath, 'rb') as f:
@@ -40,7 +37,6 @@ def generate_sha256(filepath):
 # ============================================================
 
 def check_real_image(filepath):
-
     score = 0
     details = []
 
@@ -61,7 +57,6 @@ def check_real_image(filepath):
 # ============================================================
 
 def check_embedded_payload(filepath):
-
     score = 0
     details = []
 
@@ -72,9 +67,47 @@ def check_embedded_payload(filepath):
         score += 90
         details.append("Executable disguised as image")
 
-    if b'<script' in data.lower():
+    data_lower = data.lower()
+
+    # 🧨 Script / JS injection
+    if b'<script' in data_lower:
         score += 30
-        details.append("Script pattern detected")
+        details.append("Script tag detected")
+
+    # ⚠️ HTML injection
+    if b'<iframe' in data_lower or b'<img' in data_lower:
+        score += 20
+        details.append("Suspicious HTML tag detected")
+
+    # 🐍 Python / code injection
+    if b'import os' in data_lower or b'exec(' in data_lower:
+        score += 40
+        details.append("Code execution pattern detected")
+
+    # 💻 Command injection
+    if b'cmd.exe' in data_lower or b'powershell' in data_lower:
+        score += 50
+        details.append("Command execution detected")
+
+    # 📂 Path traversal
+    if b'../' in data_lower or b'..\\' in data_lower:
+        score += 25
+        details.append("Path traversal pattern detected")
+
+    # 🔐 Credential stealing
+    if b'password=' in data_lower or b'login=' in data_lower:
+        score += 30
+        details.append("Credential pattern detected")
+
+    # 🌐 Suspicious links
+    if b'http://' in data_lower or b'https://' in data_lower:
+        score += 10
+        details.append("Embedded URL found")
+
+    # 🧬 Encoded / obfuscated
+    if b'base64' in data_lower or b'eval(' in data_lower:
+        score += 35
+        details.append("Obfuscated code detected")
 
     return score, details
 
@@ -84,7 +117,6 @@ def check_embedded_payload(filepath):
 # ============================================================
 
 def detect_steganography(filepath):
-
     score = 0
     details = []
 
@@ -106,11 +138,10 @@ def detect_steganography(filepath):
 
 
 # ============================================================
-# VIRUSTOTAL UPLOAD
+# VIRUSTOTAL
 # ============================================================
 
 def upload_to_virustotal(filepath):
-
     url = "https://www.virustotal.com/api/v3/files"
     headers = {"x-apikey": VIRUSTOTAL_API_KEY}
 
@@ -128,12 +159,7 @@ def upload_to_virustotal(filepath):
         return f"Upload error: {e}"
 
 
-# ============================================================
-# VIRUSTOTAL CHECK
-# ============================================================
-
 def check_virustotal(filepath):
-
     score = 0
     details = []
 
@@ -142,7 +168,6 @@ def check_virustotal(filepath):
         return score, details
 
     try:
-
         file_hash = generate_sha256(filepath)
         details.append(f"SHA256: {file_hash}")
 
@@ -152,7 +177,6 @@ def check_virustotal(filepath):
         response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
-
             stats = response.json()["data"]["attributes"]["last_analysis_stats"]
 
             malicious = stats.get("malicious", 0)
@@ -174,7 +198,6 @@ def check_virustotal(filepath):
                 details.append("VirusTotal clean")
 
         elif response.status_code == 404:
-
             details.append("VirusTotal: File unknown")
             details.append(upload_to_virustotal(filepath))
 
@@ -193,28 +216,8 @@ def check_virustotal(filepath):
 # ============================================================
 # QR ANALYSIS
 # ============================================================
-
-def analyse_url(url):
-
-    score = 0
-    details = []
-
-    suspicious = ["bit.ly", "tinyurl", "grabify", "ngrok"]
-
-    for d in suspicious:
-        if d in url.lower():
-            score += 40
-            details.append(f"Suspicious domain: {d}")
-
-    if not url.startswith("https://"):
-        score += 20
-        details.append("Non-HTTPS URL")
-
-    return score, details
-
-
+'''
 def check_qr_codes(filepath):
-
     score = 0
     details = []
 
@@ -223,18 +226,18 @@ def check_qr_codes(filepath):
         qr_codes = decode(img)
 
         if qr_codes:
-
             details.append("QR code detected")
 
             for qr in qr_codes:
-
                 data = qr.data.decode('utf-8')
                 details.append(f"QR Content: {data}")
 
-                if "http" in data.lower():
-                    s, d = analyse_url(data)
-                    score += s
-                    details.extend(d)
+                # 🔥 unified analysis
+                s, d = check_url(data)
+
+                details.append("Content analysis:")
+                score += s
+                details.extend(d)
 
         else:
             details.append("No QR codes found")
@@ -242,7 +245,7 @@ def check_qr_codes(filepath):
     except Exception as e:
         details.append(f"QR error: {e}")
 
-    return score, details
+    return score, details'''
 
 
 # ============================================================
@@ -250,31 +253,30 @@ def check_qr_codes(filepath):
 # ============================================================
 
 def analyze_image(filepath):
-
     score = 0
     details = []
 
     try:
-
         details.append(f"File: {os.path.basename(filepath)}")
 
         for func in [
             check_real_image,
             check_embedded_payload,
             detect_steganography,
-            check_qr_codes,
+            #check_qr_codes,
             check_virustotal
         ]:
             s, d = func(filepath)
             score += s
             details.extend(d)
 
+        # ✅ STATUS SYSTEM
         if score >= 80:
-            status = "MALICIOUS"
+            status = "THREAT"
         elif score >= 40:
-            status = "SUSPICIOUS"
+            status = "WARNING"
         else:
-            status = "CLEAN"
+            status = "SAFE"
 
         return {
             "status": status,
@@ -296,9 +298,11 @@ def analyze_image(filepath):
 
 if __name__ == "__main__":
 
-    result = analyze_image("test.png")
+    file_path = "test.png"  # 🔁 photo de test
 
-    print("\n========== RESULT ==========\n")
+    result = analyze_image(file_path)
+
+    print("\n","=="*10 ,"RESULT", "=="*10,"\n")
     print("STATUS :", result["status"])
     print("SCORE  :", result["score"])
 
