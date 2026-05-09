@@ -1,127 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sign In — CyberGuard AI</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-</head>
-<body>
 
-  <!-- ═══════════════════════════════
-       NAVBAR (simplified)
-  ═══════════════════════════════ -->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In - CyberGuard AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script
+    defer
+    crossorigin="anonymous"
+    data-clerk-publishable-key="{{ clerk_publishable_key }}"
+    src="{{ clerk_js_url }}"
+    type="text/javascript">
+  </script>
+  <style>
+    .google-auth-btn {
+      width: 100%;
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 0.94rem;
+      cursor: pointer;
+      transition: transform var(--trans), background var(--trans), box-shadow var(--trans);
+    }
+    .google-auth-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,0.1);
+      box-shadow: 0 0 28px rgba(59,130,246,0.2);
+    }
+    .google-auth-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .auth-status {
+      min-height: 1.4em;
+      margin-top: 18px;
+      color: var(--text-muted);
+      font-size: 0.84rem;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
   <nav class="navbar">
     <div class="nav-inner">
       <a href="{{ url_for('home') }}" class="nav-logo">
         <svg class="nav-logo-icon" width="34" height="34" viewBox="0 0 32 32" fill="none">
-          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" fill="url(#sf1)"/>
-          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" stroke="#3B82F6" stroke-width="1.2" fill="none"/>
-          <path d="M11 17L14.5 20.5L21 14" stroke="#06B6D4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 2C22 2 27 7 27 13V18C27 22 23 26 16 30C9 26 5 22 5 18V13C5 7 10 2 16 2Z" fill="url(#si1)"/>
+          <path d="M16 2C22 2 27 7 27 13V18C27 22 23 26 16 30C9 26 5 22 5 18V13C5 7 10 2 16 2Z" stroke="#3B82F6" stroke-width="1.2" fill="none"/>
+          <path d="M9.8 14.2L14 18.4L22.2 10.2" stroke="#06B6D4" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 9.2C10.7 7.6 13.2 6.7 16 6.7C18.8 6.7 21.3 7.6 23 9.2" stroke="rgba(6,182,212,0.55)" stroke-width="1.1" fill="none" stroke-linecap="round"/>
           <defs>
-            <linearGradient id="sf1" x1="3" y1="2" x2="29" y2="34" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#1e3a5f"/>
+            <linearGradient id="si1" x1="6" y1="2" x2="26" y2="30" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#0B5BFF"/>
+              <stop offset="55%" stop-color="#06B6D4"/>
               <stop offset="100%" stop-color="#0D1117"/>
             </linearGradient>
           </defs>
         </svg>
         <span class="nav-logo-text">CyberGuard AI</span>
       </a>
+
       <div class="nav-actions">
         <a href="{{ url_for('home') }}" class="nav-link">Home</a>
-        <a href="{{ url_for('signup') }}" class="btn btn-primary">Create Account</a>
       </div>
     </div>
   </nav>
 
-  <!-- ═══════════════════════════════
-       AUTH WRAPPER
-  ═══════════════════════════════ -->
-  <div class="auth-wrapper">
-    <div class="auth-panel">
-      <div class="auth-logo" style="text-align: center; margin-bottom: 32px;">
-        <svg width="48" height="48" viewBox="0 0 32 32" fill="none">
-          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" fill="url(#sf2)"/>
-          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" stroke="#3B82F6" stroke-width="1.2" fill="none"/>
-          <path d="M11 17L14.5 20.5L21 14" stroke="#06B6D4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          <defs>
-            <linearGradient id="sf2" x1="3" y1="2" x2="29" y2="34" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#1e3a5f"/>
-              <stop offset="100%" stop-color="#0D1117"/>
-            </linearGradient>
-          </defs>
-        </svg>
+  <main class="auth-wrapper">
+    <section class="auth-panel">
+      <div style="text-align:center;margin-bottom:28px;">
+        <h1 class="auth-title">Sign in</h1>
+        <p class="auth-sub" style="margin-bottom:0;">Continue with your Google account.</p>
       </div>
 
-      <h1 class="auth-title">Welcome back</h1>
-      <p class="auth-sub">Sign in to your account to continue protecting against cyber threats</p>
+      <button id="googleAuthBtn" class="google-auth-btn" type="button">
+        <svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true">
+          <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C34.1 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/>
+          <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 12 24 12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C34.1 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+          <path fill="#4CAF50" d="M24 44c5.2 0 10-2 13.5-5.3l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.5 16.2 44 24 44z"/>
+          <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-1.1 3.1-3.3 5.5-6 7l6.2 5.2C39.5 36.5 44 30.8 44 24c0-1.3-.1-2.7-.4-3.5z"/>
+        </svg>
+        Continue with Google
+      </button>
+      <div id="authStatus" class="auth-status">Secure authentication powered by Clerk</div>
+    </section>
+  </main>
 
-      <form id="authForm" class="auth-form">
-        <div class="form-field">
-          <label class="input-label">Email</label>
-          <input type="email" name="email" class="tool-input" 
-                 placeholder="you@example.com" required/>
-        </div>
-
-        <div class="form-field">
-          <label class="input-label">Password</label>
-          <input type="password" name="password" class="tool-input" 
-                 placeholder="••••••••" required/>
-        </div>
-
-        <div id="authError" class="form-error hidden"></div>
-
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 14px; margin-top: 20px; font-size: 0.95rem;">
-          Sign In
-        </button>
-      </form>
-
-      <p class="form-note" style="margin-top: 24px;">
-        Don't have an account? <a href="{{ url_for('signup') }}">Create one now</a>
-      </p>
-    </div>
-  </div>
-
-  <script src="{{ url_for('static', filename='script.js') }}"></script>
   <script>
-    // Sign in form handler
-    document.getElementById('authForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const btn = form.querySelector('button[type="submit"]');
-      const errorEl = document.getElementById('authError');
+    function getClerkErrorMessage(err) {
+      return err?.errors?.[0]?.longMessage
+        || err?.errors?.[0]?.message
+        || err?.message
+        || "Google sign-in failed.";
+    }
 
-      const email = form.email.value.trim().toLowerCase();
-      const password = form.password.value;
-
-      errorEl.classList.add('hidden');
-
-      btn.disabled = true;
-      btn.textContent = 'Signing in…';
+    window.addEventListener("load", async () => {
+      const button = document.getElementById("googleAuthBtn");
+      const status = document.getElementById("authStatus");
 
       try {
-        // Mock: store in localStorage for demo
-        const users = JSON.parse(localStorage.getItem('cg_users') || '[]');
-        const user = users.find(u => u.email === email && u.password === password);
-
-        if (user) {
-          localStorage.setItem('cg_currentUser', JSON.stringify(user));
-          // Redirect to home after a brief delay
-          setTimeout(() => {
-            window.location.href = '{{ url_for("home") }}';
-          }, 500);
-        } else {
-          errorEl.textContent = 'Invalid email or password.';
-          errorEl.classList.remove('hidden');
+        await window.Clerk.load();
+        if (window.Clerk.user) {
+          window.location.href = "/";
+          return;
         }
+
+        button.addEventListener("click", async () => {
+          button.disabled = true;
+          status.textContent = "Opening Google...";
+
+          try {
+            const signIn = window.Clerk.client?.signIn;
+            if (!signIn?.authenticateWithRedirect) {
+              throw new Error("Clerk sign-in object is not ready. Refresh the page and try again.");
+            }
+
+            await signIn.authenticateWithRedirect({
+              strategy: "oauth_google",
+              redirectUrl: "/sso-callback",
+              redirectUrlComplete: "/",
+            });
+          } catch (err) {
+            console.error("Google sign-in failed:", err);
+            status.textContent = getClerkErrorMessage(err);
+            button.disabled = false;
+          }
+        });
       } catch (err) {
-        errorEl.textContent = 'An error occurred. Please try again.';
-        errorEl.classList.remove('hidden');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
+        console.error("Clerk failed to load:", err);
+        status.textContent = "Clerk could not load. Check your key and internet connection.";
+        button.disabled = true;
       }
     });
   </script>

@@ -17,24 +17,27 @@
     <div class="nav-inner">
       <a href="{{ url_for('home') }}" class="nav-logo">
         <svg class="nav-logo-icon" width="34" height="34" viewBox="0 0 32 32" fill="none">
-          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" fill="url(#sf1)"/>
-          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" stroke="#3B82F6" stroke-width="1.2" fill="none"/>
-          <path d="M11 17L14.5 20.5L21 14" stroke="#06B6D4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 2C22 2 27 7 27 13V18C27 22 23 26 16 30C9 26 5 22 5 18V13C5 7 10 2 16 2Z" fill="url(#sf1)"/>
+          <path d="M16 2C22 2 27 7 27 13V18C27 22 23 26 16 30C9 26 5 22 5 18V13C5 7 10 2 16 2Z" stroke="#3B82F6" stroke-width="1.2" fill="none"/>
+          <path d="M9.8 14.2L14 18.4L22.2 10.2" stroke="#06B6D4" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 9.2C10.7 7.6 13.2 6.7 16 6.7C18.8 6.7 21.3 7.6 23 9.2" stroke="rgba(6,182,212,0.55)" stroke-width="1.1" fill="none" stroke-linecap="round"/>
           <defs>
-            <linearGradient id="sf1" x1="3" y1="2" x2="29" y2="34" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#1e3a5f"/>
+            <linearGradient id="sf1" x1="6" y1="2" x2="26" y2="30" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#0B5BFF"/>
+              <stop offset="55%" stop-color="#06B6D4"/>
               <stop offset="100%" stop-color="#0D1117"/>
             </linearGradient>
           </defs>
         </svg>
         <span class="nav-logo-text">CyberGuard AI</span>
       </a>
+
       <div class="nav-actions">
-        <a href="{{ url_for('home') }}" class="nav-link">Home</a>
+        <a href="{{ url_for('home') }}" class="nav-link" data-i18n="navbar_home">Home</a>
         
         <!-- User Profile -->
         <div style="position: relative;">
-          <button id="profileBtn" style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); padding: 8px 14px; border-radius: 8px; cursor: pointer; color: var(--text); font-size: 0.85rem; font-weight: 500;">
+          <button id="profileBtn" onclick="toggleProfileDropdown()" style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); padding: 8px 14px; border-radius: 8px; cursor: pointer; color: var(--text); font-size: 0.85rem; font-weight: 500;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>
             </svg>
@@ -47,7 +50,7 @@
           <!-- Dropdown Menu -->
           <div id="profileDropdown" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; min-width: 200px; box-shadow: 0 12px 32px rgba(0,0,0,0.3); z-index: 1001;">
             <div style="padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; color: var(--text-muted);">
-              <div style="margin-bottom: 4px;">Logged in as</div>
+              <div style="margin-bottom: 4px;" data-i18n="profile_logged_in">Logged in as</div>
               <div id="profileEmailFull" style="font-weight: 600; color: var(--text); word-break: break-all;"></div>
             </div>
             <button onclick="signOut()" style="display: block; width: 100%; text-align: left; padding: 10px 16px; color: var(--red); background: none; border: none; cursor: pointer; font-size: 0.85rem; transition: background var(--trans);" onmouseover="this.style.background='rgba(239,68,68,0.08)'" onmouseout="this.style.background='transparent'">
@@ -63,8 +66,8 @@
        HISTORY PAGE
   ═══════════════════════════════ -->
   <div class="page-section">
-    <h1 class="page-title">Scan History</h1>
-    <p class="page-sub">All your analyses are saved here. Review past scans and threat assessments.</p>
+    <h1 class="page-title" data-i18n="history_title">Scan History</h1>
+    <p class="page-sub" data-i18n="history_sub">All your analyses are saved here. Review past scans and threat assessments.</p>
 
     <div class="history-card">
       <table class="history-table" id="historyTable" style="display: none;">
@@ -83,11 +86,11 @@
         <svg width="60" height="60" viewBox="0 0 24 24" fill="none" style="opacity: 0.3; margin-bottom: 16px;">
           <path d="M11 19H5V5h14v8m6 0a6 6 0 1 1-12 0 6 6 0 0 1 12 0z" stroke="var(--text-sub)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <p style="font-size: 1rem; color: var(--text-sub);">No scans yet</p>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
+        <p style="font-size: 1rem; color: var(--text-sub);" data-i18n="history_empty_title">No scans yet</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;" data-i18n="history_empty_info">
           Start by analyzing a URL, image, or message
         </p>
-        <a href="{{ url_for('home') }}" class="btn btn-primary" style="margin-top: 20px;">
+        <a href="{{ url_for('home') }}" class="btn btn-primary" style="margin-top: 20px;" data-i18n="history_action">
           Go to Analyzer
         </a>
       </div>
@@ -97,125 +100,177 @@
   <!-- ═══════════════════════════════
        FOOTER
   ═══════════════════════════════ -->
-  <footer class="footer">
-    <div class="footer-inner">
-      <span class="footer-logo">CyberGuard AI</span>
-      <span class="footer-copy">© 2026 CyberGuard AI — Advanced AI-powered cybersecurity.</span>
-    </div>
-  </footer>
+ <footer class="footer">
+  <div class="footer-container">
 
+    <!-- Brand -->
+    <div class="footer-brand">
+      <h2 class="footer-logo">CyberGuard AI</h2>
+      <p class="footer-description">
+        Advanced AI-powered cybersecurity solutions for modern businesses.
+      </p>
+    </div>
+
+    <!-- Links -->
+    <div class="footer-links">
+      <h3>Quick Links</h3>
+      <a href="#">Home</a>
+      <a href="#">Features</a>
+      <a href="#">Pricing</a>
+      <a href="#">Contact</a>
+    </div>
+
+    <!-- Support -->
+    <div class="footer-links">
+      <h3>Support</h3>
+      <a href="#">Help Center</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+
+   
+
+  </div>
+
+  <div class="footer-bottom">
+    © 2026 CyberGuard AI — All rights reserved.
+  </div>
+</footer>
+
+  <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}"></script>
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
   <script src="{{ url_for('static', filename='script.js') }}"></script>
   <script>
-    // Update user profile in navbar
-    function updateUserProfile() {
+    async function updateUserProfile() {
       try {
-        const user = JSON.parse(localStorage.getItem('cg_currentUser') || 'null');
-
-        if (user && user.email) {
-          // Update profile info
-          const profileEmail = document.getElementById('profileEmail');
-          const profileEmailFull = document.getElementById('profileEmailFull');
-          if (profileEmail) profileEmail.textContent = user.email.split('@')[0];
-          if (profileEmailFull) profileEmailFull.textContent = user.email;
-
-          // Setup profile button toggle
-          const profileBtn = document.getElementById('profileBtn');
-          const profileDropdown = document.getElementById('profileDropdown');
-          if (profileBtn && profileDropdown) {
-            profileBtn.addEventListener('click', (e) => {
-              e.stopPropagation();
-              profileDropdown.style.display = profileDropdown.style.display === 'none' ? 'block' : 'none';
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener('click', () => {
-              profileDropdown.style.display = 'none';
-            });
-          }
-        } else {
-          // Redirect to signin if not logged in
+        const user = window.Clerk ? window.Clerk.user : null;
+        if (!user || !user.primaryEmailAddress) {
           window.location.href = '{{ url_for("signin") }}';
+          return;
         }
+
+        const email = user.primaryEmailAddress.emailAddress;
+        const profileEmail = document.getElementById('profileEmail');
+        const profileEmailFull = document.getElementById('profileEmailFull');
+        if (profileEmail) profileEmail.textContent = email.split('@')[0];
+        if (profileEmailFull) profileEmailFull.textContent = email;
+
+        const profileBtn = document.getElementById('profileBtn');
+        const profileDropdown = document.getElementById('profileDropdown');
+        if (profileBtn && profileDropdown) {
+          profileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileDropdown.style.display = profileDropdown.style.display === 'block' ? 'none' : 'block';
+          });
+
+          document.addEventListener('click', () => {
+            profileDropdown.style.display = 'none';
+          });
+        }
+
+        await syncClerkUser(user);
       } catch (err) {
         console.error('Error updating user profile:', err);
+        window.location.href = '{{ url_for("signin") }}';
       }
     }
 
-    function signOut() {
-      localStorage.removeItem('cg_currentUser');
-      window.location.href = '{{ url_for("home") }}';
+    async function syncClerkUser(user) {
+      if (!user || !user.id || !user.primaryEmailAddress) return;
+      try {
+        await fetch('/api/sync-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, email: user.primaryEmailAddress.emailAddress }),
+        });
+      } catch (err) {
+        console.warn('Unable to sync Clerk user to backend:', err);
+      }
     }
 
-    // Load history from localStorage
+    async function signOut() {
+      if (window.Clerk) {
+        await window.Clerk.signOut();
+      }
+      window.location.href = '/';
+    }
+
+    function toggleProfileDropdown() {
+      const dropdown = document.getElementById('profileDropdown');
+      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+    }
+
     function loadHistory() {
+      if (!clerkUser) return;
+
       const historyTable = document.getElementById('historyTable');
       const historyEmpty = document.getElementById('historyEmpty');
       const tbody = document.getElementById('historyTableBody');
 
-      try {
-        const history = JSON.parse(localStorage.getItem('cg_scanHistory') || '[]');
+      fetch('/api/history?user_id=' + encodeURIComponent(clerkUser.id))
+        .then(r => r.json())
+        .then(data => {
+          if (data.success && data.history.length > 0) {
+            historyTable.style.display = 'table';
+            historyEmpty.style.display = 'none';
+            tbody.innerHTML = '';
 
-        if (history.length === 0) {
+            const levelColors = {
+              'Safe': '#22C55E',
+              'Suspicious': '#F59E0B',
+              'Phishing': '#EF4444',
+              'Social Engineering': '#EF4444',
+              'Alert': '#F59E0B'
+            };
+
+            data.history.forEach((scan) => {
+              const row = document.createElement('tr');
+              const date = new Date(scan.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+
+              const content = scan.content.length > 60 ? scan.content.substring(0, 60) + '…' : scan.content;
+              const level = scan.category;
+
+              row.innerHTML = `
+                <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                  <span style="word-break: break-all; font-family: monospace; font-size: 0.85rem;">
+                    ${escapeHtml(content)}
+                  </span>
+                  <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+                    ${scan.type === 'url' ? '🔗 URL' : scan.type === 'msg' ? '💬 Message' : '📄 ' + scan.type}
+                  </div>
+                </td>
+                <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-sub);">
+                  ${scan.category}
+                </td>
+                <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                  <span style="display: inline-block; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; background: rgba(${level === 'Safe' ? '34,197,94' : level === 'Suspicious' ? '245,158,11' : '239,68,68'},0.15); color: ${levelColors[level] || '#F59E0B'};">
+                    ${scan.score}%
+                  </span>
+                </td>
+                <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; font-size: 0.85rem; color: var(--text-muted);">
+                  ${date}
+                </td>
+              `;
+              tbody.appendChild(row);
+            });
+          } else {
+            historyTable.style.display = 'none';
+            historyEmpty.style.display = 'block';
+          }
+        })
+        .catch(err => {
+          console.error('Error loading history:', err);
           historyTable.style.display = 'none';
           historyEmpty.style.display = 'block';
-          return;
-        }
-
-        historyTable.style.display = 'table';
-        historyEmpty.style.display = 'none';
-        tbody.innerHTML = '';
-
-        // Display in reverse order (newest first)
-        history.slice().reverse().forEach((scan, idx) => {
-          const row = document.createElement('tr');
-          const date = new Date(scan.timestamp).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-
-          const levelColors = {
-            'safe': '#22C55E',
-            'suspicious': '#F59E0B',
-            'dangerous': '#EF4444'
-          };
-
-          const content = scan.content.length > 60 
-            ? scan.content.substring(0, 60) + '…' 
-            : scan.content;
-
-          row.innerHTML = `
-            <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-              <span style="word-break: break-all; font-family: monospace; font-size: 0.85rem;">
-                ${escapeHtml(content)}
-              </span>
-              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
-                ${scan.type === 'url' ? '🔗 URL' : scan.type === 'image' ? '🖼️ Image' : '💬 Message'}
-              </div>
-            </td>
-            <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-sub);">
-              ${scan.category}
-            </td>
-            <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
-              <span style="display: inline-block; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; background: rgba(${scan.level === 'safe' ? '34,197,94' : scan.level === 'suspicious' ? '245,158,11' : '239,68,68'},0.15); color: ${levelColors[scan.level]};">
-                ${scan.score}%
-              </span>
-            </td>
-            <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; font-size: 0.85rem; color: var(--text-muted);">
-              ${date}
-            </td>
-          `;
-          tbody.appendChild(row);
+          historyEmpty.innerHTML = '<p style="color: var(--red);">Failed to load history.</p>';
         });
-
-      } catch (err) {
-        console.error('Error loading history:', err);
-        historyTable.style.display = 'none';
-        historyEmpty.style.display = 'block';
-        historyEmpty.innerHTML = '<p style="color: var(--red);">Failed to load history.</p>';
-      }
     }
 
     function escapeHtml(text) {
@@ -224,11 +279,22 @@
       return div.innerHTML;
     }
 
-    // Load history and update profile on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      updateUserProfile();
-      loadHistory();
-    });
+    clerkUser = null;
+
+    async function initClerk() {
+      if (window.Clerk) {
+        await window.Clerk.load();
+        clerkUser = window.Clerk.user;
+        if (!clerkUser) {
+          window.location.href = '{{ url_for("signin") }}';
+          return;
+        }
+        await updateUserProfile();
+        loadHistory();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initClerk);
   </script>
 </body>
 </html>

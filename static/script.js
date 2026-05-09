@@ -11,15 +11,109 @@ const state = {
   imageFile:       null,
   imageBase64:     null,
 };
+let clerkUser = null;
+let clerkLoaded = false;
 
+async function syncBackendClerkUser(user) {
+  const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || user?.email;
+  if (!user?.id || !email) return;
+
+  await fetch('/api/sync-user', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: user.id, email }),
+  });
+}
+
+/* ─────────────────────────────────────
+   CLERK AUTH
+───────────────────────────────────── */
+async function initClerk() {
+  if (!window.Clerk) {
+    updateNavbar();
+    return;
+  }
+
+  try {
+    if (!clerkLoaded) {
+      await window.Clerk.load();
+      clerkLoaded = true;
+    }
+    clerkUser = window.Clerk.user;
+    if (clerkUser) {
+      await syncBackendClerkUser(clerkUser).catch((err) => {
+        console.warn('Unable to sync Clerk user to backend:', err);
+      });
+    }
+  } catch (err) {
+    console.warn('Clerk failed to initialize:', err);
+  } finally {
+    updateNavbar();
+  }
+}
+
+function updateNavbar() {
+  const getStartedBtn = document.getElementById('getStartedBtn');
+  const signInLink = document.getElementById('signInLink');
+  const profileMenu = document.getElementById('profileMenu');
+  const profileBtn = document.getElementById('profileBtn');
+  const profileEmail = document.getElementById('profileEmail');
+  const profileEmailFull = document.getElementById('profileEmailFull');
+  const mobileProfile = document.getElementById('mobileProfile');
+  const mobileProfileEmail = document.getElementById('mobileProfileEmail');
+
+  const email = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || '';
+  const name = clerkUser?.fullName || clerkUser?.firstName || email.split('@')[0] || 'User';
+
+  if (clerkUser && email) {
+    if (getStartedBtn) getStartedBtn.style.display = 'none';
+    if (signInLink) signInLink.style.display = 'none';
+    if (profileMenu) profileMenu.style.display = 'flex';
+    if (profileBtn) profileBtn.style.display = 'flex';
+    if (profileEmail) profileEmail.textContent = name;
+    if (profileEmailFull) profileEmailFull.textContent = email;
+    if (mobileProfile) {
+      mobileProfile.style.display = 'block';
+      if (mobileProfileEmail) mobileProfileEmail.textContent = email;
+    }
+  } else {
+    if (getStartedBtn) getStartedBtn.style.display = 'inline-flex';
+    if (signInLink) signInLink.style.display = 'block';
+    if (profileMenu) profileMenu.style.display = 'none';
+    if (mobileProfile) mobileProfile.style.display = 'none';
+  }
+}
+
+async function signOut() {
+  if (window.Clerk) {
+    await window.Clerk.signOut();
+  }
+  window.location.href = '/';
+}
+
+function toggleProfileDropdown() {
+  const dropdown = document.getElementById('profileDropdown');
+  if (!dropdown) return;
+  dropdown.classList.toggle('open');
+}
+
+window.addEventListener('load', () => {
+  initClerk();
+});
+
+document.addEventListener('click', (event) => {
+  const menu = document.getElementById('profileMenu');
+  const dropdown = document.getElementById('profileDropdown');
+  if (dropdown && menu && !menu.contains(event.target)) {
+    dropdown.classList.remove('open');
+  }
+});
 /* ─────────────────────────────────────
    FLASK ENDPOINTS
    → uncomment when Flask is ready
 ───────────────────────────────────── */
 const API = {
-  url:   '/api/url-shield',
-  image: '/api/image-scan',
-  msg:   '/api/trustcheck',
+  scan: '/api/scan',
   stats: '/api/stats',
 };
 
@@ -93,6 +187,11 @@ function scrollToModules() {
 }
 
 function openModule(mod) {
+  if (!clerkUser) {
+    window.location.href = '/signin';
+    return;
+  }
+
   state.currentModule = mod;
 
   // Set panel title
@@ -236,6 +335,10 @@ function validateInput() {
 ───────────────────────────────────── */
 async function analyzeNow() {
   if (state.isLoading) return;
+  if (!clerkUser) {
+    window.location.href = '/signin';
+    return;
+  }
 
   const v = validateInput();
   if (!v.ok) { showError(v.msg); return; }
@@ -247,20 +350,25 @@ async function analyzeNow() {
   try {
     let result;
 
-    /* ═══ REAL FLASK CALL — uncomment when backend is ready ═══
+    /* ═══ REAL FLASK CALL ═══ */
 
     let body;
     const mod = state.currentModule;
 
     if (mod === 'url') {
-      body = JSON.stringify({ data: document.getElementById('url-input').value.trim() });
+      body = JSON.stringify({ type: 'url', url: document.getElementById('url-input').value.trim(), user_id: clerkUser ? clerkUser.id : null });
     } else if (mod === 'image') {
-      body = JSON.stringify({ image: state.imageBase64, filename: state.imageFile.name });
+      body = JSON.stringify({
+        type: 'image',
+        image_name: state.imageFile?.name || 'Uploaded image',
+        image_size: state.imageFile?.size || 0,
+        user_id: clerkUser.id,
+      });
     } else if (mod === 'msg') {
-      body = JSON.stringify({ data: document.getElementById('msg-input').value.trim() });
+      body = JSON.stringify({ type: 'msg', text: document.getElementById('msg-input').value.trim(), user_id: clerkUser ? clerkUser.id : null });
     }
 
-    const res = await fetch(API[mod], {
+    const res = await fetch(API.scan, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body,
@@ -272,10 +380,9 @@ async function analyzeNow() {
     }
 
     result = await res.json();
-    ═══════════════════════════════════════════════════════════ */
+    if (!result.success) throw new Error(result.message || 'Analysis failed');
 
-    // MOCK — remove when Flask is connected
-    result = await mockAnalyze();
+    result = normalizeResult(result.result);
 
     state.lastResult = result;
     renderResult(result);
@@ -323,16 +430,33 @@ async function mockAnalyze() {
   return MOCK.url.safe;
 }
 
+function normalizeResult(result) {
+  if (!result) return MOCK.url.safe;
+  if (result.level) return result;
+
+  const category = (result.category || '').toLowerCase();
+  let level = 'safe';
+  if (result.score >= 70 || category.includes('phishing') || category.includes('engineering') || category.includes('alert')) {
+    level = 'dangerous';
+  } else if (result.score >= 40 || category.includes('suspicious')) {
+    level = 'suspicious';
+  }
+
+  return {
+    ...result,
+    level,
+    humanExplanation: result.humanExplanation || result.explanation,
+  };
+}
+
 /* ─────────────────────────────────────
    RENDER RESULT
 ───────────────────────────────────── */
 function renderResult(r) {
+  r = normalizeResult(r);
   const card  = document.getElementById('resultCard');
   const badge = document.getElementById('threatBadge');
   const bar   = document.getElementById('scoreBar');
-
-  // Save to history
-  saveToHistory(r);
 
   // Reset classes
   ['level-safe','level-suspicious','level-dangerous'].forEach(c => {
@@ -530,11 +654,16 @@ async function handleAuthForm(e, endpoint) {
 /* ─────────────────────────────────────
    SIGN OUT
 ───────────────────────────────────── */
-function signOut() {
-  try { 
+async function signOut() {
+  try {
     localStorage.removeItem('cg_currentUser');
-  } catch {}
-  window.location.href = '{{ url_for("home") }}';
+    if (window.Clerk && typeof Clerk.signOut === 'function') {
+      await Clerk.signOut();
+    }
+  } catch (err) {
+    console.warn('Sign out error:', err);
+  }
+  window.location.href = '/';
 }
 
 /* ─────────────────────────────────────
@@ -543,69 +672,68 @@ function signOut() {
 async function loadHistory() {
   const table = document.getElementById('historyTable');
   const empty = document.getElementById('historyEmpty');
+  const tbody = document.getElementById('historyTableBody') || table?.querySelector('tbody');
   if (!table) return;
 
+  if (!clerkUser) {
+    window.location.href = '/signin';
+    return;
+  }
+
   try {
-    const history = JSON.parse(localStorage.getItem('cg_scanHistory') || '[]');
-    const list = history.slice().reverse(); // Show newest first
+    const res = await fetch('/api/history?user_id=' + encodeURIComponent(clerkUser.id));
+    const data = await res.json();
+    const list = data.success ? data.history : [];
 
     if (list.length === 0) {
       table.style.display = 'none';
-      empty.style.display = 'block';
+      if (empty) empty.style.display = 'block';
       return;
     }
 
     table.style.display = 'table';
-    empty.style.display = 'none';
-    const tbody = table.querySelector('tbody') || table.appendChild(document.createElement('tbody'));
+    if (empty) empty.style.display = 'none';
     tbody.innerHTML = '';
 
-    list.forEach(scan => {
+    const levelColors = {
+      Safe: '#22C55E',
+      Suspicious: '#F59E0B',
+      Phishing: '#EF4444',
+      'Social Engineering': '#EF4444',
+      Alert: '#F59E0B',
+      'Image Phishing': '#EF4444'
+    };
+
+    list.forEach((scan) => {
       const row = document.createElement('tr');
-      const date = new Date(scan.timestamp).toLocaleDateString('en-US', {
+      const date = new Date(scan.created_at).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
       });
-
-      const levelColors = {
-        'safe': '#22C55E',
-        'suspicious': '#F59E0B',
-        'dangerous': '#EF4444'
-      };
-
-      const content = scan.content.length > 60 
-        ? scan.content.substring(0, 60) + '…' 
-        : scan.content;
+      const content = scan.content.length > 60 ? scan.content.substring(0, 60) + '...' : scan.content;
+      const level = normalizeResult(scan).level;
+      const icon = scan.type === 'url' ? 'URL' : scan.type === 'image' ? 'Image' : 'Message';
 
       row.innerHTML = `
         <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-          <span style="word-break: break-all; font-family: monospace; font-size: 0.85rem;">
-            ${content}
-          </span>
-          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
-            ${scan.type === 'url' ? '🔗 URL' : scan.type === 'image' ? '🖼️ Image' : '💬 Message'}
-          </div>
+          <span style="word-break: break-all; font-family: monospace; font-size: 0.85rem;">${escapeHtml(content)}</span>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">${icon}</div>
         </td>
-        <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-sub);">
-          ${scan.category}
-        </td>
+        <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--text-sub);">${escapeHtml(scan.category)}</td>
         <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center;">
-          <span style="display: inline-block; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; background: rgba(${scan.level === 'safe' ? '34,197,94' : scan.level === 'suspicious' ? '245,158,11' : '239,68,68'},0.15); color: ${levelColors[scan.level]};">
-            ${scan.score}%
-          </span>
+          <span style="display: inline-block; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; background: rgba(${level === 'safe' ? '34,197,94' : level === 'suspicious' ? '245,158,11' : '239,68,68'},0.15); color: ${levelColors[scan.category] || '#F59E0B'};">${scan.score}%</span>
         </td>
-        <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; font-size: 0.85rem; color: var(--text-muted);">
-          ${date}
-        </td>
+        <td style="padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; font-size: 0.85rem; color: var(--text-muted);">${date}</td>
       `;
       tbody.appendChild(row);
     });
-  } catch {
+  } catch (err) {
+    console.error('Error loading history:', err);
     if (empty) { empty.textContent = 'Failed to load history.'; empty.style.display = 'block'; }
-    if (table) table.style.display = 'none';
+    table.style.display = 'none';
   }
 }
 
@@ -654,14 +782,21 @@ document.addEventListener('keydown', e => {
 ───────────────────────────────────── */
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text ?? '';
+  return div.innerHTML;
+}
 
 /* ─────────────────────────────────────
    INIT
 ───────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
+async function syncClerkUser() {
+  await initClerk();
+}
 
-  // Update user profile in navbar
-  updateUserProfile();
+document.addEventListener('DOMContentLoaded', async () => {
+  await initClerk();
 
   // Stats counter
   setTimeout(loadStats, 400);
@@ -681,46 +816,85 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('%c🛡️ CyberGuard AI ready', 'color:#3B82F6;font-weight:bold;font-size:14px');
 });
 
+window.addEventListener('load', async () => {
+  await initClerk();
+});
+
 /* ─────────────────────────────────────
    UPDATE USER PROFILE
 ───────────────────────────────────── */
 function updateUserProfile() {
-  try {
-    const user = JSON.parse(localStorage.getItem('cg_currentUser') || 'null');
-    const signInLink = document.getElementById('signInLink');
-    const profileMenu = document.getElementById('profileMenu');
+  updateNavbar();
+}
 
-    if (user && user.email) {
-      // User is logged in
-      if (signInLink) signInLink.style.display = 'none';
-      if (profileMenu) profileMenu.style.display = 'block';
+/* ─────────────────────────────────────
+   SETTINGS MENU (Language / Theme)
+───────────────────────────────────── */
+(function initializeSettings() {
+  const settingsBtn = document.getElementById('settingsBtn');
+  const settingsDropdown = document.getElementById('settingsDropdown');
 
-      // Update profile info
-      const profileEmail = document.getElementById('profileEmail');
-      const profileEmailFull = document.getElementById('profileEmailFull');
-      if (profileEmail) profileEmail.textContent = user.email.split('@')[0];
-      if (profileEmailFull) profileEmailFull.textContent = user.email;
+  if (!settingsBtn || !settingsDropdown) return;
 
-      // Setup profile button toggle
-      const profileBtn = document.getElementById('profileBtn');
-      const profileDropdown = document.getElementById('profileDropdown');
-      if (profileBtn && profileDropdown) {
-        profileBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          profileDropdown.style.display = profileDropdown.style.display === 'none' ? 'block' : 'none';
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', () => {
-          profileDropdown.style.display = 'none';
-        });
-      }
-    } else {
-      // User not logged in
-      if (signInLink) signInLink.style.display = 'block';
-      if (profileMenu) profileMenu.style.display = 'none';
+  // Toggle dropdown on settings button click
+  settingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = settingsDropdown.style.display === 'none';
+    settingsDropdown.style.display = isVisible ? 'block' : 'none';
+    if (isVisible) {
+      updateSettingsHighlights();
     }
-  } catch (err) {
-    console.error('Error updating user profile:', err);
-  }
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!settingsBtn.contains(e.target) && !settingsDropdown.contains(e.target)) {
+      settingsDropdown.style.display = 'none';
+    }
+  });
+
+  // Close when a language button is clicked - removed to allow seeing language changes
+  // document.querySelectorAll('.lang-btn').forEach(btn => {
+  //   btn.addEventListener('click', () => {
+  //     setTimeout(() => {
+  //       settingsDropdown.style.display = 'none';
+  //     }, 800);
+  //   });
+  // });
+
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const lang = btn.dataset.lang;
+      if (!lang) return;
+      changeLanguage(lang);
+      updateSettingsHighlights();
+    });
+  });
+
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const theme = btn.dataset.theme;
+      if (!theme) return;
+      changeTheme(theme);
+      updateSettingsHighlights();
+      setTimeout(() => {
+        settingsDropdown.style.display = 'none';
+      }, 400);
+    });
+  });
+
+  updateSettingsHighlights();
+})();
+
+function updateSettingsHighlights() {
+  const currentLang = localStorage.getItem('cg_language') || 'en';
+  const currentTheme = localStorage.getItem('cg_theme') || 'dark';
+
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === currentLang);
+  });
+
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === currentTheme);
+  });
 }

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — CyberGuard AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}" type="text/javascript"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="{{ url_for('home') }}" class="nav-logo">
+        <svg width="34" height="34" viewBox="0 0 32 32" fill="none">
+          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" fill="url(#sf1)"/>
+          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" stroke="#3B82F6" stroke-width="1.2" fill="none"/>
+          <path d="M11 17L14.5 20.5L21 14" stroke="#06B6D4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="sf1" x1="3" y1="2" x2="29" y2="34" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#1e3a5f"/>
+              <stop offset="100%" stop-color="#0D1117"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="nav-logo-text">CyberGuard AI</span>
+      </a>
+      <div class="nav-actions">
+        <a href="{{ url_for('home') }}" class="nav-link">Home</a>
+        <div id="userButton"></div>
+        <a href="#" onclick="signOut(); return false;" class="nav-link">Sign Out</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-section">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-sub">A unified view of your CyberGuard AI account and activity.</p>
+
+    <div class="history-card" style="padding: 32px;">
+      <p style="font-size: 1rem; color: var(--text); margin-bottom: 18px;">
+        Welcome back, <strong id="userWelcome">user</strong>.
+      </p>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+        <a href="{{ url_for('history') }}" class="btn btn-primary">View History</a>
+        <a href="{{ url_for('admin') }}" class="btn btn-secondary">Admin Users</a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span class="footer-logo">CyberGuard AI</span>
+      <span class="footer-copy">© 2026 CyberGuard AI. All rights reserved.</span>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+  <script>
+    async function initDashboard() {
+      try {
+        if (!window.Clerk) return;
+        await window.Clerk.load();
+        const user = window.Clerk.user;
+        if (!user || !user.primaryEmailAddress) {
+          window.location.href = '{{ url_for("signin") }}';
+          return;
+        }
+
+        document.getElementById('userWelcome').textContent = user.primaryEmailAddress.emailAddress;
+        await fetch('/api/sync-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, email: user.primaryEmailAddress.emailAddress }),
+        });
+      } catch (err) {
+        console.error('Dashboard initialization failed:', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
+</body>
+</html>

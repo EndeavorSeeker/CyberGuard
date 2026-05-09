@@ -1,3 +1,4 @@
+import base64
 import os
 import re
 import sqlite3
@@ -5,6 +6,22 @@ from datetime import datetime
 from functools import wraps
 from urllib.parse import urlparse
 
+try:
+    from clerk_backend_api.security import AuthenticateRequestOptions, authenticate_request
+    CLERK_AVAILABLE = True
+except ImportError:
+    CLERK_AVAILABLE = False
+
+    class AuthenticateRequestOptions:
+        def __init__(self, *args, **kwargs):
+            pass
+
+    def authenticate_request(*args, **kwargs):
+        class DummyAuth:
+            is_signed_in = False
+            payload = None
+
+        return DummyAuth()
 from flask import (
     Flask,
     g,
@@ -17,6 +34,13 @@ from flask import (
 )
 from flask_mail import Mail, Message
 from werkzeug.security import check_password_hash, generate_password_hash
+
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-this")
@@ -34,6 +58,49 @@ mail = Mail(app)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_PATH = os.path.join(BASE_DIR, "cyberguard.db")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+CLERK_PUBLISHABLE_KEY = os.environ.get(
+    "CLERK_PUBLISHABLE_KEY",
+    os.environ.get("VITE_CLERK_PUBLISHABLE_KEY", "pk_test_Y2xhc3NpYy1mb3gtNi5jbGVyay5hY2NvdW50cy5kZXYk"),
+)
+
+
+from typing import Optional
+
+def _clerk_domain_from_publishable_key(key: str) -> Optional[str]:
+    try:
+        parts = key.split("_")
+        code = parts[2]
+        padding = "=" * (-len(code) % 4)
+        decoded = base64.b64decode(code + padding).decode("utf-8")
+        return decoded.rstrip("$\n\r")
+    except Exception:
+        return None
+
+CLERK_DOMAIN = _clerk_domain_from_publishable_key(CLERK_PUBLISHABLE_KEY)
+
+def _clerk_url(env_name: str, path: str, fallback_domain: str) -> str:
+    env_value = os.environ.get(env_name)
+    if env_value:
+        return env_value
+    if path.startswith("http://") or path.startswith("https://"):
+        return path
+    domain = CLERK_DOMAIN or fallback_domain
+    if domain.startswith("http://") or domain.startswith("https://"):
+        return f"{domain.rstrip('/')}/{path.lstrip('/')}"
+    return f"https://{domain.rstrip('/')}/{path.lstrip('/')}"
+
+
+CLERK_JS_URL = _clerk_url(
+    "CLERK_JS_URL",
+    "npm/@clerk/clerk-js@6/dist/clerk.browser.js",
+    "classic-fox-6.clerk.accounts.dev",
+)
+CLERK_SECRET_KEY = os.environ.get(
+    "CLERK_SECRET_KEY",
+    "sk_test_m4HZ56o1sqXkgvSkDhcVMXTLcGzXwCiPJdump1IjO2",
+)
+CLERK_JWT_KEY = os.environ.get("CLERK_JWT_KEY")
 
 
 def get_db():
@@ -68,14 +135,34 @@ def init_db():
         """
         CREATE TABLE IF NOT EXISTS scans (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            url TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            type TEXT NOT NULL,
+            content TEXT NOT NULL,
             category TEXT NOT NULL,
             score INTEGER NOT NULL,
             confidence INTEGER NOT NULL,
             explanation TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users (id)
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    scan_columns = {
+        row["name"] for row in db.execute("PRAGMA table_info(scans)").fetchall()
+    }
+    if "type" not in scan_columns:
+        db.execute("ALTER TABLE scans ADD COLUMN type TEXT")
+        db.execute("UPDATE scans SET type = 'url' WHERE type IS NULL")
+    if "content" not in scan_columns:
+        db.execute("ALTER TABLE scans ADD COLUMN content TEXT")
+        if "url" in scan_columns:
+            db.execute("UPDATE scans SET content = url WHERE content IS NULL")
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS clerk_users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            clerk_user_id TEXT NOT NULL UNIQUE,
+            email TEXT NOT NULL,
+            created_at TEXT NOT NULL
         )
         """
     )
@@ -84,6 +171,14 @@ def init_db():
 
 with app.app_context():
     init_db()
+
+
+@app.context_processor
+def inject_clerk_config():
+    return {
+        "clerk_publishable_key": CLERK_PUBLISHABLE_KEY,
+        "clerk_js_url": CLERK_JS_URL,
+    }
 
 
 @app.before_request
@@ -95,6 +190,42 @@ def load_current_user():
             "SELECT id, email FROM users WHERE id = ?", (user_id,)
         ).fetchone()
         g.user = user
+        return
+
+    if CLERK_AVAILABLE and (CLERK_SECRET_KEY or CLERK_JWT_KEY):
+        auth_state = authenticate_request(
+            request,
+            AuthenticateRequestOptions(
+                secret_key=CLERK_SECRET_KEY,
+                jwt_key=CLERK_JWT_KEY,
+                accepts_token=["session_token", "oauth_token", "any"],
+            ),
+        )
+        if auth_state.is_signed_in and auth_state.payload:
+            clerk_user_id = auth_state.payload.get("sub") or auth_state.payload.get("user_id")
+            clerk_email = auth_state.payload.get("email") or auth_state.payload.get("email_address")
+            if clerk_user_id:
+                db = get_db()
+                clerk_user = db.execute(
+                    "SELECT clerk_user_id, email FROM clerk_users WHERE clerk_user_id = ?",
+                    (clerk_user_id,),
+                ).fetchone()
+                if clerk_user is None:
+                    db.execute(
+                        "INSERT INTO clerk_users (clerk_user_id, email, created_at) VALUES (?, ?, ?)",
+                        (clerk_user_id, clerk_email or "", datetime.utcnow().isoformat()),
+                    )
+                    db.commit()
+                    clerk_user = db.execute(
+                        "SELECT clerk_user_id, email FROM clerk_users WHERE clerk_user_id = ?",
+                        (clerk_user_id,),
+                    ).fetchone()
+
+                if clerk_user is not None:
+                    g.user = {
+                        "id": clerk_user["clerk_user_id"],
+                        "email": clerk_user["email"],
+                    }
 
 
 def login_required(view):
@@ -250,19 +381,53 @@ def scan_content(payload_type, content):
     }
 
 
-def save_scan(user_id, url, payload):
+def scan_image_metadata(file_name, file_size):
+    name = (file_name or "Uploaded image").strip()
+    size = int(file_size or 0)
+    suspicious_tokens = ["qr", "login", "invoice", "receipt", "verify", "password", "account"]
+    hits = sum(token in name.lower() for token in suspicious_tokens)
+    score = min(88, 14 + hits * 18 + (18 if size and size < 160 * 1024 else 0))
+    category = "Safe" if score < 40 else "Suspicious" if score < 70 else "Image Phishing"
+    confidence = 90 if score < 40 else 80 if score < 70 else 72
+    explanation = (
+        "The image metadata does not show obvious phishing indicators. Review visible links or QR codes before acting."
+        if score < 40
+        else "The file name or image profile contains patterns commonly seen in phishing screenshots, fake receipts, or QR-code lures."
+    )
+    return {
+        "score": score,
+        "confidence": confidence,
+        "category": category,
+        "explanation": explanation,
+    }
+
+
+def save_scan(user_id, scan_type, content, payload):
     db = get_db()
+    scan_columns = {row["name"] for row in db.execute("PRAGMA table_info(scans)").fetchall()}
+    columns = ["user_id", "category", "score", "confidence", "explanation", "created_at"]
+    values = [
+        user_id,
+        payload["category"],
+        payload["score"],
+        payload["confidence"],
+        payload["explanation"],
+        datetime.utcnow().isoformat(),
+    ]
+    if "type" in scan_columns:
+        columns.insert(1, "type")
+        values.insert(1, scan_type)
+    if "content" in scan_columns:
+        columns.insert(2, "content")
+        values.insert(2, content)
+    if "url" in scan_columns:
+        columns.insert(3, "url")
+        values.insert(3, content)
+
+    placeholders = ", ".join("?" for _ in columns)
     db.execute(
-        "INSERT INTO scans (user_id, url, category, score, confidence, explanation, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (
-            user_id,
-            payload["url"],
-            payload["category"],
-            payload["score"],
-            payload["confidence"],
-            payload["explanation"],
-            datetime.utcnow().isoformat(),
-        ),
+        f"INSERT INTO scans ({', '.join(columns)}) VALUES ({placeholders})",
+        values,
     )
     db.commit()
 
@@ -272,18 +437,49 @@ def home():
     return render_template("index.html")
 
 
-@app.route("/signup")
-def signup():
-    if g.user:
-        return redirect(url_for("home"))
-    return render_template("signup.html")
+@app.route("/history")
+def history():
+    return render_template("history.html")
 
 
 @app.route("/signin")
 def signin():
     if g.user:
         return redirect(url_for("home"))
-    return render_template("signin.html")
+    return render_template("signin.html", 
+                         clerk_publishable_key=CLERK_PUBLISHABLE_KEY,
+                         clerk_js_url=CLERK_JS_URL)
+
+
+@app.route("/signup")
+def signup():
+    if g.user:
+        return redirect(url_for("home"))
+    return redirect(url_for("signin"))
+
+
+@app.route("/sso-callback")
+def sso_callback():
+    return render_template("sso_callback.html",
+                         clerk_publishable_key=CLERK_PUBLISHABLE_KEY,
+                         clerk_js_url=CLERK_JS_URL)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("home"))
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    return render_template("dashboard.html")
+
+
+@app.route("/admin")
+def admin():
+    return render_template("admin.html")
 
 
 @app.route("/verify/<token>")
@@ -376,7 +572,9 @@ def api_me():
 @app.route("/api/stats")
 def api_stats():
     db = get_db()
-    users_count = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    password_users = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    clerk_users = db.execute("SELECT COUNT(*) FROM clerk_users").fetchone()[0]
+    users_count = password_users + clerk_users
     scans_count = db.execute("SELECT COUNT(*) FROM scans").fetchone()[0]
     return jsonify({"users": users_count, "scans": scans_count})
 
@@ -385,39 +583,54 @@ def api_stats():
 def api_scan():
     payload = request.get_json() or {}
     url = (payload.get("url") or "").strip()
+    text = (payload.get("text") or "").strip()
     scan_type = payload.get("type", "url")
+    user_id = payload.get("user_id")  # Clerk user ID
+    if not user_id:
+        return jsonify({"success": False, "message": "Authentication required."}), 401
+
     if scan_type == "url":
         if not url:
             return jsonify({"success": False, "message": "URL is required."}), 400
         result = scan_url(url)
-        if g.user:
-            save_scan(g.user["id"], url, result)
-        return jsonify({"success": True, "saved": g.user is not None, "result": result})
+        save_scan(user_id, "url", url, result)
+        return jsonify({"success": True, "saved": True, "result": result})
 
-    if scan_type in ["logs", "msg"]:
-        text = (payload.get("text") or "").strip()
+    if scan_type == "msg":
         if not text:
             return jsonify({"success": False, "message": "Input text is required."}), 400
-        result = scan_content(scan_type, text)
-        return jsonify({"success": True, "saved": False, "result": result})
+        result = scan_content("msg", text)
+        save_scan(user_id, "msg", text, result)
+        return jsonify({"success": True, "saved": True, "result": result})
+
+    if scan_type == "image":
+        image_name = (payload.get("image_name") or "").strip()
+        image_size = payload.get("image_size") or 0
+        if not image_name:
+            return jsonify({"success": False, "message": "Image name is required."}), 400
+        result = scan_image_metadata(image_name, image_size)
+        save_scan(user_id, "image", image_name, result)
+        return jsonify({"success": True, "saved": True, "result": result})
 
     return jsonify({"success": False, "message": "Invalid scan type."}), 400
 
 
 @app.route("/api/history")
+@login_required
 def api_history():
-    auth_error = require_api_auth()
-    if auth_error:
-        return auth_error
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "message": "User ID required."}), 400
 
     db = get_db()
     rows = db.execute(
-        "SELECT url, category, score, confidence, explanation, created_at FROM scans WHERE user_id = ? ORDER BY created_at DESC",
-        (g.user["id"],),
+        "SELECT type, content, category, score, confidence, explanation, created_at FROM scans WHERE user_id = ? ORDER BY created_at DESC",
+        (user_id,),
     ).fetchall()
     history = [
         {
-            "url": row["url"],
+            "type": row["type"],
+            "content": row["content"],
             "category": row["category"],
             "score": row["score"],
             "confidence": row["confidence"],
@@ -426,7 +639,56 @@ def api_history():
         }
         for row in rows
     ]
-    return jsonify({"history": history})
+    return jsonify({"success": True, "history": history})
+
+
+@app.route("/api/sync-user", methods=["POST"])
+def api_sync_user():
+    payload = request.get_json() or {}
+    clerk_user_id = (payload.get("user_id") or "").strip()
+    email = (payload.get("email") or "").strip().lower()
+    if not clerk_user_id or not validate_email(email):
+        return jsonify({"success": False, "message": "A valid user_id and email are required."}), 400
+
+    db = get_db()
+    created_at = datetime.utcnow().isoformat()
+    db.execute(
+        """
+        INSERT INTO clerk_users (clerk_user_id, email, created_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(clerk_user_id) DO UPDATE SET email = excluded.email
+        """,
+        (clerk_user_id, email, created_at),
+    )
+    db.commit()
+    return jsonify({"success": True})
+
+
+@app.route("/api/admin/users")
+@login_required
+def api_admin_users():
+    db = get_db()
+    rows = db.execute(
+        """
+        SELECT c.clerk_user_id, c.email, c.created_at,
+            COALESCE(SUM(CASE WHEN s.user_id = c.clerk_user_id THEN 1 ELSE 0 END), 0) AS scan_count
+        FROM clerk_users c
+        LEFT JOIN scans s ON s.user_id = c.clerk_user_id
+        GROUP BY c.clerk_user_id
+        ORDER BY c.created_at DESC
+        """
+    ).fetchall()
+
+    users = [
+        {
+            "clerk_user_id": row["clerk_user_id"],
+            "email": row["email"],
+            "created_at": row["created_at"],
+            "scan_count": row["scan_count"],
+        }
+        for row in rows
+    ]
+    return jsonify({"success": True, "users": users})
 
 
 if __name__ == "__main__":
