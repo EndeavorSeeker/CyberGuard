@@ -1,3 +1,4 @@
+
 import base64
 import os
 import re
@@ -5,7 +6,6 @@ import sqlite3
 from datetime import datetime
 from functools import wraps
 from urllib.parse import urlparse
-
 try:
     from clerk_backend_api.security import AuthenticateRequestOptions, authenticate_request
     CLERK_AVAILABLE = True
@@ -689,7 +689,6 @@ def api_admin_users():
         for row in rows
     ]
     return jsonify({"success": True, "users": users})
-
 
 if __name__ == "__main__":
     app.run(debug=True)
