@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Completing sign in - CyberGuard AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}" type="text/javascript"></script>
+</head>
+<body>
+  <main class="auth-wrapper">
+    <section class="auth-panel" style="text-align:center;">
+      <h1 class="auth-title">Completing authentication</h1>
+      <p id="callbackStatus" class="auth-sub" style="margin-bottom:0;">Please wait while Clerk finishes the Google sign in.</p>
+      <div id="clerk-captcha"></div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script>
+
+
+    async function syncUser(user) {
+      const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress;
+      if (!user?.id || !email) return;
+      await fetch('/api/sync-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id, email })
+      }).catch(() => {});
+    }
+
+    window.addEventListener('load', async () => {
+      const status = document.getElementById('callbackStatus');
+      try {
+        await window.Clerk.load({
+          publishableKey: '{{ clerk_publishable_key }}'
+        });
+        await window.Clerk.handleRedirectCallback({
+          signInUrl: "{{ url_for('signin') }}",
+          signUpUrl: "{{ url_for('signup') }}",
+          signInFallbackRedirectUrl: "{{ url_for('home') }}",
+          signUpFallbackRedirectUrl: "{{ url_for('home') }}"
+        });
+        await window.Clerk.load();
+        await syncUser(window.Clerk.user);
+        window.location.href = "{{ url_for('home') }}";
+      } catch (err) {
+        console.error('Clerk callback error:', err);
+        status.textContent = 'Authentication could not be completed. Please try signing in again.';
+        setTimeout(() => { window.location.href = "{{ url_for('signin') }}"; }, 1800);
+      }
+    });
+  </script>
+</body>
+</html>

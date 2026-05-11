@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Users — CyberGuard AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="{{ url_for('home') }}" class="nav-logo">
+        <svg width="34" height="34" viewBox="0 0 32 32" fill="none">
+          <path d="M16 2C22 2 27 7 27 13V18C27 22 23 26 16 30C9 26 5 22 5 18V13C5 7 10 2 16 2Z" fill="url(#sf1)"/>
+          <path d="M16 2C22 2 27 7 27 13V18C27 22 23 26 16 30C9 26 5 22 5 18V13C5 7 10 2 16 2Z" stroke="#3B82F6" stroke-width="1.2" fill="none"/>
+          <path d="M9.8 14.2L14 18.4L22.2 10.2" stroke="#06B6D4" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 9.2C10.7 7.6 13.2 6.7 16 6.7C18.8 6.7 21.3 7.6 23 9.2" stroke="rgba(6,182,212,0.55)" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="sf1" x1="6" y1="2" x2="26" y2="30" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#0B5BFF"/>
+              <stop offset="55%" stop-color="#06B6D4"/>
+              <stop offset="100%" stop-color="#0D1117"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="nav-logo-text">CyberGuard AI</span>
+      </a>
+      <div class="nav-actions">
+        <a href="{{ url_for('home') }}" class="nav-link">Home</a>
+        <a href="#" onclick="signOut(); return false;" class="nav-link">Sign Out</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page-section">
+    <h1 class="page-title">Admin Users</h1>
+    <p class="page-sub">View Clerk users synced to the backend and track scan activity.</p>
+
+    <div class="history-card" style="padding: 32px; overflow-x:auto">
+      <table class="history-table" style="width:100%; border-spacing:0;">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Clerk User ID</th>
+            <th>Scans</th>
+            <th>Created At</th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody">
+          <tr><td colspan="4" style="padding: 18px; text-align:center; color: var(--text-muted);">Loading users…</td></tr>
+        </tbody>
+      </table>
+      <div id="adminEmpty" class="history-empty" style="display:none; margin-top:20px;">
+        <p style="font-size:1rem; color: var(--text-sub);">No synced Clerk users yet.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span class="footer-logo">CyberGuard AI</span>
+      <span class="footer-copy">© 2026 CyberGuard AI. All rights reserved.</span>
+    </div>
+  </footer>
+
+  <script async crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}"></script>
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script>
+    async function loadAdminPage() {
+      try {
+        if (!window.Clerk) return;
+        await window.Clerk.load();
+        const user = window.Clerk.user;
+        if (!user || !user.primaryEmailAddress) {
+          window.location.href = '{{ url_for("signin") }}';
+          return;
+        }
+
+        await fetch('/api/sync-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, email: user.primaryEmailAddress.emailAddress }),
+        });
+
+        const response = await fetch('/api/admin/users');
+        const payload = await response.json();
+
+        const body = document.getElementById('adminTableBody');
+        const empty = document.getElementById('adminEmpty');
+
+        if (!payload.success || !payload.users || payload.users.length === 0) {
+          body.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+
+        empty.style.display = 'none';
+        body.innerHTML = '';
+
+        payload.users.forEach(userRow => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${escapeHtml(userRow.email)}</td>
+            <td style="word-break: break-all; font-size: 0.84rem;">${escapeHtml(userRow.clerk_user_id)}</td>
+            <td>${userRow.scan_count}</td>
+            <td>${escapeHtml(userRow.created_at)}</td>
+          `;
+          body.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Admin page failed to load:', err);
+        const body = document.getElementById('adminTableBody');
+        body.innerHTML = '<tr><td colspan="4" style="padding:18px;text-align:center;color:var(--red);">Failed to load admin users.</td></tr>';
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text ?? '';
+      return div.innerHTML;
+    }
+
+    document.addEventListener('DOMContentLoaded', loadAdminPage);
+  </script>
+</body>
+</html>
