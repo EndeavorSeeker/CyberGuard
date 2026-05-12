@@ -1,10 +1,14 @@
 
 from PIL import Image
+from pyzbar.pyzbar import decode
 import hashlib
 import requests
 import os
 
-
+'''# 🔗 URL SHIELD IMPORT
+from url_shield import check_url
+# 🔗 TEXT CHECK IMPORT
+from url_shield import check_text'''
 
 
 # ============================================================
@@ -209,6 +213,51 @@ def check_virustotal(filepath):
     return score, details
 
 
+# ============================================================
+# QR ANALYSIS
+# ============================================================
+'''
+def check_qr_codes(filepath):
+    score = 0
+    details = []
+
+    try:
+        img = Image.open(filepath)
+        qr_codes = decode(img)
+
+        if qr_codes:
+            details.append("QR code detected")
+
+            for qr in qr_codes:
+                data = qr.data.decode('utf-8')
+                details.append(f"QR Content: {data}")
+
+                # 🔍 content QR
+                content = data.lower()
+
+                # 🌐 URL
+                if "http" in content or "www" in content:
+                    details.append("Detected: URL")
+                    s, d = check_url(data)
+                # 📝 TEXT
+                else:
+                    details.append("Detected: TEXT")
+                    s, d = check_text(data)
+
+                score += s
+                details.extend(d)
+
+        else:
+            details.append("No QR codes found")
+
+        details.append(f"Image: {os.path.basename(filepath)}")
+
+    except Exception as e:
+        details.append(f"QR error: {e}")
+
+    return score, details
+'''
+
 
 # ============================================================
 # MAIN ENGINE
@@ -225,6 +274,7 @@ def analyze_image(filepath):
             check_real_image,
             check_embedded_payload,
             detect_steganography,
+            #check_qr_codes,
             check_virustotal
         ]:
             s, d = func(filepath)
