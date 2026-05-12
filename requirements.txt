@@ -2,4 +2,7 @@ Flask
 Flask-Mail
 clerk-backend-api
 python-dotenv
+pillow
+pyzbar
+requests
 
