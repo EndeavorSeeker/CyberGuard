@@ -42,6 +42,9 @@ try:
 except ImportError:
     pass
 
+from url_scanner import scan_url_virustotal
+from image_scanner import scan_image
+
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-this")
 
@@ -249,158 +252,48 @@ def validate_email(value):
 
 
 def scan_url(target_url):
-    normalized = target_url.strip()
-    if not normalized:
-        raise ValueError("URL is required")
-
-    if not normalized.startswith(("http://", "https://")):
-        normalized = "https://" + normalized
-
-    parsed = urlparse(normalized)
-    host = parsed.netloc.lower()
-    path = (parsed.path or "").lower()
-    query = (parsed.query or "").lower()
-    flags = []
-
-    if parsed.scheme != "https":
-        flags.append("Missing HTTPS")
-    if "@" in normalized:
-        flags.append("Credential redirect pattern")
-
-    suspicious_keywords = [
-        "login",
-        "secure",
-        "verify",
-        "account",
-        "update",
-        "bank",
-        "reset",
-        "support",
-        "confirm",
-    ]
-
-    if any(keyword in host for keyword in suspicious_keywords):
-        flags.append("Suspicious domain keywords")
-    if any(keyword in path for keyword in suspicious_keywords):
-        flags.append("Suspicious path keywords")
-    if any(keyword in query for keyword in suspicious_keywords):
-        flags.append("Suspicious query parameters")
-    if any(short in host for short in ["bit.ly", "tinyurl", "t.co", "goo.gl"]):
-        flags.append("URL shortener used")
-    if host.count("-") >= 2:
-        flags.append("Hyphen-heavy domain")
-    if re.search(r"\d", host):
-        flags.append("Numeric domain")
-    if host.endswith((".ru", ".cn", ".tk", ".ml", ".ga", ".cf", ".gq")):
-        flags.append("High-risk TLD")
-    if len(host) > 30:
-        flags.append("Extra long host")
-
-    score = 12 + len(flags) * 15
-    if parsed.scheme != "https":
-        score += 10
-    score = min(max(score, 8), 95)
-
-    if score < 40:
-        category = "Safe"
-    elif score < 70:
-        category = "Suspicious"
-    else:
-        category = "Phishing"
-
-    confidence = 98 if score < 35 else 86 if score < 70 else 74
-    explanation = (
-        "No obvious phishing signals were detected. The URL appears normal and uses a trusted structure."
-        if score < 40
-        else (
-            "The URL contains several suspicious patterns such as misleading host names or credential-related paths. "
-            "We recommend verifying the sender and avoiding inputting credentials."
-            if score < 70
-            else
-            "The URL exhibits multiple phishing indicators including suspicious host tokens, unsafe redirects, or a high-risk top-level domain. "
-            "Do not proceed and report it to your security team."
-        )
-    )
-
-    if flags and score >= 40:
-        explanation += " Detected: " + ", ".join(flags[:4]) + "."
-
-    return {
-        "url": normalized,
-        "score": score,
-        "confidence": confidence,
-        "category": category,
-        "explanation": explanation,
-    }
-
+    return scan_url_virustotal(target_url)
 
 def scan_content(payload_type, content):
     text = content.strip()
     if not text:
         raise ValueError("Input is required")
 
-    normalized = text.lower()
     if payload_type == "logs":
+        # Keep existing logs logic
+        normalized = text.lower()
         keywords = ["failed", "error", "unauthorized", "attack", "brute force", "invalid"]
         hits = sum(keyword in normalized for keyword in keywords)
         score = min(90, 18 + hits * 18)
         category = "Suspicious" if score < 70 else "Alert"
         explanation = (
-            "Logs contain repeated failures or unauthorized access attempts. Review recent events and verify source IPs."
+            "Logs contain repeated failures or unauthorized access attempts."
             if hits > 0
-            else "Logs look normal; no obvious intrusion patterns were found."
+            else "Logs look normal; no obvious intrusion patterns found."
         )
+        confidence = 94 if score < 40 else 82 if score < 70 else 76
+        return {
+            "score": score,
+            "confidence": confidence,
+            "category": category,
+            "explanation": explanation,
+        }
     else:
-        urgency_signals = [
-            "immediately",
-            "urgent",
-            "verify",
-            "click here",
-            "account",
-            "password",
-            "locked",
-            "suspend",
-            "update",
-            "confirm",
-        ]
-        hits = sum(signal in normalized for signal in urgency_signals)
-        score = min(92, 12 + hits * 20)
-        category = "Safe" if score < 40 else "Suspicious" if score < 70 else "Social Engineering"
-        explanation = (
-            "This message uses urgent or fear-based language that is common in phishing and social engineering attacks."
-            if hits > 0
-            else "The message appears benign and does not contain obvious manipulation language."
-        )
-
-    confidence = 94 if score < 40 else 82 if score < 70 else 76
-    return {
-        "score": score,
-        "confidence": confidence,
-        "category": category,
-        "explanation": explanation,
-    }
+        # Use the new AI-powered analysis
+        result = get_text_analysis_result(text)
+        return {
+            "score": result['score'],
+            "confidence": result['confidence'],
+            "category": result['category'],
+            "explanation": result['explanation'],
+        }
 
 
-def scan_image_metadata(file_name, file_size):
-    name = (file_name or "Uploaded image").strip()
-    size = int(file_size or 0)
-    suspicious_tokens = ["qr", "login", "invoice", "receipt", "verify", "password", "account"]
-    hits = sum(token in name.lower() for token in suspicious_tokens)
-    score = min(88, 14 + hits * 18 + (18 if size and size < 160 * 1024 else 0))
-    category = "Safe" if score < 40 else "Suspicious" if score < 70 else "Image Phishing"
-    confidence = 90 if score < 40 else 80 if score < 70 else 72
-    explanation = (
-        "The image metadata does not show obvious phishing indicators. Review visible links or QR codes before acting."
-        if score < 40
-        else "The file name or image profile contains patterns commonly seen in phishing screenshots, fake receipts, or QR-code lures."
-    )
-    return {
-        "score": score,
-        "confidence": confidence,
-        "category": category,
-        "explanation": explanation,
-    }
-
+def scan_image_metadata(file_path, file_name, file_size):
+    """
+    Wrapper for image scanning
+    """
+    return scan_image(file_path, file_name, file_size)
 
 def save_scan(user_id, scan_type, content, payload):
     db = get_db()
@@ -581,15 +474,15 @@ def api_stats():
 
 @app.route("/api/scan", methods=["POST"])
 def api_scan():
-    payload = request.get_json() or {}
-    url = (payload.get("url") or "").strip()
-    text = (payload.get("text") or "").strip()
-    scan_type = payload.get("type", "url")
-    user_id = payload.get("user_id")  # Clerk user ID
+    user_id = request.form.get("user_id") or (request.get_json() or {}).get("user_id")
     if not user_id:
         return jsonify({"success": False, "message": "Authentication required."}), 401
 
+    scan_type = request.form.get("type") or (request.get_json() or {}).get("type", "url")
+
     if scan_type == "url":
+        payload = request.get_json() or {}
+        url = (payload.get("url") or "").strip()
         if not url:
             return jsonify({"success": False, "message": "URL is required."}), 400
         result = scan_url(url)
@@ -597,6 +490,8 @@ def api_scan():
         return jsonify({"success": True, "saved": True, "result": result})
 
     if scan_type == "msg":
+        payload = request.get_json() or {}
+        text = (payload.get("text") or "").strip()
         if not text:
             return jsonify({"success": False, "message": "Input text is required."}), 400
         result = scan_content("msg", text)
@@ -604,16 +499,36 @@ def api_scan():
         return jsonify({"success": True, "saved": True, "result": result})
 
     if scan_type == "image":
-        image_name = (payload.get("image_name") or "").strip()
-        image_size = payload.get("image_size") or 0
-        if not image_name:
-            return jsonify({"success": False, "message": "Image name is required."}), 400
-        result = scan_image_metadata(image_name, image_size)
-        save_scan(user_id, "image", image_name, result)
-        return jsonify({"success": True, "saved": True, "result": result})
+        if 'image' in request.files:
+            # Actual file upload
+            file = request.files['image']
+            if file.filename == '':
+                return jsonify({"success": False, "message": "No file selected."}), 400
+            
+            # Save temporarily
+            temp_path = os.path.join('/tmp', file.filename)
+            file.save(temp_path)
+            
+            file_size = os.path.getsize(temp_path)
+            result = scan_image_metadata(temp_path, file.filename, file_size)
+            
+            # Clean up
+            os.remove(temp_path)
+            
+            save_scan(user_id, "image", file.filename, result)
+            return jsonify({"success": True, "saved": True, "result": result})
+        else:
+            # Fallback to metadata only
+            payload = request.get_json() or {}
+            image_name = (payload.get("image_name") or "").strip()
+            image_size = payload.get("image_size") or 0
+            if not image_name:
+                return jsonify({"success": False, "message": "Image name is required."}), 400
+            result = scan_image(None, image_name, image_size)
+            save_scan(user_id, "image", image_name, result)
+            return jsonify({"success": True, "saved": True, "result": result})
 
     return jsonify({"success": False, "message": "Invalid scan type."}), 400
-
 
 @app.route("/api/history")
 @login_required
