@@ -813,12 +813,106 @@ document.addEventListener('DOMContentLoaded', async () => {
     authForm.addEventListener('submit', e => handleAuthForm(e, ep));
   }
 
+  // Initialize hero animations
+  initializeHeroAnimations();
+
+  // Initialize stats scroll animation
+  initializeStatsScrollAnimation();
+
   console.log('%c🛡️ CyberGuard AI ready', 'color:#3B82F6;font-weight:bold;font-size:14px');
 });
 
 window.addEventListener('load', async () => {
   await initClerk();
 });
+
+/* ─────────────────────────────────────
+   HERO ANIMATIONS
+───────────────────────────────────── */
+function initializeHeroAnimations() {
+  const heroTitle = document.querySelector('.hero-title');
+  const heroBadge = document.querySelector('.hero-badge');
+  const heroSub = document.querySelector('.hero-sub');
+  
+  // Fade animation for badge
+  if (heroBadge) {
+    heroBadge.style.animation = 'fade 2s ease-out both';
+  }
+  
+  if (heroTitle) {
+    prepareHeroTitleLines(heroTitle);
+  }
+
+  if (heroSub) {
+    heroSub.style.animation = 'slideUpFade 1.4s cubic-bezier(0.22,1,0.36,1) 0.4s both';
+  }
+}
+
+function prepareHeroTitleLines(element) {
+  const originalHTML = element.innerHTML.trim();
+  const parts = originalHTML.split(/<br\s*\/?>/i);
+  element.innerHTML = '';
+
+  parts.forEach((part, index) => {
+    const lineWrapper = document.createElement('span');
+    lineWrapper.className = 'hero-line';
+    lineWrapper.style.setProperty('--delay', `${index * 0.18}s`);
+
+    const inner = document.createElement('span');
+    inner.className = 'hero-line-inner';
+    inner.innerHTML = part.trim();
+
+    lineWrapper.appendChild(inner);
+    element.appendChild(lineWrapper);
+  });
+
+  const lineItems = element.querySelectorAll('.hero-line-inner');
+
+  if (window.gsap?.to) {
+    window.gsap.set(lineItems, {
+      y: 28,
+      opacity: 0,
+      filter: 'blur(16px)'
+    });
+
+    window.gsap.to(lineItems, {
+      y: 0,
+      opacity: 1,
+      filter: 'blur(0px)',
+      duration: 1.2,
+      ease: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      stagger: 0.18
+    });
+  } else {
+    requestAnimationFrame(() => {
+      setTimeout(() => element.classList.add('hero-title-animated'), 100);
+    });
+  }
+}
+
+function initializeStatsScrollAnimation() {
+  const statsElement = document.querySelector('.hero-stats');
+  if (!statsElement) return;
+
+  // Create intersection observer for stats pop-up animation on scroll
+  const observerOptions = {
+    threshold: 0.3,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !entry.target.classList.contains('stats-animated')) {
+        entry.target.classList.add('stats-animated');
+        entry.target.style.animation = 'popScale 1.8s cubic-bezier(0.22,1,0.36,1) forwards';
+        entry.target.style.opacity = '1';
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  observer.observe(statsElement);
+}
 
 /* ─────────────────────────────────────
    UPDATE USER PROFILE
@@ -898,3 +992,36 @@ function updateSettingsHighlights() {
     btn.classList.toggle('active', btn.dataset.theme === currentTheme);
   });
 }
+
+/* ─────────────────────────────────────
+   SCROLL REVEAL — HOW SECTION
+───────────────────────────────────── */
+const revealTargets = document.querySelectorAll(
+  '.how-title, .how-sub, .how-note, .step-item'
+);
+
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('in-view');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+
+revealTargets.forEach(el => revealObserver.observe(el));
+
+/* ─────────────────────────────────────
+   SCROLL TO TOP BUTTON
+───────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  if (!scrollTopBtn) return;
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) {
+      scrollTopBtn.classList.add('visible');
+    } else {
+      scrollTopBtn.classList.remove('visible');
+    }
+  });
+});
