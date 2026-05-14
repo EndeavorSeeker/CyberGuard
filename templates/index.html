@@ -1,19 +1,476 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimal Flask App</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberGuard AI — Cybersecurity Detection Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script
+    defer
+    crossorigin="anonymous"
+    data-clerk-publishable-key="{{ clerk_publishable_key }}"
+    src="{{ clerk_js_url }}"
+    type="text/javascript">
+  </script>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Flask Starter</h1>
-        <p id="status">Client-side JS is ready.</p>
-        <button id="action-btn">Click Me</button>
+  <!-- ═══════════════════════════════
+       NAVBAR
+  ═══════════════════════════════ -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="{{ url_for('home') }}" class="nav-logo">
+        <svg class="nav-logo-icon" width="34" height="34" viewBox="0 0 32 32" fill="none">
+          <path d="M16 2C22 2 27 7 27 13V18C27 22 23 26 16 30C9 26 5 22 5 18V13C5 7 10 2 16 2Z" fill="url(#sf1)"/>
+          <path d="M16 2C22 2 27 7 27 13V18C27 22 23 26 16 30C9 26 5 22 5 18V13C5 7 10 2 16 2Z" stroke="#3B82F6" stroke-width="1.2" fill="none"/>
+          <path d="M9.8 14.2L14 18.4L22.2 10.2" stroke="#06B6D4" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 9.2C10.7 7.6 13.2 6.7 16 6.7C18.8 6.7 21.3 7.6 23 9.2" stroke="rgba(6,182,212,0.55)" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="sf1" x1="6" y1="2" x2="26" y2="30" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#0B5BFF"/>
+              <stop offset="55%" stop-color="#06B6D4"/>
+              <stop offset="100%" stop-color="#0D1117"/>
+            </linearGradient>
+          </defs>
+
+        </svg>
+        <span class="nav-logo-text">CyberGuard AI</span>
+      </a>
+      <div class="nav-actions">
+        <a href="{{ url_for('history') }}" class="nav-link" data-i18n="navbar_history">History</a>
+        
+        <!-- User Profile or Sign In -->
+        <div id="userNav" class="user-nav">
+          <!-- Sign In (shown when not logged in) -->
+          <a href="{{ url_for('signin') }}" id="getStartedBtn" class="btn btn-primary" data-i18n="home_get_started">Get started</a>
+          
+          <!-- User Profile (shown when logged in) -->
+          <div id="profileMenu" class="profile-menu">
+            <div id="userButton" hidden></div>
+            <button id="profileBtn" class="profile-btn" onclick="toggleProfileDropdown()" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/>
+              </svg>
+              <span id="profileEmail">User</span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 5l3 3 3-3"/>
+              </svg>
+            </button>
+            
+            <!-- Dropdown Menu -->
+            <div id="profileDropdown" class="profile-dropdown">
+              <div style="padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.8rem; color: var(--text-muted);">
+                <div style="margin-bottom: 4px;" data-i18n="profile_logged_in">Logged in as</div>
+                <div id="profileEmailFull" style="font-weight: 600; color: var(--text); word-break: break-all;"></div>
+              </div>
+              <a href="{{ url_for('dashboard') }}" style="display: block; padding: 10px 16px; color: var(--text); text-decoration: none; font-size: 0.85rem; transition: background var(--trans);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                📁 <span data-i18n="navbar_dashboard">Dashboard</span>
+              </a>
+              <a href="{{ url_for('history') }}" style="display: block; padding: 10px 16px; color: var(--text); text-decoration: none; font-size: 0.85rem; transition: background var(--trans);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                📊 <span data-i18n="navbar_history">History</span>
+              </a>
+              <button onclick="signOut()" style="display: block; width: 100%; text-align: left; padding: 10px 16px; color: var(--red); background: none; border: none; cursor: pointer; font-size: 0.85rem; transition: background var(--trans);" onmouseover="this.style.background='rgba(239,68,68,0.08)'" onmouseout="this.style.background='transparent'">
+                🚪 <span data-i18n="navbar_signout">Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Settings / Hamburger Menu -->
+        <button id="settingsBtn" class="settings-btn" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer; color: var(--text-sub); transition: all var(--trans);" title="Settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+        
+        <!-- Settings Dropdown -->
+        <div id="settingsDropdown" style="display: none; position: absolute; top: 64px; right: 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; min-width: 240px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); z-index: 999; padding: 12px 0;">
+          
+          <!-- Language Selector -->
+          <div style="padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;" data-i18n="navbar_language">Language</p>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <button type="button" data-lang="en" class="lang-btn" data-i18n="lang_english" style="padding: 8px 12px; text-align: left; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: var(--text); cursor: pointer; transition: all var(--trans);">English 🇺🇸</button>
+              <button type="button" data-lang="fr" class="lang-btn" data-i18n="lang_french" style="padding: 8px 12px; text-align: left; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: var(--text); cursor: pointer; transition: all var(--trans);">Français 🇫🇷</button>
+              <button type="button" data-lang="ar" class="lang-btn" data-i18n="lang_arabic" style="padding: 8px 12px; text-align: left; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: var(--text); cursor: pointer; transition: all var(--trans);">العربية 🇲🇦</button>
+            </div>
+          </div>
+          
+          <!-- Theme Selector -->
+          <div style="padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <p style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;" data-i18n="navbar_theme">Theme</p>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <button type="button" data-theme="dark" class="theme-btn" data-i18n="theme_dark" style="padding: 8px 12px; text-align: left; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: var(--text); cursor: pointer; transition: all var(--trans);">🌙 Dark Mode</button>
+              <button type="button" data-theme="light" class="theme-btn" data-i18n="theme_light" style="padding: 8px 12px; text-align: left; font-size: 0.85rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: var(--text); cursor: pointer; transition: all var(--trans);">☀️ Light Mode</button>
+            </div>
+          </div>
+       
+          
+          <!-- Menu Links -->
+          <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
+            <a href="/" style="display: block; padding: 10px 16px; color: var(--text); text-decoration: none; font-size: 0.85rem; transition: background var(--trans);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+              🏠 <span data-i18n="navbar_home">Home</span>
+            </a>
+            <a href="/history" style="display: block; padding: 10px 16px; color: var(--text); text-decoration: none; font-size: 0.85rem; transition: background var(--trans);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+              📊 <span data-i18n="navbar_history">History</span>
+            </a>
+            <div id="mobileProfile" style="display: none; padding: 10px 16px; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 12px;">
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Logged in as</div>
+              <div id="mobileProfileEmail" style="font-weight: 600; color: var(--text); word-break: break-all;"></div>
+              <button onclick="signOut()" style="margin-top: 8px; width: 100%; text-align: left; padding: 8px 0; color: var(--red); background: none; border: none; cursor: pointer; font-size: 0.85rem;">🚪 <span data-i18n="navbar_signout">Sign Out</span></button>
+            </div>
+          </div>
+          
+          <!-- Additional Info -->
+          <a href="{{ url_for('home') }}" style="display: block; padding: 10px 16px; color: var(--text-sub); text-decoration: none; font-size: 0.85rem; transition: all var(--trans);" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-sub)'">
+            📚 <span data-i18n="navbar_documentation">Documentation</span>
+          </a>
+          <a href="#" style="display: block; padding: 10px 16px; color: var(--text-sub); text-decoration: none; font-size: 0.85rem; transition: all var(--trans);" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-sub)'">
+            💬 <span data-i18n="navbar_support">Support</span>
+          </a>
+        </div>
+        
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════
+       HERO
+  ═══════════════════════════════ -->
+  <section class="hero-section">
+    <div class="hero-bg">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="grid-overlay"></div>
+    </div>
+    <div class="hero-inner">
+      <div class="hero-badge" data-i18n="hero_badge">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M5 1L6.2 3.8L9 4.2L7 6.2L7.5 9L5 7.7L2.5 9L3 6.2L1 4.2L3.8 3.8L5 1Z" fill="#3B82F6"/>
+        </svg>
+        AI-Powered Cybersecurity Platform
+      </div>
+      <h1 class="hero-title" data-i18n="hero_title">
+        Detect threats.<br/>
+        <span class="hero-gradient">Protect everything.</span>
+      </h1>
+      <p class="hero-sub" data-i18n="hero_sub">
+        Scan URLs, images, and messages for phishing, social engineering, and malicious content — powered by AI, in real time.
+      </p>
+
+      <!-- Stats -->
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-num" id="userCount" data-target="0">0</span>
+          <span class="stat-lbl" data-i18n="stats_users">Users</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat-item">
+          <span class="stat-num" id="scanCount" data-target="0">0</span>
+          <span class="stat-lbl" data-i18n="stats_scans">Scans</span>
+        </div>
+        <div class="stat-sep"></div>
+        <div class="stat-item">
+          <span class="stat-num">99.2%</span>
+          <span class="stat-lbl" data-i18n="stats_accuracy">Accuracy</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════
+       3 MODULE CARDS
+  ═══════════════════════════════ -->
+  <section class="modules-section" id="tool-section">
+    <div class="modules-inner">
+
+      <!-- CARD 1 — URL Shield -->
+      <div class="module-card" onclick="openModule('url')">
+        <div class="module-card-glow glow-blue"></div>
+        <div class="module-icon-wrap icon-blue">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </div>
+        <h3 class="module-card-title" data-i18n="module_url_title">URL Shield</h3>
+        <p class="module-card-desc" data-i18n="module_url_desc">Detect malicious &amp; phishing URLs with ML pattern analysis</p>
+        <div class="module-card-cta">
+          <span class="cta-text" data-i18n="module_url_cta">Analyze a URL</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M3 7h8M8 4l3 3-3 3"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- CARD 2 — Image Scan -->
+      <div class="module-card" onclick="openModule('image')">
+        <div class="module-card-glow glow-purple"></div>
+        <div class="module-icon-wrap icon-purple">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="9" cy="9" r="2"/>
+            <path d="M21 15l-5-5L5 21"/>
+          </svg>
+        </div>
+        <h3 class="module-card-title" data-i18n="module_image_title">Image Scan</h3>
+        <p class="module-card-desc" data-i18n="module_image_desc">Upload or drag an image to detect fake screenshots, QR phishing &amp; manipulated content</p>
+        <div class="module-card-cta">
+          <span class="cta-text" data-i18n="module_image_cta">Scan an image</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M3 7h8M8 4l3 3-3 3"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- CARD 3 — TrustCheck -->
+      <div class="module-card" onclick="openModule('msg')">
+        <div class="module-card-glow glow-green"></div>
+        <div class="module-icon-wrap icon-green">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <h3 class="module-card-title" data-i18n="module_msg_title">TrustCheck</h3>
+        <p class="module-card-desc" data-i18n="module_msg_desc">Identify social engineering, fake messages and manipulation attempts</p>
+        <div class="module-card-cta">
+          <span class="cta-text" data-i18n="module_msg_cta">Check a message</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M3 7h8M8 4l3 3-3 3"/>
+          </svg>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════
+       TOOL MODAL / PANEL (slide-up)
+  ═══════════════════════════════ -->
+  <div class="tool-overlay" id="toolOverlay" onclick="closeModule()"></div>
+  <div class="tool-panel" id="toolPanel">
+    <div class="tool-panel-header">
+      <div class="tool-panel-title" id="panelTitle" data-i18n="tool_panel_title">Analyze</div>
+      <button class="tool-close-btn" onclick="closeModule()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M3 3l12 12M15 3L3 15"/>
+        </svg>
+      </button>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <!-- URL PANE -->
+    <div class="tool-pane" id="pane-url">
+      <label class="input-label" data-i18n="input_url_label">Enter URL to scan</label>
+      <input id="url-input" class="tool-input" type="url"
+        data-i18n-placeholder="input_url_placeholder"
+        autocomplete="off" spellcheck="false"/>
+      <div class="example-chips">
+        <span class="chips-label" data-i18n="chips_try">Try:</span>
+        <button class="chip chip-danger" onclick="loadExample('url','phishing')" data-i18n="chip_phishing_url">⚠ Phishing URL</button>
+        <button class="chip chip-safe"   onclick="loadExample('url','safe')" data-i18n="chip_safe_url">✓ Safe URL</button>
+      </div>
+    </div>
+
+    <!-- IMAGE PANE -->
+    <div class="tool-pane" id="pane-image">
+      <label class="input-label" data-i18n="input_image_label">Upload or drag an image</label>
+
+      <!-- Drop zone -->
+      <div class="drop-zone" id="dropZone"
+           ondragover="handleDragOver(event)"
+           ondragleave="handleDragLeave(event)"
+           ondrop="handleDrop(event)"
+           onclick="document.getElementById('imageFileInput').click()">
+        <div class="drop-icon">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <rect width="40" height="40" rx="12" fill="rgba(139,92,246,0.1)"/>
+            <path d="M13 27l5-5 3 3 4-5 5 7H13z" fill="rgba(139,92,246,0.3)" stroke="#8B5CF6" stroke-width="1.5" stroke-linejoin="round"/>
+            <circle cx="16" cy="18" r="2" fill="#8B5CF6"/>
+            <path d="M20 10v8M17 13l3-3 3 3" stroke="#8B5CF6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <p class="drop-title" data-i18n="tool_drop_title">Drag &amp; drop your image here</p>
+        <p class="drop-sub" data-i18n="tool_drop_sub">or browse files</p>
+        <p class="drop-formats" data-i18n="tool_drop_formats">PNG, JPG, WEBP — max 10 MB</p>
+      </div>
+
+      <input type="file" id="imageFileInput" accept="image/*" style="display:none"
+             onchange="handleFileSelect(event)"/>
+
+      <!-- Preview -->
+      <div class="image-preview-wrap hidden" id="imagePreviewWrap">
+        <img class="image-preview" id="imagePreview" alt="Preview"/>
+        <div class="image-preview-info">
+          <span class="image-preview-name" id="imageName">—</span>
+          <button class="image-remove-btn" onclick="removeImage()">✕ Remove</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESSAGE PANE -->
+    <div class="tool-pane" id="pane-msg">
+      <label class="input-label" data-i18n="input_msg_label">Paste message or email</label>
+      <textarea id="msg-input" class="tool-textarea" rows="6" data-i18n-placeholder="input_msg_placeholder"></textarea>
+      <div class="example-chips">
+        <span class="chips-label" data-i18n="chips_try">Try:</span>
+        <button class="chip chip-danger" onclick="loadExample('msg','fake')" data-i18n="chip_fake_message">⚠ Fake Message</button>
+        <button class="chip chip-safe"   onclick="loadExample('msg','legit')" data-i18n="chip_legit_message">✓ Legit Message</button>
+      </div>
+    </div>
+
+    <!-- ANALYZE BUTTON -->
+    <button class="btn-analyze" id="analyzeBtn" onclick="analyzeNow()">
+      <span id="btnContent" data-i18n="analyze_btn">🔍 Analyze Threat</span>
+      <span id="btnSpinner" class="hidden" data-i18n="analyzing_btn">
+        <svg class="spinner-ring" width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <circle cx="9" cy="9" r="7" stroke="rgba(255,255,255,0.25)" stroke-width="2.5"/>
+          <path d="M9 2a7 7 0 0 1 7 7" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </span>
+    </button>
+
+    <!-- ERROR -->
+    <div class="error-toast hidden" id="errorToast">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="6" stroke="#EF4444" stroke-width="1.5"/>
+        <path d="M8 5v3M8 10v.5" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span id="errorMsg" data-i18n="tool_error_generic">Something went wrong.</span>
+    </div>
+
+    <!-- RESULT CARD -->
+    <div class="result-card hidden" id="resultCard">
+      <div class="result-card-glow" id="resultGlow"></div>
+
+      <div class="result-header">
+        <div>
+          <h3 class="result-title" data-i18n="result_title">Analysis Complete</h3>
+          <span class="result-category" id="resultCategory">—</span>
+        </div>
+        <div class="threat-badge" id="threatBadge">
+          <span class="threat-dot" id="threatDot"></span>
+          <span id="threatLabel">—</span>
+        </div>
+      </div>
+
+      <div class="result-score-section">
+        <div class="score-ring-wrap">
+          <svg class="score-ring" width="110" height="110" viewBox="0 0 110 110">
+            <circle class="ring-track" cx="55" cy="55" r="44"/>
+            <circle class="ring-fill"  cx="55" cy="55" r="44" id="ringFill"/>
+          </svg>
+          <div class="ring-center">
+            <span class="ring-number" id="ringNumber">0</span>
+            <span class="ring-unit">%</span>
+          </div>
+        </div>
+        <div class="score-details">
+          <div class="score-label-row">
+            <span class="score-label" data-i18n="score_label">Risk Score</span>
+            <span class="score-value" id="scoreText">0%</span>
+          </div>
+          <div class="score-bar-track">
+            <div class="score-bar-fill" id="scoreBar"></div>
+          </div>
+          <div class="score-scale">
+            <span class="scale-safe" data-i18n="scale_safe">Safe</span>
+            <span class="scale-suspicious" data-i18n="scale_suspicious">Suspicious</span>
+            <span class="scale-dangerous" data-i18n="scale_dangerous">Dangerous</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-explanation">
+        <div class="explain-header">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="6" stroke="#3B82F6" stroke-width="1.2"/>
+            <path d="M7 4v3.5L9 9" stroke="#3B82F6" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          <span data-i18n="result_ai_explanation">AI Explanation</span>
+          <button class="explain-toggle" id="explainToggle" onclick="toggleExplanation()" data-i18n="explain_toggle">
+            🧠 Explain like I'm human
+          </button>
+        </div>
+        <p class="explain-text" id="explainText">—</p>
+      </div>
+    </div>
+
+  </div><!-- /tool-panel -->
+
+  <!-- ═══════════════════════════════
+       HOW IT WORKS
+  ═══════════════════════════════ -->
+  <section class="how-section">
+    <div class="how-inner">
+      <h2 class="how-title" data-i18n="how_title">How it works</h2>
+      <p class="how-sub" data-i18n="how_sub">Three simple steps to stay protected</p>
+      <p class="how-note" data-i18n="how_note">Pick the analyzer you need, submit a link/image/text, and review the AI risk assessment with safety recommendations.</p>
+      <div class="steps-row">
+        <div class="step-item">
+          <div class="step-bar"></div>
+          <h4 class="step-title step-one" data-i18n="step_1">Step 1</h4>
+          <p class="step-desc" data-i18n="step_1_desc">Select URL Shield, Image Scan, or TrustCheck to begin your check.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-bar"></div>
+          <h4 class="step-title step-two" data-i18n="step_2">Step 2</h4>
+          <p class="step-desc" data-i18n="step_2_desc">Paste a suspicious link, upload a screenshot, or type the message text.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-bar"></div>
+          <h4 class="step-title step-three" data-i18n="step_3">Step 3</h4>
+          <p class="step-desc" data-i18n="step_3_desc">Read the score, category, and actionable guidance instantly.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════
+       FOOTER
+  ═══════════════════════════════ -->
+ <footer class="footer">
+  <div class="footer-container">
+
+    <!-- Brand -->
+    <div class="footer-brand">
+      <h2 class="footer-logo">CyberGuard AI</h2>
+      <p class="footer-description">
+        Advanced AI-powered cybersecurity solutions for modern businesses.
+      </p>
+    </div>
+
+    <!-- Links -->
+    <div class="footer-links">
+      <h3>Quick Links</h3>
+      <a href="#">Home</a>
+      <a href="#">Features</a>
+      <a href="#">Pricing</a>
+      <a href="#">Contact</a>
+    </div>
+
+    <!-- Support -->
+    <div class="footer-links">
+      <h3>Support</h3>
+      <a href="#">Help Center</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Service</a>
+    </div>
+
+   
+
+  </div>
+
+  <div class="footer-bottom">
+    © 2026 CyberGuard AI — All rights reserved.
+  </div>
+</footer>
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+
 </body>
 </html>
