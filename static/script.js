@@ -1025,3 +1025,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+// Scroll button: show/hide
+const scrollBtn = document.getElementById('scrollTopBtn');
+window.addEventListener('scroll', () => {
+  scrollBtn.classList.toggle('visible', window.scrollY > 300);
+}, { passive: true });
+
+// Swap arrow color on theme change
+function updateScrollBtnIcon() {
+  const isLight = document.body.classList.contains('light-mode');
+  document.querySelector('.icon-dark').style.display = isLight ? 'none'  : 'flex';
+  document.querySelector('.icon-light').style.display = isLight ? 'flex' : 'none';
+}
+
+// Call after each theme change in theme.js
+const origApplyTheme = window.applyTheme;
+window.applyTheme = function(theme) {
+  origApplyTheme(theme);
+  updateScrollBtnIcon();
+};
+updateScrollBtnIcon(); // init

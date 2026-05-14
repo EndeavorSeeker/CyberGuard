@@ -1449,3 +1449,96 @@ input::placeholder, textarea::placeholder { color:var(--text-muted); }
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+/* ── Scroll to top ── */
+.scroll-top-btn {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.2s ease;
+}
+.scroll-top-btn.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+.scroll-top-btn:hover { transform: scale(1.12); }
+.scroll-top-btn:active { transform: scale(0.96); }
+
+/* RTL → bouton à gauche */
+[dir="rtl"] .scroll-top-btn { right: auto; left: 32px; }
+
+/* Dark mode style */
+body.dark-mode .scroll-top-btn {
+  background: linear-gradient(135deg, #0066ff 0%, #00d4ff 100%);
+  box-shadow: 0 0 16px rgba(0,212,255,0.45);
+  animation: glowDark 2.4s ease-in-out infinite;
+}
+@keyframes glowDark {
+  0%,100% { box-shadow: 0 0 10px rgba(0,212,255,0.4); }
+  50%      { box-shadow: 0 0 26px rgba(0,212,255,0.75); }
+}
+
+/* Light mode style */
+body.light-mode .scroll-top-btn {
+  background: #ffffff;
+  animation: glowLight 2.4s ease-in-out infinite;
+}
+@keyframes glowLight {
+  0%,100% { box-shadow: 0 4px 16px rgba(0,80,200,0.18), 0 0 0 1.5px rgba(0,102,255,0.2); }
+  50%      { box-shadow: 0 4px 28px rgba(0,80,200,0.35), 0 0 0 2px rgba(0,102,255,0.4); }
+}
+
+/* Rings */
+.btn-ring {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: ringOut 2.4s ease-out infinite;
+}
+.btn-ring-2 { animation-delay: 1.2s; }
+
+body.dark-mode  .btn-ring { border: 1.5px solid rgba(0,212,255,0.5); }
+body.light-mode .btn-ring { border: 1.5px solid rgba(0,102,255,0.35); }
+
+@keyframes ringOut {
+  0%   { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(2.3); opacity: 0; }
+}
+
+/* Floating icon */
+.btn-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: floatUp 2s ease-in-out infinite;
+}
+@keyframes floatUp {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+/* Shield badge on hover */
+.shield-badge {
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%) scale(0);
+  transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none;
+}
+.scroll-top-btn:hover .shield-badge {
+  transform: translateX(-50%) scale(1);
+}
