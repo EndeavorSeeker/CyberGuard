@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberGuard Academy - Digital Security Education</title>
+  <link rel="stylesheet" href="game.css" />
+</head>
+<body>
+  <div class="background-gradient"></div>
+  
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand">
+        <span class="shield-icon">🛡️</span>
+        <h1>CyberGuard Academy</h1>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#home" onclick="showSection('home')">Home</a></li>
+        <li><a href="#lessons" onclick="showSection('lessons')">Learn</a></li>
+        <li><a href="#games" onclick="showSection('games')">Games</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section id="home" class="section-home active-section">
+    <div class="hero">
+      <div class="hero-content">
+        <h2 class="hero-title">Protect Your Digital Life</h2>
+        <p class="hero-subtitle">Learn essential cybersecurity skills for your phone, browser, and PC</p>
+        <button class="cta-btn" onclick="showSection('lessons')">Start Learning</button>
+      </div>
+      <div class="hero-graphic">
+        <div class="lock-animation">🔒</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Learning Section -->
+  <section id="lessons" class="section-lessons">
+    <div class="container">
+      <h2 class="section-title">Security Topics</h2>
+      <div class="topics-grid">
+        
+        <!-- Phone Security -->
+        <a href="phone-security.html" class="topic-card">
+          <div class="topic-icon">📱</div>
+          <h3>Phone Security</h3>
+          <p>Learn how to protect your mobile devices</p>
+          <button class="category-btn">Learn More →</button>
+        </a>
+
+        <!-- Browser Security -->
+        <a href="browser-security.html" class="topic-card">
+          <div class="topic-icon">🌐</div>
+          <h3>Browser Security</h3>
+          <p>Safe web browsing practices</p>
+          <button class="category-btn">Learn More →</button>
+        </a>
+
+        <!-- PC Security -->
+        <a href="pc-security.html" class="topic-card">
+          <div class="topic-icon">💻</div>
+          <h3>PC Security</h3>
+          <p>Secure your computer system</p>
+          <button class="category-btn">Learn More →</button>
+        </a>
+
+        <!-- Password Security -->
+        <a href="password-security.html" class="topic-card">
+          <div class="topic-icon">🔐</div>
+          <h3>Password Security</h3>
+          <p>Create and manage strong passwords</p>
+          <button class="category-btn">Learn More →</button>
+        </a>
+
+        <!-- Phishing Prevention -->
+        <a href="phishing-prevention.html" class="topic-card">
+          <div class="topic-icon">🎣</div>
+          <h3>Phishing Prevention</h3>
+          <p>Detect and avoid phishing attacks</p>
+          <button class="category-btn">Learn More →</button>
+        </a>
+
+        <!-- Data Protection -->
+        <a href="data-protection.html" class="topic-card">
+          <div class="topic-icon">📊</div>
+          <h3>Data Protection</h3>
+          <p>Safeguard your personal information</p>
+          <button class="category-btn">Learn More →</button>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Category Details Section -->
+  <section id="category-detail" class="section-category-detail">
+    <div class="container">
+      <button class="btn-back" onclick="showSection('lessons')">← Back to Topics</button>
+      
+      <!-- Phone Security Details -->
+      <div id="cat-phone" class="category-content">
+        <h2 class="category-title">📱 Phone Security</h2>
+        <div class="category-text">
+          <h3>Why Phone Security Matters</h3>
+          <p>Your phone contains personal information, financial data, and access to your online accounts. Protecting it is crucial.</p>
+          
+          <h3>Key Security Practices</h3>
+          <div class="tips-list">
+            <div class="tip">
+              <strong>1. Use Strong Lock Screens</strong>
+              <p>Set a complex PIN, password, or biometric lock. Avoid simple patterns (123, 000, etc.)</p>
+            </div>
+            <div class="tip">
+              <strong>2. Update Apps Regularly</strong>
+              <p>Enable automatic updates for apps. Updates patch security vulnerabilities.</p>
+            </div>
+            <div class="tip">
+              <strong>3. Download Safely</strong>
+              <p>Only download apps from official stores (Google Play, Apple App Store). Check reviews and permissions.</p>
+            </div>
+            <div class="tip">
+              <strong>4. Enable Two-Factor Authentication</strong>
+              <p>Add an extra layer of security to important accounts with 2FA.</p>
+            </div>
+            <div class="tip">
+              <strong>5. Avoid Public WiFi for Sensitive Tasks</strong>
+              <p>Never access banking or passwords on unsecured public WiFi. Use a VPN if necessary.</p>
+            </div>
+            <div class="tip">
+              <strong>6. Turn Off Location Sharing</strong>
+              <p>Disable location services for apps that don't need it to prevent tracking.</p>
+            </div>
+            <div class="tip">
+              <strong>7. Backup Your Data</strong>
+              <p>Regularly backup contacts, photos, and important files in case of loss or theft.</p>
+            </div>
+            <div class="tip">
+              <strong>8. Use a PIN for SIM Card</strong>
+              <p>Protect your SIM card with a PIN to prevent unauthorized access to your phone number.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Browser Security Details -->
+      <div id="cat-browser" class="category-content">
+        <h2 class="category-title">🌐 Browser Security</h2>
+        <div class="category-text">
+          <h3>Why Browser Security Matters</h3>
+          <p>Your browser is your gateway to the internet. Malicious websites and phishing attacks target web browsers daily.</p>
+          
+          <h3>Key Security Practices</h3>
+          <div class="tips-list">
+            <div class="tip">
+              <strong>1. Look for HTTPS</strong>
+              <p>Always check for "HTTPS" and the padlock icon in the address bar before entering sensitive information.</p>
+            </div>
+            <div class="tip">
+              <strong>2. Don't Trust Suspicious Links</strong>
+              <p>Hover over links to see where they point before clicking. Be cautious with shortened URLs.</p>
+            </div>
+            <div class="tip">
+              <strong>3. Clear Cookies and Cache</strong>
+              <p>Regularly clear your browsing history, cookies, and cache to remove tracking data.</p>
+            </div>
+            <div class="tip">
+              <strong>4. Use Privacy Mode</strong>
+              <p>Use Incognito/Private mode when browsing sensitive information - it doesn't save history.</p>
+            </div>
+            <div class="tip">
+              <strong>5. Install Security Extensions</strong>
+              <p>Use trusted security extensions that block malware and phishing attempts.</p>
+            </div>
+            <div class="tip">
+              <strong>6. Update Your Browser</strong>
+              <p>Keep your browser up-to-date with the latest security patches and features.</p>
+            </div>
+            <div class="tip">
+              <strong>7. Check SSL Certificates</strong>
+              <p>Click the padlock to verify the website's SSL certificate is valid and current.</p>
+            </div>
+            <div class="tip">
+              <strong>8. Disable Pop-ups</strong>
+              <p>Configure your browser to block pop-ups which may contain malicious content.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PC Security Details -->
+      <div id="cat-pc" class="category-content">
+        <h2 class="category-title">💻 PC Security</h2>
+        <div class="category-text">
+          <h3>Why PC Security Matters</h3>
+          <p>Your computer stores sensitive data and is a primary target for cyber attacks. Comprehensive security is essential.</p>
+          
+          <h3>Key Security Practices</h3>
+          <div class="tips-list">
+            <div class="tip">
+              <strong>1. Keep OS Updated</strong>
+              <p>Enable automatic updates for Windows, macOS, or Linux to patch security vulnerabilities.</p>
+            </div>
+            <div class="tip">
+              <strong>2. Use Antivirus Software</strong>
+              <p>Install reputable antivirus/anti-malware software and keep it updated.</p>
+            </div>
+            <div class="tip">
+              <strong>3. Enable Windows Defender</strong>
+              <p>Windows Defender provides built-in protection. Ensure it's enabled and up-to-date.</p>
+            </div>
+            <div class="tip">
+              <strong>4. Use Strong Passwords</strong>
+              <p>Create unique, complex passwords for your computer login and all accounts.</p>
+            </div>
+            <div class="tip">
+              <strong>5. Backup Important Files</strong>
+              <p>Regularly backup critical data to external drives or cloud storage for disaster recovery.</p>
+            </div>
+            <div class="tip">
+              <strong>6. Enable Firewall</strong>
+              <p>Turn on your system firewall to monitor incoming and outgoing network traffic.</p>
+            </div>
+            <div class="tip">
+              <strong>7. Be Cautious with Downloads</strong>
+              <p>Only download from trusted sources. Scan files with antivirus before opening.</p>
+            </div>
+            <div class="tip">
+              <strong>8. Lock Your Computer</strong>
+              <p>Lock your screen when stepping away. Use Windows+L shortcut on Windows.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Password Security Details -->
+      <div id="cat-password" class="category-content">
+        <h2 class="category-title">🔐 Password Security</h2>
+        <div class="category-text">
+          <h3>Why Password Security Matters</h3>
+          <p>Passwords are the first line of defense against unauthorized access to your accounts. Weak passwords compromise everything.</p>
+          
+          <h3>Key Security Practices</h3>
+          <div class="tips-list">
+            <div class="tip">
+              <strong>1. Never Share Passwords</strong>
+              <p>Keep passwords confidential. Legitimate companies will never ask for your password.</p>
+            </div>
+            <div class="tip">
+              <strong>2. Use 12+ Characters</strong>
+              <p>Longer passwords are exponentially harder to crack. Aim for at least 12-16 characters.</p>
+            </div>
+            <div class="tip">
+              <strong>3. Mix Character Types</strong>
+              <p>Combine uppercase, lowercase, numbers, and special characters (!@#$%^&*)</p>
+            </div>
+            <div class="tip">
+              <strong>4. Unique Passwords per Account</strong>
+              <p>Never reuse passwords. If one account is compromised, others remain safe.</p>
+            </div>
+            <div class="tip">
+              <strong>5. Use a Password Manager</strong>
+              <p>Store passwords securely in a password manager like Bitwarden, 1Password, or KeePass.</p>
+            </div>
+            <div class="tip">
+              <strong>6. Avoid Common Words</strong>
+              <p>Don't use dictionary words, birthdates, or sequential numbers like "123456".</p>
+            </div>
+            <div class="tip">
+              <strong>7. Change Passwords Regularly</strong>
+              <p>Update important account passwords every 3-6 months or after suspicious activity.</p>
+            </div>
+            <div class="tip">
+              <strong>8. Use Security Questions Wisely</strong>
+              <p>Create unique, hard-to-guess answers for security questions. Don't use obvious information.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phishing Prevention Details -->
+      <div id="cat-phishing" class="category-content">
+        <h2 class="category-title">🎣 Phishing Prevention</h2>
+        <div class="category-text">
+          <h3>Why Phishing Prevention Matters</h3>
+          <p>Phishing is one of the most common cyber attacks. Attackers impersonate legitimate organizations to steal credentials and data.</p>
+          
+          <h3>Key Security Practices</h3>
+          <div class="tips-list">
+            <div class="tip">
+              <strong>1. Check Sender Email Address</strong>
+              <p>Verify the full email address, not just the display name. Scammers often fake these.</p>
+            </div>
+            <div class="tip">
+              <strong>2. Hover Over Links First</strong>
+              <p>Don't click links in emails. Hover to preview the actual URL destination.</p>
+            </div>
+            <div class="tip">
+              <strong>3. Never Enter Passwords via Email</strong>
+              <p>Legitimate companies never ask for passwords by email. This is always a red flag.</p>
+            </div>
+            <div class="tip">
+              <strong>4. Report Suspicious Emails</strong>
+              <p>Use your email provider's report feature to flag phishing attempts.</p>
+            </div>
+            <div class="tip">
+              <strong>5. Watch for Urgent Language</strong>
+              <p>Phishing emails often use urgency ("Act now!" "Verify immediately!") to bypass critical thinking.</p>
+            </div>
+            <div class="tip">
+              <strong>6. Check for Poor Grammar</strong>
+              <p>Many phishing emails contain spelling and grammatical errors.</p>
+            </div>
+            <div class="tip">
+              <strong>7. Verify Requests Independently</strong>
+              <p>If an email claims to be from your bank, call them directly to verify the request.</p>
+            </div>
+            <div class="tip">
+              <strong>8. Look for Generic Greetings</strong>
+              <p>Phishing emails often use "Dear Customer" instead of your actual name.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Protection Details -->
+      <div id="cat-data" class="category-content">
+        <h2 class="category-title">📊 Data Protection</h2>
+        <div class="category-text">
+          <h3>Why Data Protection Matters</h3>
+          <p>Your personal data is valuable. Protecting it prevents identity theft, fraud, and misuse by criminals.</p>
+          
+          <h3>Key Security Practices</h3>
+          <div class="tips-list">
+            <div class="tip">
+              <strong>1. Use Encryption Tools</strong>
+              <p>Encrypt sensitive files and communications. Use tools like VeraCrypt for data at rest.</p>
+            </div>
+            <div class="tip">
+              <strong>2. Limit Personal Info Shared</strong>
+              <p>Only provide necessary information when required. Question why data is needed.</p>
+            </div>
+            <div class="tip">
+              <strong>3. Review Privacy Settings</strong>
+              <p>Regularly check privacy settings on social media and online services. Minimize data sharing.</p>
+            </div>
+            <div class="tip">
+              <strong>4. Don't Overshare on Social Media</strong>
+              <p>Avoid posting sensitive information (address, phone, birthdate) that can be used against you.</p>
+            </div>
+            <div class="tip">
+              <strong>5. Use VPN on Public Networks</strong>
+              <p>Always use a VPN when connecting to public WiFi to encrypt your traffic.</p>
+            </div>
+            <div class="tip">
+              <strong>6. Monitor Your Accounts</strong>
+              <p>Regularly check bank statements and credit reports for suspicious activity.</p>
+            </div>
+            <div class="tip">
+              <strong>7. Use Privacy-Focused Services</strong>
+              <p>Choose services that respect privacy (DuckDuckGo, ProtonMail, Signal).</p>
+            </div>
+            <div class="tip">
+              <strong>8. Secure Your Home Network</strong>
+              <p>Change default WiFi passwords, enable WPA3 encryption, and hide SSID if possible.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Games Section -->
+  <section id="games" class="section-games">
+    <div class="container">
+      <h2 class="section-title">Interactive Security Games</h2>
+      <div class="games-grid">
+        
+        <!-- Game 1: Password Strength Checker -->
+        <div class="game-card" onclick="switchGame('password-game')">
+          <div class="game-icon">🔐</div>
+          <h3>Password Strength Checker</h3>
+          <p>Test password strength and learn best practices</p>
+        </div>
+
+        <!-- Game 2: Phishing Detector -->
+        <div class="game-card" onclick="switchGame('phishing-game')">
+          <div class="game-icon">🎣</div>
+          <h3>Spot the Phishing Email</h3>
+          <p>Identify fake emails before they trick you</p>
+        </div>
+
+        <!-- Game 3: Security Quiz -->
+        <div class="game-card" onclick="switchGame('quiz-game')">
+          <div class="game-icon">❓</div>
+          <h3>Security Quiz</h3>
+          <p>Test your cybersecurity knowledge</p>
+        </div>
+
+        <!-- Game 4: Password Hacker Defense -->
+        <div class="game-card" onclick="switchGame('hacker-game')">
+          <div class="game-icon">⚔️</div>
+          <h3>Defend Against Hackers</h3>
+          <p>Build strong defenses against cyber attacks</p>
+        </div>
+      </div>
+
+      <!-- Game Containers -->
+      <div id="password-game" class="game-container active-game">
+        <div class="game-header">
+          <h2>🔐 Password Strength Checker</h2>
+          <p>Enter a password and see how strong it is!</p>
+        </div>
+        <div class="game-content">
+          <div class="password-input-group">
+            <input type="password" id="passwordInput" placeholder="Enter your password..." />
+            <button id="togglePwdView" class="btn-toggle-pwd">👁️</button>
+          </div>
+          <div id="passwordFeedback" class="password-feedback"></div>
+          <div id="passwordStrengthBar" class="strength-bar"></div>
+        </div>
+      </div>
+
+      <!-- Phishing Game -->
+      <div id="phishing-game" class="game-container">
+        <div class="game-header">
+          <h2>🎣 Spot the Phishing Email</h2>
+          <p>Identify which emails are phishing attempts</p>
+        </div>
+        <div class="game-content">
+          <div id="emailDisplay" class="email-box">
+            <div class="email-header">
+              <strong id="emailFrom">From: Amazon Support</strong>
+              <span id="emailDate">Today 2:30 PM</span>
+            </div>
+            <div id="emailBody" class="email-body">
+              Dear Customer,
+              Your account has been suspended. Click here immediately to verify your account.
+            </div>
+          </div>
+          <div class="phishing-buttons">
+            <button class="btn-phishing" onclick="answerPhishing(true)">🚨 PHISHING!</button>
+            <button class="btn-phishing legitimate" onclick="answerPhishing(false)">✅ LEGITIMATE</button>
+          </div>
+          <div id="phishingResult" class="game-result"></div>
+        </div>
+      </div>
+
+      <!-- Quiz Game -->
+      <div id="quiz-game" class="game-container">
+        <div class="game-header">
+          <h2>❓ Security Quiz</h2>
+          <p id="quizProgress">Question 1 of 5</p>
+        </div>
+        <div class="game-content">
+          <div id="quizQuestion" class="quiz-question">Loading question...</div>
+          <div id="quizAnswers" class="quiz-answers"></div>
+          <div id="quizResult" class="game-result"></div>
+        </div>
+      </div>
+
+      <!-- Hacker Defense Game -->
+      <div id="hacker-game" class="game-container">
+        <div class="game-header">
+          <h2>⚔️ Defend Against Hackers</h2>
+          <p>Click security measures to protect your system</p>
+        </div>
+        <div class="game-content">
+          <div class="defense-stats">
+            <div class="stat-bar">
+              <span>🛡️ Defense Level:</span>
+              <div class="stat-progress">
+                <div id="defenseLevel" class="stat-fill inline-defense-style\"></div>
+              </div>
+              <span id="defensePercent">0%</span>
+            </div>
+          </div>
+          <div id="defenseActions" class="defense-grid"></div>
+          <button id="resetDefenseBtn" class="btn-primary" onclick="resetDefenseGame()">Reset Game</button>
+          <div id="defenseMessage" class="game-result"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Close Game Button -->
+    <button class="btn-close-game" onclick="closeGame()">← Back to Games</button>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>🛡️ CyberGuard Academy - Learn to protect your digital life</p>
+    <p class="footer-note">Educational content for cybersecurity awareness</p>
+  </footer>
+
+  <script src="game.js"></script>
+</body>
+</html>
