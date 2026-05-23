@@ -219,8 +219,8 @@ function openModule(mod) {
 }
 
 function closeModule() {
-  document.getElementById('toolOverlay').classList.remove('active');
-  document.getElementById('toolPanel').classList.remove('open');
+  document.getElementById('toolOverlay')?.classList.remove('active');
+  document.getElementById('toolPanel')?.classList.remove('open');
   state.currentModule = null;
 }
 
@@ -789,6 +789,247 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+const ACADEMY_MODULES = {
+  password: {
+    icon: 'lock',
+    title: 'academy_password_strength_title',
+    subtitle: 'academy_password_strength_subtitle',
+  },
+  phishing: {
+    icon: 'phishing',
+    title: 'module_msg_title',
+    subtitle: 'module_msg_desc',
+  },
+  quiz: {
+    icon: 'quiz',
+    title: 'module_msg_title',
+    subtitle: 'module_msg_desc',
+  },
+  network: {
+    icon: 'security',
+    title: 'module_url_title',
+    subtitle: 'module_url_desc',
+  },
+};
+
+function cgI18n(key) {
+  try {
+    if (typeof cgTranslate === 'function') return cgTranslate(key);
+  } catch (e) {}
+  return key;
+}
+
+
+const academyQuizQuestions = [
+  {
+    question: 'You receive a login link from a sender you do not recognize. What is the safest first action?',
+    options: ['Open the link in private mode', 'Verify the sender and domain first', 'Forward it to everyone'],
+    answer: 1,
+    detail: 'Verifying the sender and domain prevents credential theft before any click happens.',
+  },
+  {
+    question: 'Which password is strongest?',
+    options: ['Company2026!', 'blue-car-9', 'Mango!River#72Vault'],
+    answer: 2,
+    detail: 'Long, mixed, less predictable passphrases are harder to crack.',
+  },
+  {
+    question: 'A public Wi-Fi network asks you to install a certificate. What should you do?',
+    options: ['Install it quickly', 'Avoid it unless your organization confirms it', 'Disable your firewall'],
+    answer: 1,
+    detail: 'Unexpected certificates can let attackers inspect encrypted traffic.',
+  },
+];
+
+let academyQuizIndex = 0;
+let academyQuizScore = 0;
+let academyNetworkScore = 0;
+
+function initAcademy() {
+  const body = document.getElementById('academySimBody');
+  if (!body) return;
+
+  document.querySelectorAll('[data-academy-module]').forEach((card) => {
+    card.addEventListener('click', () => setAcademyModule(card.dataset.academyModule));
+  });
+
+  setAcademyModule('password');
+}
+
+function setAcademyModule(moduleName) {
+  const config = ACADEMY_MODULES[moduleName] || ACADEMY_MODULES.password;
+  document.querySelectorAll('[data-academy-module]').forEach((card) => {
+    card.classList.toggle('active', card.dataset.academyModule === moduleName);
+  });
+
+  const icon = document.getElementById('academySimIcon');
+  const title = document.getElementById('academySimTitle');
+  const subtitle = document.getElementById('academySimSubtitle');
+  if (icon) icon.textContent = config.icon;
+  if (title) title.textContent = config.title;
+  if (subtitle) subtitle.textContent = config.subtitle;
+
+  if (moduleName === 'phishing') renderPhishingTrainer();
+  else if (moduleName === 'quiz') renderSecurityQuiz();
+  else if (moduleName === 'network') renderNetworkDefense();
+  else renderPasswordTrainer();
+}
+
+function renderPasswordTrainer() {
+  const body = document.getElementById('academySimBody');
+  body.innerHTML = `
+    <div class="password-field">
+      <input id="academyPassword" type="password" value="CyberSec2026!" aria-label="Password payload" />
+      <button type="button" id="academyPasswordToggle"><span class="material-symbols-outlined">visibility</span></button>
+    </div>
+    <div class="strength-row"><span>Resilience Level</span><strong id="academyStrengthLabel">Strong</strong></div>
+    <div class="strength-meter" id="academyStrengthMeter"><span></span><span></span><span></span><span class="empty"></span></div>
+    <div class="academy-score-line"><span id="academyPasswordScore">Score: 0/100</span></div>
+    <div class="feedback-chips" id="academyPasswordFeedback"></div>
+  `;
+
+  const input = document.getElementById('academyPassword');
+  const toggle = document.getElementById('academyPasswordToggle');
+  toggle.addEventListener('click', () => {
+    input.type = input.type === 'password' ? 'text' : 'password';
+    toggle.querySelector('.material-symbols-outlined').textContent = input.type === 'password' ? 'visibility' : 'visibility_off';
+  });
+  input.addEventListener('input', updatePasswordTrainer);
+  updatePasswordTrainer();
+}
+
+function updatePasswordTrainer() {
+  const value = document.getElementById('academyPassword')?.value || '';
+  const checks = [
+    { ok: value.length >= 12, label: 'Length >= 12' },
+    { ok: /[A-Z]/.test(value) && /[a-z]/.test(value), label: 'Upper and lower case' },
+    { ok: /\d/.test(value), label: 'Number included' },
+    { ok: /[^A-Za-z0-9]/.test(value), label: 'Special character' },
+    { ok: !/(password|admin|cyber|qwerty|1234)/i.test(value), label: 'No common dictionary word' },
+  ];
+  const score = Math.min(100, checks.filter(check => check.ok).length * 20 + Math.min(10, Math.max(0, value.length - 12)));
+  const level = score >= 85 ? 'Excellent' : score >= 65 ? 'Strong' : score >= 40 ? 'Medium' : 'Weak';
+  const bars = score >= 85 ? 4 : score >= 65 ? 3 : score >= 40 ? 2 : 1;
+
+  document.getElementById('academyStrengthLabel').textContent = level;
+  document.getElementById('academyPasswordScore').textContent = `Score: ${score}/100`;
+  document.getElementById('academyStrengthMeter').innerHTML = [0, 1, 2, 3]
+    .map(index => `<span class="${index >= bars ? 'empty' : ''}"></span>`)
+    .join('');
+  document.getElementById('academyPasswordFeedback').innerHTML = checks.map(check => `
+    <span><span class="material-symbols-outlined ${check.ok ? '' : 'warn'}">${check.ok ? 'check_circle' : 'cancel'}</span>${check.label}</span>
+  `).join('');
+}
+
+function renderPhishingTrainer() {
+  const body = document.getElementById('academySimBody');
+  body.innerHTML = `
+    <div class="academy-challenge">
+      <div class="message-card">
+        <strong>Security Notice</strong>
+        <p>Your account will be suspended in 30 minutes. Confirm your password now at secure-paypa1.account-verify.xyz/login.</p>
+      </div>
+      <div class="academy-options">
+        <button type="button" data-phishing-answer="safe">Safe</button>
+        <button type="button" data-phishing-answer="phishing">Phishing</button>
+      </div>
+      <div class="academy-result" id="academyPhishingResult">Choose an answer.</div>
+    </div>
+  `;
+
+  document.querySelectorAll('[data-phishing-answer]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const correct = button.dataset.phishingAnswer === 'phishing';
+      renderAcademyResult('academyPhishingResult', correct, correct
+        ? 'Correct. Urgency, password request, and typosquatted domain are strong phishing signals.'
+        : 'Not quite. This message uses urgency and a fake PayPal-like domain.');
+    });
+  });
+}
+
+function renderSecurityQuiz() {
+  academyQuizIndex = 0;
+  academyQuizScore = 0;
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion() {
+  const body = document.getElementById('academySimBody');
+  const item = academyQuizQuestions[academyQuizIndex];
+  body.innerHTML = `
+    <div class="academy-challenge">
+      <div class="academy-score-line">Question ${academyQuizIndex + 1}/${academyQuizQuestions.length} · Score ${academyQuizScore}</div>
+      <h3>${escapeHtml(item.question)}</h3>
+      <div class="academy-options">
+        ${item.options.map((option, index) => `<button type="button" data-quiz-answer="${index}">${escapeHtml(option)}</button>`).join('')}
+      </div>
+      <div class="academy-result" id="academyQuizResult">Select one answer.</div>
+    </div>
+  `;
+
+  document.querySelectorAll('[data-quiz-answer]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const selected = Number(button.dataset.quizAnswer);
+      const correct = selected === item.answer;
+      if (correct) academyQuizScore += 1;
+      renderAcademyResult('academyQuizResult', correct, item.detail);
+      document.querySelectorAll('[data-quiz-answer]').forEach(btn => btn.disabled = true);
+      setTimeout(() => {
+        academyQuizIndex += 1;
+        if (academyQuizIndex >= academyQuizQuestions.length) renderQuizSummary();
+        else renderQuizQuestion();
+      }, 1100);
+    });
+  });
+}
+
+function renderQuizSummary() {
+  document.getElementById('academySimBody').innerHTML = `
+    <div class="academy-challenge">
+      <h3>Quiz complete</h3>
+      <p class="academy-score-line">Final score: ${academyQuizScore}/${academyQuizQuestions.length}</p>
+      <button class="premium-primary-btn compact" type="button" onclick="renderSecurityQuiz()">Restart Quiz</button>
+    </div>
+  `;
+}
+
+function renderNetworkDefense() {
+  academyNetworkScore = 0;
+  const body = document.getElementById('academySimBody');
+  body.innerHTML = `
+    <div class="academy-challenge">
+      <div class="message-card">
+        <strong>Incident: suspicious outbound traffic</strong>
+        <p>An endpoint is sending encrypted traffic to an unknown IP every 10 seconds. What is your first response?</p>
+      </div>
+      <div class="academy-options">
+        <button type="button" data-network-answer="ignore">Ignore until users complain</button>
+        <button type="button" data-network-answer="isolate">Isolate endpoint and preserve evidence</button>
+        <button type="button" data-network-answer="wipe">Wipe the device immediately</button>
+      </div>
+      <div class="academy-result" id="academyNetworkResult">Choose the response.</div>
+    </div>
+  `;
+
+  document.querySelectorAll('[data-network-answer]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const correct = button.dataset.networkAnswer === 'isolate';
+      academyNetworkScore = correct ? 100 : 35;
+      renderAcademyResult('academyNetworkResult', correct, correct
+        ? `Correct. Score ${academyNetworkScore}/100: isolate first, then investigate with evidence intact.`
+        : `Risky. Score ${academyNetworkScore}/100: this can spread or destroy evidence.`);
+    });
+  });
+}
+
+function renderAcademyResult(id, correct, message) {
+  const result = document.getElementById(id);
+  if (!result) return;
+  result.classList.toggle('success', correct);
+  result.classList.toggle('danger', !correct);
+  result.textContent = message;
+}
+
 /* ─────────────────────────────────────
    INIT
 ───────────────────────────────────── */
@@ -819,6 +1060,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize stats scroll animation
   initializeStatsScrollAnimation();
+  initializeThemeToggleButton();
+  initAcademy();
 
   console.log('%c🛡️ CyberGuard AI ready', 'color:#3B82F6;font-weight:bold;font-size:14px');
 });
@@ -920,6 +1163,32 @@ function initializeStatsScrollAnimation() {
 ───────────────────────────────────── */
 function updateUserProfile() {
   updateNavbar();
+}
+
+function initializeThemeToggleButton() {
+  const button = document.getElementById('themeToggleBtn');
+  if (!button) return;
+
+  button.addEventListener('click', () => {
+    if (typeof toggleTheme === 'function') toggleTheme();
+    updateThemeToggleIcon();
+    updateScrollBtnIcon();
+    updateSettingsHighlights();
+  });
+
+  updateThemeToggleIcon();
+}
+
+function updateThemeToggleIcon() {
+  const button = document.getElementById('themeToggleBtn');
+  const icon = button?.querySelector('.material-symbols-outlined');
+  if (!button || !icon) return;
+
+  const isLight = document.body.classList.contains('light-mode')
+    || document.documentElement.getAttribute('data-theme') === 'light';
+  icon.textContent = isLight ? 'dark_mode' : 'light_mode';
+  button.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  button.setAttribute('title', isLight ? 'Dark mode' : 'Light mode');
 }
 
 /* ─────────────────────────────────────
@@ -1028,12 +1297,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // Scroll button: show/hide
 const scrollBtn = document.getElementById('scrollTopBtn');
-window.addEventListener('scroll', () => {
-  scrollBtn.classList.toggle('visible', window.scrollY > 300);
-}, { passive: true });
+if (scrollBtn) {
+  window.addEventListener('scroll', () => {
+    scrollBtn.classList.toggle('visible', window.scrollY > 300);
+  }, { passive: true });
+}
 
 // Swap arrow color on theme change
 function updateScrollBtnIcon() {
+  if (!document.querySelector('.icon-dark') || !document.querySelector('.icon-light')) return;
   const isLight = document.body.classList.contains('light-mode');
   document.querySelector('.icon-dark').style.display = isLight ? 'none'  : 'flex';
   document.querySelector('.icon-light').style.display = isLight ? 'flex' : 'none';
@@ -1042,7 +1314,9 @@ function updateScrollBtnIcon() {
 // Call after each theme change in theme.js
 const origApplyTheme = window.applyTheme;
 window.applyTheme = function(theme) {
-  origApplyTheme(theme);
+  if (typeof origApplyTheme === 'function') origApplyTheme(theme);
+  updateThemeToggleIcon();
   updateScrollBtnIcon();
 };
+updateThemeToggleIcon();
 updateScrollBtnIcon(); // init

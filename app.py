@@ -29,6 +29,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_from_directory,
     session,
     url_for,
 )
@@ -440,6 +441,26 @@ def home():
 @app.route("/history")
 def history():
     return render_template("history.html")
+
+
+@app.route("/academy")
+def academy():
+    return render_template("academy.html")
+
+
+@app.route("/academy/topic/<page>")
+def academy_topic(page):
+    allowed_pages = {
+        "phone-security.html",
+        "browser-security.html",
+        "pc-security.html",
+        "password-security.html",
+        "phishing-prevention.html",
+        "data-protection.html",
+    }
+    if page not in allowed_pages:
+        return redirect(url_for("academy"))
+    return send_from_directory(app.root_path, page)
 
 
 @app.route("/signin")

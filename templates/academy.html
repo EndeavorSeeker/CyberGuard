@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberGuard Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}" type="text/javascript"></script>
+</head>
+<body class="premium-page">
+  <div class="premium-bg" aria-hidden="true">
+    <div class="premium-glow premium-glow-one"></div>
+    <div class="premium-glow premium-glow-two"></div>
+    <div class="premium-noise"></div>
+  </div>
+
+  <nav class="navbar premium-navbar">
+    <div class="nav-inner premium-nav-inner">
+      <a href="{{ url_for('home') }}" class="nav-logo premium-logo" style="gap:6px;">
+        <img src="{{ url_for('static', filename='logo.cybergard.png') }}" alt="CyberGuard AI" height="36" style="object-fit:contain;">
+        <span class="nav-logo-text">CyberGuard AI</span>
+      </a>
+      <div class="premium-nav-links">
+        <a href="{{ url_for('home') }}" class="nav-link">Home</a>
+        <a href="{{ url_for('history') }}" class="nav-link">History</a>
+        <a href="{{ url_for('academy') }}" class="nav-link active">Academy</a>
+      </div>
+
+      <div class="nav-actions premium-actions">
+        <div id="userNav" class="user-nav">
+
+          <a href="{{ url_for('signin') }}" id="getStartedBtn" class="btn btn-primary" data-i18n="navbar_signin">Sign In</a>
+          <div id="profileMenu" class="profile-menu">
+            <div id="userButton" hidden></div>
+            <button id="profileBtn" class="profile-btn" onclick="toggleProfileDropdown()" type="button">
+              <span class="material-symbols-outlined">person</span>
+              <span id="profileEmail">User</span>
+              <span class="material-symbols-outlined small-icon">expand_more</span>
+            </button>
+            <div id="profileDropdown" class="profile-dropdown">
+              <div class="profile-dropdown-head">
+                <div class="profile-label" data-i18n="profile_logged_in">Logged in as</div>
+                <div id="profileEmailFull" class="profile-email-full"></div>
+              </div>
+              <a href="{{ url_for('dashboard') }}" class="profile-menu-item" data-i18n="navbar_dashboard">Dashboard</a>
+              <a href="{{ url_for('history') }}" class="profile-menu-item" data-i18n="navbar_history">History</a>
+              <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">Sign Out</button>
+            </div>
+          </div>
+        </div>
+
+        <button id="themeToggleBtn" class="premium-icon-btn theme-toggle-inline" title="Toggle theme" type="button" aria-label="Toggle dark mode">
+          <span class="material-symbols-outlined">light_mode</span>
+        </button>
+
+        <button id="settingsBtn" class="premium-icon-btn" title="Settings" type="button">
+          <span class="material-symbols-outlined">settings</span>
+        </button>
+
+        <div id="settingsDropdown" class="settings-dropdown" style="display:none;">
+          <div class="settings-group">
+            <p data-i18n="navbar_language">Language</p>
+            <button type="button" data-lang="en" class="lang-btn">English</button>
+            <button type="button" data-lang="fr" class="lang-btn">Francais</button>
+            <button type="button" data-lang="ar" class="lang-btn">Arabic</button>
+          </div>
+          <div class="settings-group">
+            <p data-i18n="navbar_theme">Theme</p>
+            <button type="button" data-theme="dark" class="theme-btn">Dark Mode</button>
+            <button type="button" data-theme="light" class="theme-btn">Light Mode</button>
+          </div>
+          <div id="mobileProfile" class="settings-profile">
+            <div class="profile-label">Logged in as</div>
+            <div id="mobileProfileEmail" class="profile-email-full"></div>
+            <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">Sign Out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="academy-main">
+    <header class="academy-hero">
+      <div class="academy-mark">
+        <img src="{{ url_for('static', filename='logo.cybergard.png') }}" alt="CyberGuard AI logo">
+      </div>
+      <h1 data-i18n="academy_title_nav">CyberGuard Academy</h1>
+      <p data-i18n="academy_subtext">Learn to protect your digital life through immersive, high-fidelity security simulations.</p>
+    </header>
+
+    <section class="academy-modules">
+      <div class="premium-section-head compact-head">
+        <span class="material-symbols-outlined">extension</span>
+        <h2 data-i18n="academy_interactive_modules_title">Interactive Modules</h2>
+      </div>
+      <div class="academy-grid" onclick="document.getElementById('history-table-container').scrollIntoView({ behavior: 'smooth' })">
+        
+        <button class="academy-card active" data-academy-module="password" type="button">
+          <span class="material-symbols-outlined">lock</span>
+          <h3 data-i18n="academy_password_strength_title">Password Strength</h3>
+          <p data-i18n="academy_password_strength_subtitle">Analyze cryptographic resistance.</p>
+        </button>
+        <button class="academy-card" data-academy-module="phishing" type="button">
+          <span class="material-symbols-outlined">phishing</span>
+          <h3 data-i18n="academy_phishing_title">Spot Phishing</h3>
+          <p data-i18n="academy_phishing_subtitle">Identify deceptive vectors.</p>
+        </button>
+        <button class="academy-card" data-academy-module="quiz" type="button">
+          <span class="material-symbols-outlined">quiz</span>
+          <h3 data-i18n="academy_quiz_title">Security Quiz</h3>
+          <p data-i18n="academy_quiz_subtitle">Test your threat intelligence.</p>
+        </button>
+        <button class="academy-card" data-academy-module="network" type="button">
+          <span class="material-symbols-outlined">security</span>
+          <h3 data-i18n="academy_network_title">Defend Network</h3>
+          <p data-i18n="academy_network_subtitle">Practice active intrusion response.</p>
+        </button>
+      </div>
+    </section>
+
+    <section class="academy-simulator" id="academySimulator">
+      <div class="sim-header">
+        <div><span class="material-symbols-outlined" id="academySimIcon">lock</span></div>
+        <div>
+          <h2 id="academySimTitle" data-i18n="academy_password_strength_title">Password Strength Checker</h2>
+          <p id="academySimSubtitle" data-i18n="academy_password_strength_subtitle">Enter a key string to evaluate its cryptographic resilience.</p>
+        </div>
+        <span class="sim-status" data-i18n="academy_sim_status_active">Active Simulator</span>
+      </div>
+      <div class="sim-body" id="academySimBody"></div>
+    </section>
+
+    <section class="knowledge-section">
+      <h2 data-i18n="academy_knowledge_domains_title">Core Knowledge Domains</h2>
+      <div class="knowledge-grid">
+        <a class="knowledge-app" href="{{ url_for('academy_topic', page='phone-security.html') }}">
+          <span class="knowledge-app-icon material-symbols-outlined">smartphone</span>
+          <strong data-i18n="academy_domain_phone">Phone Security</strong>
+          <small data-i18n="academy_knowledge_open_app">Open app</small>
+        </a>
+        <a class="knowledge-app" href="{{ url_for('academy_topic', page='browser-security.html') }}">
+          <span class="knowledge-app-icon material-symbols-outlined">public</span>
+          <strong data-i18n="academy_domain_browser">Browser Safety</strong>
+          <small data-i18n="academy_knowledge_open_app">Open app</small>
+        </a>
+        <a class="knowledge-app" href="{{ url_for('academy_topic', page='pc-security.html') }}">
+          <span class="knowledge-app-icon material-symbols-outlined">computer</span>
+          <strong data-i18n="academy_domain_pc">PC Defense</strong>
+          <small data-i18n="academy_knowledge_open_app">Open app</small>
+        </a>
+        <a class="knowledge-app" href="{{ url_for('academy_topic', page='password-security.html') }}">
+          <span class="knowledge-app-icon material-symbols-outlined">key</span>
+          <strong>Passwords</strong>
+          <small>Open app</small>
+        </a>
+        <a class="knowledge-app" href="{{ url_for('academy_topic', page='phishing-prevention.html') }}">
+          <span class="knowledge-app-icon material-symbols-outlined">book</span>
+          <strong>Phishing</strong>
+          <small>Open app</small>
+        </a>
+        <a class="knowledge-app" href="{{ url_for('academy_topic', page='data-protection.html') }}">
+          <span class="knowledge-app-icon material-symbols-outlined">database</span>
+          <strong>Data Protection</strong>
+          <small>Open app</small>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer premium-footer">
+    <div class="footer-container">
+      <div class="footer-brand"><h2 class="footer-logo">CyberGuard AI</h2><p class="footer-description">© 2026 CyberGuard AI. Secure Intelligence.</p></div>
+      <div class="footer-links"><h3>Platform</h3><a href="{{ url_for('home') }}">Home</a><a href="{{ url_for('history') }}">History</a><a href="{{ url_for('academy') }}">Academy</a></div>
+      <div class="footer-links"><h3>Resources</h3><a href="mailto:ai.cybergard@gmail.com?subject=Help Center">Help Center</a><a href="mailto:ai.cybergard@gmail.com?subject=Contact">Contact</a></div>
+      <div class="footer-links"><h3>Legal</h3><a href="mailto:ai.cybergard@gmail.com?subject=Privacy Policy">Privacy Policy</a><a href="mailto:ai.cybergard@gmail.com?subject=Terms of Service">Terms of Service</a></div>
+    </div>
+  </footer>
+
+  <button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Retour en haut">
+    <div class="btn-ring"></div><div class="btn-ring btn-ring-2"></div>
+    <div class="btn-icon-wrap">
+      <svg class="icon-dark" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 16V4" stroke="white" stroke-width="2.2" stroke-linecap="round"/><path d="M4 10l6-6 6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg class="icon-light" width="20" height="20" viewBox="0 0 20 20" fill="none" style="display:none;"><path d="M10 16V4" stroke="#0066ff" stroke-width="2.2" stroke-linecap="round"/><path d="M4 10l6-6 6 6" stroke="#0066ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+  </button>
+
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
