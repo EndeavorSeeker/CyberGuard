@@ -3,184 +3,836 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📱 Phone Security - CyberGuard Academy</title>
-  <link rel="stylesheet" href="game.css" />
+  <title>Smartphone Security — CyberGuard AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}" type="text/javascript"></script>
+
+  <style>
+    /* Topic page specific styles */
+    .topic-hero {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 120px 40px 60px;
+    }
+    .topic-back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-sub);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+      transition: color 0.2s ease;
+      text-decoration: none;
+    }
+    .topic-back-btn:hover { color: var(--text); }
+    .topic-accent { color: #4cd7f6; }
+    .topic-grid {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 40px 80px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .topic-card {
+      background: rgba(28,31,42,0.44);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 28px;
+    }
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      user-select: none;
+    }
+    .checklist-item:hover { background: rgba(255,255,255,0.06); }
+    .checklist-item input[type="checkbox"] {
+      accent-color: #4cd7f6;
+      width: 18px;
+      height: 18px;
+    }
+    .checklist-item.checked {
+  opacity: 0.7;
+}
+.checklist-item.checked span {
+  text-decoration: line-through;
+  color: var(--text-sub, #aaa);
+}
+    .progress-bar-track {
+      height: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 16px 0 8px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: #4cd7f6;
+      transition: width 0.4s ease;
+    }
+
+    .threat-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 18px; }
+    .threat-card { padding: 18px; border-radius: 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); min-height: 170px; }
+    .threat-card .t-title { display: flex; align-items: center; gap: 10px; font-weight: 950; margin-bottom: 8px; }
+    .threat-card .t-title .material-symbols-outlined { color: #4cd7f6; font-size: 24px; }
+    .threat-card p { color: var(--text-sub); font-size: 0.92rem; line-height: 1.7; margin: 0; }
+
+    .topic-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(76,215,246,0.28);
+      background: rgba(76,215,246,0.10);
+      color: #4cd7f6;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+    }
+
+    .accordion-item {
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.02);
+    }
+    .accordion-header {
+      padding: 16px 20px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      background: rgba(255,255,255,0.03);
+    }
+    .accordion-header .left {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 10px;
+    }
+    .accordion-header .left .material-symbols-outlined {
+      color: #4cd7f6;
+      font-size: 22px;
+    }
+    .accordion-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.35s ease;
+      padding: 0 20px;
+      color: var(--text-sub);
+      line-height: 1.7;
+    }
+    .accordion-body.open {
+      max-height: 400px;
+      padding: 16px 20px;
+    }
+
+    .quiz-option {
+      width: 100%;
+      padding: 12px 18px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      color: var(--text);
+      font-size: 0.9rem;
+      text-align: left;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .quiz-option:hover:not(:disabled) {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .quiz-option.correct { 
+      background: rgba(34,197,94,0.15); 
+      border-color: rgba(34,197,94,0.4);
+      color: #4ade80;
+    }
+    .quiz-option.wrong { 
+      background: rgba(239,68,68,0.15); 
+      border-color: rgba(239,68,68,0.4);
+      color: #f87171;
+    }
+
+    .quiz-explain {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      color: var(--text-sub);
+      line-height: 1.7;
+      font-weight: 700;
+      display: none;
+    }
+
+    .quiz-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .quiz-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(76,215,246,0.10);
+      border: 1px solid rgba(76,215,246,0.28);
+      color: var(--text);
+      font-weight: 950;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .quiz-btn:hover { transform: translateY(-2px); background: rgba(76,215,246,0.14); }
+    .quiz-btn[disabled] { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* Light mode overrides */
+    body.light-mode .topic-card,
+    [data-theme='light'] .topic-card {
+      background: rgba(255,255,255,0.85);
+      border-color: rgba(0,0,0,0.08);
+      color: #111827;
+    }
+    body.light-mode .checklist-item,
+    [data-theme='light'] .checklist-item {
+      background: rgba(0,0,0,0.02);
+      border-color: rgba(0,0,0,0.08);
+    }
+    body.light-mode .quiz-option,
+    [data-theme='light'] .quiz-option {
+      background: rgba(0,0,0,0.02);
+      border-color: rgba(0,0,0,0.10);
+      color: #111827;
+    }
+    body.light-mode .accordion-header,
+    [data-theme='light'] .accordion-header {
+      background: rgba(0,0,0,0.02);
+    }
+    body.light-mode .threat-card,
+    [data-theme='light'] .threat-card {
+      background: rgba(255,255,255,0.85);
+      border-color: rgba(0,0,0,0.08);
+    }
+    body.light-mode .quiz-btn,
+    [data-theme='light'] .quiz-btn {
+      background: rgba(0,180,255,0.08);
+      border-color: rgba(0,180,255,0.20);
+      color: #111827;
+    }
+      .topic-grid { grid-template-columns: 1fr; padding: 0 20px 60px; }
+      .topic-hero { padding: 100px 20px 40px; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1024px) {
+      .threat-cards { grid-template-columns: 1fr 1fr !important; }
+      .topic-grid { grid-template-columns: 1fr !important; padding: 0 28px 60px; }
+      .topic-hero { padding: 110px 28px 48px; }
+      .topic-card { padding: 22px; align-self: auto !important; }
+      .topic-card[style*="grid-column"] { grid-column: 1 / -1 !important; }
+      .topic-card[style*="max-width"] { max-width: 100% !important; }
+    }
+    @media (max-width: 768px) {
+      .threat-cards { grid-template-columns: 1fr !important; gap: 12px; }
+      .topic-hero { padding: 96px 20px 36px; }
+      .topic-grid { padding: 0 20px 48px; gap: 16px; }
+      .topic-card { padding: 18px; }
+      /* Hero card: stack title + progress vertically */
+      .topic-card > div[style*="flex"] { flex-direction: column !important; }
+      .topic-card > div > div[style*="min-width"] { min-width: 100% !important; max-width: 100% !important; }
+      .accordion-body.open { max-height: 600px; }
+    }
+    @media (max-width: 480px) {
+      .threat-cards { grid-template-columns: 1fr !important; }
+      .topic-hero { padding: 88px 16px 28px; }
+      .topic-grid { padding: 0 16px 40px; gap: 14px; }
+      .topic-card { padding: 14px; border-radius: 14px; }
+      .topic-card h2 { font-size: 1rem !important; }
+      .topic-card h1 { font-size: clamp(1.5rem,5vw,2rem) !important; }
+      .threat-card { padding: 14px; min-height: auto !important; }
+      .threat-card p { font-size: .84rem; }
+      .checklist-item { padding: 9px 12px; font-size: .84rem; }
+      .quiz-option { padding: 9px 12px; font-size: .84rem; margin-bottom: 8px; }
+      .quiz-btn { padding: 8px 12px; font-size: .84rem; }
+      .accordion-header { padding: 12px 14px; }
+      .accordion-body.open { padding: 12px 14px; max-height: 800px; }
+      .topic-badge { font-size: .65rem !important; padding: 6px 10px !important; }
+    }
+    @media (max-width: 360px) {
+      .topic-hero { padding: 84px 12px 24px; }
+      .topic-grid { padding: 0 12px 32px; }
+      .topic-card { padding: 12px; }
+    }
+  </style>
 </head>
-<body>
-  <div class="background-gradient"></div>
-  
-  <!-- Navigation -->
-  <nav class="navbar">
-    <div class="navbar-container">
-      <div class="navbar-brand">
-        <span class="shield-icon">🛡️</span>
-        <h1>CyberGuard Academy</h1>
+
+<body class="premium-page">
+  <div class="premium-bg" aria-hidden="true">
+    <div class="premium-glow premium-glow-one"></div>
+    <div class="premium-glow premium-glow-two"></div>
+    <div class="premium-noise"></div>
+  </div>
+
+  <nav class="navbar premium-navbar">
+    <div class="nav-inner premium-nav-inner">
+
+      <!-- Logo (toujours visible) -->
+      <a href="{{ url_for('home') }}" class="nav-logo premium-logo">
+        <img src="{{ url_for('static', filename='logo.cybergard.png') }}" alt="CyberGuard AI" height="44" style="object-fit:contain;">
+        <span class="nav-logo-text">CyberGuard <span style="font-weight:900;opacity:0.85;">AI</span></span>
+      </a>
+
+      <!-- Links desktop (cachés < 1000px) -->
+      <div class="premium-nav-links" id="desktopNavLinks">
+        <a href="{{ url_for('home') }}" class="nav-link active">Home</a>
+        <a href="{{ url_for('history') }}" class="nav-link" data-i18n="navbar_history">History</a>
+        <a href="{{ url_for('academy') }}" class="nav-link">Academy</a>
       </div>
-      <ul class="nav-links">
-        <li><a href="game.html">← Back to Learn</a></li>
-      </ul>
+
+      <!-- Actions droite (toujours visibles) -->
+      <div class="nav-actions premium-actions">
+
+        <!-- Sign In (desktop uniquement) -->
+        <div id="userNav" class="user-nav">
+          <a href="{{ url_for('signin') }}" id="getStartedBtn" class="btn btn-primary" data-i18n="navbar_signin">Sign In</a>
+          <div id="profileMenu" class="profile-menu">
+            <div id="userButton" hidden></div>
+            <button id="profileBtn" class="profile-btn" onclick="toggleProfileDropdown()" type="button">
+              <span class="material-symbols-outlined">person</span>
+              <span id="profileEmail">User</span>
+              <span class="material-symbols-outlined small-icon">expand_more</span>
+            </button>
+            <div id="profileDropdown" class="profile-dropdown">
+  <div class="profile-dropdown-head">
+    <div class="profile-label" data-i18n="profile_logged_in">Your Account</div>
+    <div id="profileEmailFull" class="profile-email-full"></div>
+  </div>
+  <a href="{{ url_for('dashboard') }}" class="profile-menu-item" data-i18n="navbar_dashboard">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.6;">dashboard</span>
+    Dashboard
+  </a>
+  <a href="{{ url_for('history') }}" class="profile-menu-item" data-i18n="navbar_history">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.6;">history</span>
+    History
+  </a>
+  <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.7;">logout</span>
+    Sign Out
+  </button>
+</div>
+          </div>
+        </div>
+
+        <!-- Theme toggle (toujours visible) -->
+        <button id="themeToggleBtn" class="premium-icon-btn theme-toggle-inline" title="Toggle theme" type="button" aria-label="Toggle dark mode">
+          <span class="material-symbols-outlined">light_mode</span>
+        </button>
+
+        <!-- Settings (toujours visibles) -->
+        <div id="settings-toggle">
+          <button id="settingsBtn" class="premium-icon-btn" title="Settings" type="button">
+            <span class="material-symbols-outlined">settings</span>
+          </button>
+        </div>
+
+        <!-- Burger (visible < 1000px uniquement) -->
+        <button class="burger-btn premium-icon-btn" id="burgerBtn" type="button" aria-label="Menu" onclick="toggleBurgerMenu()">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+
+        <div id="settingsDropdown" class="settings-dropdown" style="display:none;">
+          <div class="settings-group">
+            <p data-i18n="navbar_language">Language</p>
+            <button type="button" data-lang="en" class="lang-btn">English</button>
+            <button type="button" data-lang="fr" class="lang-btn">Francais</button>
+            <button type="button" data-lang="ar" class="lang-btn">Arabic</button>
+          </div>
+          <div class="settings-group">
+            <p data-i18n="navbar_theme">Theme</p>
+            <button type="button" data-theme="dark" class="theme-btn">Dark Mode</button>
+            <button type="button" data-theme="light" class="theme-btn">Light Mode</button>
+          </div>
+          <div id="mobileProfile" class="settings-profile">
+            <div class="profile-label">Logged in as</div>
+            <div id="mobileProfileEmail" class="profile-email-full"></div>
+            <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">Sign Out</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Burger dropdown menu -->
+    <div class="burger-menu" id="burgerMenu">
+      <a href="{{ url_for('home') }}" class="burger-link active">
+        <span class="material-symbols-outlined">home</span>
+        Home
+      </a>
+      <a href="{{ url_for('history') }}" class="burger-link" data-i18n="navbar_history">
+        <span class="material-symbols-outlined">history</span>
+        History
+      </a>
+      <a href="{{ url_for('academy') }}" class="burger-link">
+        <span class="material-symbols-outlined">school</span>
+        Academy
+      </a>
+
+      <!-- Langues dans le burger -->
+      <div class="burger-settings-section">
+        <p class="burger-section-label" data-i18n="navbar_language">Language</p>
+        <div class="burger-lang-grid">
+          <button type="button" data-lang="en" class="lang-btn">EN</button>
+          <button type="button" data-lang="fr" class="lang-btn">FR</button>
+          <button type="button" data-lang="ar" class="lang-btn">AR</button>
+        </div>
+      </div>
+      <div class="burger-settings-section">
+        <p class="burger-section-label" data-i18n="navbar_theme">Theme</p>
+        <div class="burger-lang-grid">
+          <button type="button" data-theme="light" class="theme-btn" style="flex:1; padding:8px; font-size:0.8rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text);">
+            <span class="material-symbols-outlined" style="font-size:18px;">light_mode</span>
+          </button>
+          <button type="button" data-theme="dark" class="theme-btn" style="flex:1; padding:8px; font-size:0.8rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text);">
+            <span class="material-symbols-outlined" style="font-size:18px;">dark_mode</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Sign In dans le burger (cachés si connecté) -->
+      <div class="burger-auth" id="burgerAuth">
+        <a href="{{ url_for('signin') }}" class="btn btn-primary burger-signin" data-i18n="navbar_signin">Sign In</a>
+      </div>
     </div>
   </nav>
 
-  <!-- Category Page -->
-  <section class="category-page">
-    <div class="container">
-      <div class="category-header">
-        <div class="category-icon-large">📱</div>
-        <h1>Phone Security</h1>
-        <p class="category-subtitle">Learn how to protect your mobile devices from cyber threats</p>
-      </div>
+  <main class="premium-main">
+    <section class="topic-hero">
+      <a class="topic-back-btn" href="{{ url_for('academy') }}" aria-label="Back to academy">
+        <span class="material-symbols-outlined" style="font-size:20px;">arrow_back</span>
+        <span data-i18n="topic_back_academy">Back to Academy</span>
+      </a>
 
-      <div class="category-content-full">
-        <section class="content-section">
-          <h2>📚 Why Phone Security Matters</h2>
-          <p>
-            Your phone is like a magic wallet that holds all your secrets! 📱 It stores your photos, messages, games, and passwords. Bad people on the internet want to steal this information to cause trouble. Think of phone security like locking your diary - it keeps your private stuff safe!
-          </p>
-          <p>
-            When you protect your phone with strong locks and smart choices, you become a security hero! 🦸 You keep your friends' messages safe, protect your family's information, and enjoy the internet without worry.
-          </p>
-        </section>
-
-        <section class="content-section">
-          <h2>🔒 Key Security Practices</h2>
-          
-          <div class="tips-full">
-            <div class="tip-card">
-              <div class="tip-number">1</div>
-              <h3>🔐 Use Strong Lock Screens</h3>
-              <p>
-                Set a complex PIN, password, or fingerprint lock. Avoid simple patterns like 123, 000, or your birthday. A strong lock screen is like a superhero shield for your phone!
-              </p>
-              <div class="tip-example">
-                <strong>✅ Super Strong:</strong> A 6+ digit PIN mixed with numbers<br>
-                <strong>❌ Too Weak:</strong> Your birthdate or "1234"
-              </div>
+      <div class="topic-card" style="padding:22px 22px 18px; margin-bottom:18px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+          <div>
+<div class="topic-badge">
+              <span class="material-symbols-outlined" style="font-size:18px;">smartphone</span>
+              <span data-i18n="phone_badge">Smartphone Security</span>
             </div>
-
-            <div class="tip-card">
-              <div class="tip-number">2</div>
-              <h3>⬆️ Update Apps Regularly</h3>
-              <p>
-                Updates are like getting stronger armor! They fix holes that bad guys try to use. Always say yes to app updates - they make your apps safer and faster.
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Say yes when apps ask to update<br>
-                <strong>❌ Don't:</strong> Ignore update notifications forever
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">3</div>
-              <h3>📥 Download Safely</h3>
-              <p>
-                Only download apps from official stores (Google Play, Apple App Store) - they check apps like security guards checking backpacks! Don't download from weird websites.
-              </p>
-              <div class="tip-example">
-                <strong>✅ Safe:</strong> Download from official app stores<br>
-                <strong>❌ Dangerous:</strong> Unknown websites or links
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">4</div>
-              <h3>🎯 Enable Two-Factor Authentication</h3>
-              <p>
-                This is like having TWO locks on your diary! Even if someone gets your password, they need a second code to get in. It's extra protection!
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Use 2FA on email and games<br>
-                <strong>❌ Don't:</strong> Rely only on passwords
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">5</div>
-              <h3>📡 Avoid Public WiFi for Secrets</h3>
-              <p>
-                Public WiFi is like talking in a crowded room - everyone can hear! Never use it for passwords, banking, or private stuff. Use mobile data instead, or ask an adult about VPN.
-              </p>
-              <div class="tip-example">
-                <strong>✅ Safe:</strong> Use mobile data for passwords<br>
-                <strong>❌ Risky:</strong> Airport/cafe WiFi for secret stuff
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">6</div>
-              <h3>📍 Turn Off Location Sharing</h3>
-              <p>
-                Don't let every app know where you are! It's like letting strangers follow you around. Turn off location for apps that don't really need it.
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Check location permissions<br>
-                <strong>❌ Don't:</strong> Let games know your location
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">7</div>
-              <h3>☁️ Backup Your Data</h3>
-              <p>
-                Save copies of your photos and files to the cloud (like a remote backup brain!). If your phone breaks or gets lost, your memories are safe!
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Backup to iCloud or Google Drive<br>
-                <strong>❌ Don't:</strong> Keep only one copy
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">8</div>
-              <h3>🎫 Use a PIN for SIM Card</h3>
-              <p>
-                Your SIM card is like your phone's secret ID! Protect it with a PIN so bad guys can't steal your phone number and take over your accounts.
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Set a 4-digit SIM PIN<br>
-                <strong>❌ Don't:</strong> Leave SIM unprotected
-              </div>
-            </div>
+            <h1 style="margin:14px 0 8px;font-size: clamp(2rem,4vw,3rem);line-height:1.08;font-weight:950;letter-spacing:-0.02em;" data-i18n="phone_title">Smartphone Security</h1>
+            <p style="margin:0;color:var(--text-sub);font-size:1.02rem;line-height:1.7;max-width:720px;font-weight:700;" data-i18n="phone_subtitle">
+              Reduce risk from malicious apps, account takeovers, and unsafe networks. Use the checklist to build a strong, repeatable defense.
+            </p>
           </div>
-        </section>
 
-        <section class="content-section">
-          <h2>💡 Cool Security Tips</h2>
-          <ul class="security-list">
-            <li>🔄 Keep your phone's system updated like you update your apps</li>
-            <li>🛡️ Use antivirus app if available to catch bad programs</li>
-            <li>⚠️ Be careful with permission requests from apps - they might be spies!</li>
-            <li>🚫 Never click suspicious links in texts or emails</li>
-            <li>🔑 Use strong, unique passwords (use a password manager!)</li>
-            <li>👀 Watch for weird activity on your phone - apps acting strange?</li>
-            <li>🚨 Know how to wipe your phone remotely if it gets stolen</li>
-            <li>⛔ Don't break your phone's protections (no jailbreaking!)</li>
-          </ul>
-        </section>
+          <div style="min-width:200px;flex:0 1 auto;max-width:100%;">
+            <div style="color: var(--text-sub); font-weight:900; letter-spacing:0.06em; text-transform:uppercase; font-size:0.72rem; margin-bottom:8px;" data-i18n="topic_checklist_progress">Checklist Progress</div>
+            <div class="progress-bar-track" aria-label="Checklist progress bar">
+              <div class="progress-bar-fill" id="phoneProgressFill" style="width:0%"></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;">
+              <strong id="phoneProgressPct">0%</strong>
+              <span id="phoneProgressMsg" style="color: var(--text-sub); font-weight:800; font-size:0.85rem;" data-i18n="common_progress_default">Complete steps to finish the module</span>
+            </div>
+            <div id="phoneCompletionBadge" style="display:none;margin-top:10px;color:#4cd7f6;font-weight:950;" data-i18n="topic_module_complete">✓ Module Complete — Well done!</div>
+          </div>
+        </div>
 
-        <section class="content-section">
-          <h2>🆘 My Phone Got Hacked! What Now?</h2>
-          <ul class="security-list">
-            <li>🔐 Change ALL your passwords from another device RIGHT NOW</li>
-            <li>🎯 Turn on 2FA everywhere to lock down your accounts</li>
-            <li>💰 Tell a trusted adult about banking or money stuff</li>
-            <li>📊 Watch your accounts for weird activity (suspicious purchases?)</li>
-            <li>🔧 Do a factory reset if the hack is really serious</li>
-            <li>📢 Tell the app company or website what happened</li>
-            <li>👨‍👩‍👧 Tell a trusted adult or parent immediately</li>
-          </ul>
-        </section>
+        <div class="threat-cards" aria-label="Threat overview">
+          <article class="threat-card">
+            <div class="t-title"><span class="material-symbols-outlined">apps</span> <span data-i18n="phone_malicious_apps">Malicious Apps</span></div>
+<p data-i18n="phone_malicious_apps_desc">
+  Identify fake apps by checking developer reputation and reviews. Be cautious with apps requesting unnecessary permissions (camera + contacts, SMS + microphone, etc.).
+</p>
+          </article>
+
+          <article class="threat-card">
+            <div class="t-title"><span class="material-symbols-outlined">sim_card</span> <span data-i18n="phone_sim_swap">SIM Swapping</span></div>
+<p data-i18n="phone_sim_swap_desc">
+  SIM swapping lets an attacker receive SMS verification codes by moving your number to their SIM. Prevent it with stronger 2FA and account protections.
+</p>
+          </article>
+
+          <article class="threat-card">
+            <div class="t-title"><span class="material-symbols-outlined">wifi_lock</span> <span data-i18n="phone_wifi">Public Wi‑Fi Risks</span></div>
+<p data-i18n="phone_wifi_desc">
+  Public Wi‑Fi can expose you to interception and fake hotspots. Prefer mobile data, avoid sensitive logins, and use a VPN.
+</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-grid" aria-label="Smartphone security module">
+            <div class="topic-card" style="grid-column: 1 / -1;">
+        <h2 style="margin:0 0 10px;font-size:1.15rem;font-weight:950;letter-spacing:-0.01em;" data-i18n="common_interactive_checklist_title">Interactive Checklist</h2>
+        <p style="margin:0 0 14px;color:var(--text-sub);line-height:1.7;font-weight:700;" data-i18n="phone_checklist_subtitle">Tick the defenses you’ve enabled. Your progress is saved locally in your browser.</p>
+
+        <div id="phoneChecklist" aria-label="Phone security checklist">
+          <label class="checklist-item" data-key="phone_lock_biometrics">
+            <input type="checkbox" />
+            <span data-i18n="phone_check_lock_biometrics">Enable screen lock with biometrics</span>
+          </label>
+
+          <label class="checklist-item" data-key="phone_apps_store">
+            <input type="checkbox" />
+            <span data-i18n="phone_check_apps_store">Only install apps from official stores</span>
+          </label>
+
+          <label class="checklist-item" data-key="phone_permissions_review">
+            <input type="checkbox" />
+            <span data-i18n="phone_check_permissions">Review app permissions monthly</span>
+          </label>
+
+          <label class="checklist-item" data-key="phone_remote_wipe">
+            <input type="checkbox" />
+            <span data-i18n="phone_check_remote_wipe">Enable remote wipe (Find My iPhone / Find My Device)</span>
+          </label>
+
+          <label class="checklist-item" data-key="phone_os_updates">
+            <input type="checkbox" />
+            <span data-i18n="phone_check_os_updates">Keep OS updated</span>
+          </label>
+
+          <label class="checklist-item" data-key="phone_vpn_public_wifi">
+            <input type="checkbox" />
+            <span data-i18n="phone_check_vpn">Use a VPN on public Wi‑Fi</span>
+          </label>
+
+          <label class="checklist-item" data-key="phone_2fa_accounts">
+            <input type="checkbox" />
+            <span data-i18n="phone_check_2fa">Enable 2FA on all important accounts</span>
+          </label>
+
+          <label class="checklist-item" data-key="phone_backup_weekly">
+            <input type="checkbox" />
+            <span data-i18n="phone_check_backup">Backup data weekly</span>
+          </label>
+        </div>
       </div>
 
-      <div class="category-footer">
-        <a href="game.html" class="btn-back-full">← Back to Learning Center</a>
-      </div>
-    </div>
-  </section>
+      <div class="topic-card" style="align-self: start;">
+        <h2 style="margin:0 0 10px;font-size:1.15rem;font-weight:950;letter-spacing:-0.01em;" data-i18n="phone_tips_title">Tips Accordion</h2>
+<p style="margin:0 0 16px;color:var(--text-sub);line-height:1.7;font-weight:700;" data-i18n="common_accordion_subtitle">Click to expand. Only one panel stays open at a time.</p>
 
-  <footer class="footer">
-    <p>🛡️ CyberGuard Academy - Learn to protect your digital life</p>
-    <p class="footer-note">Educational content for cybersecurity awareness</p>
-  </footer>
+        <div class="accordion-item">
+          <div class="accordion-header" role="button" tabindex="0" data-acc="compromised">
+            <div class="left"><span class="material-symbols-outlined">security</span> <span data-i18n="phone_acc_compromised_title">How to check if your phone is compromised</span></div>
+            <span class="material-symbols-outlined" style="opacity:0.7;">expand_more</span>
+          </div>
+          <div class="accordion-body" id="acc_compromised">
+            <ul style="margin:0; padding-left:18px; line-height:1.7;">
+  <li data-i18n="phone_acc_compromised_li1">Look for battery drain, unexpected data usage, and new admin/Accessibility permissions.</li>
+  <li data-i18n="phone_acc_compromised_li2">Check for unknown device administrators and remove them immediately.</li>
+  <li data-i18n="phone_acc_compromised_li3">Review notifications for suspicious "security alerts" from random apps.</li>
+  <li data-i18n="phone_acc_compromised_li4">Reinstall core apps from official stores after a suspected compromise.</li>
+</ul>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header" role="button" tabindex="0" data-acc="permissions">
+            <div class="left"><span class="material-symbols-outlined">rule</span> <span data-i18n="phone_acc_permissions_title">Best practices for app permissions</span></div>
+            <span class="material-symbols-outlined" style="opacity:0.7;">expand_more</span>
+          </div>
+          <div class="accordion-body" id="acc_permissions">
+            <ul style="margin:0; padding-left:18px; line-height:1.7;">
+  <li data-i18n="phone_acc_permissions_li1">Prefer "Allow only while using the app" for location/microphone.</li>
+  <li data-i18n="phone_acc_permissions_li2">Reject SMS permissions for apps that don't need messaging.</li>
+  <li data-i18n="phone_acc_permissions_li3">Use your OS privacy dashboards to spot permission-heavy apps.</li>
+  <li data-i18n="phone_acc_permissions_li4">Revoke permissions after you finish tasks that require them.</li>
+</ul>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <div class="accordion-header" role="button" tabindex="0" data-acc="remote_wipe">
+            <div class="left"><span class="material-symbols-outlined">devices</span> <span data-i18n="phone_acc_remotewipe_title">How to set up remote wipe</span></div>
+            <span class="material-symbols-outlined" style="opacity:0.7;">expand_more</span>
+          </div>
+          <div class="accordion-body" id="acc_remote_wipe">
+            <ul style="margin:0; padding-left:18px; line-height:1.7;">
+  <li data-i18n="phone_acc_remotewipe_li1">Enable "Find My" (iOS) or "Find My Device" (Android) inside your account settings.</li>
+  <li data-i18n="phone_acc_remotewipe_li2">Verify the correct recovery email/phone is linked to the device.</li>
+  <li data-i18n="phone_acc_remotewipe_li3">Turn on location permissions for the tracking service.</li>
+  <li data-i18n="phone_acc_remotewipe_li4">Practice the remote wipe flow once so you're ready during an emergency.</li>
+</ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-card" style="grid-column: 1 / -1; max-width: 680px; margin-left: auto; margin-right: auto; width: 100%;">
+        <h2 style="margin:0 0 10px;font-size:1.15rem;font-weight:950;letter-spacing:-0.01em;" data-i18n="common_quiz_3_questions_title">Quiz (3 Questions)</h2>
+        <p style="margin:0 0 14px;color:var(--text-sub);line-height:1.7;font-weight:700;" data-i18n="common_quiz_subtitle">Choose an answer. You'll get immediate feedback and an explanation.</p>
+
+        <div class="quiz-card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;">
+            <div>
+              <div style="font-weight:950;font-size:1.05rem;" id="phoneQuizQuestionTitle">Q1</div>
+              <div style="font-weight:950;font-size:1.02rem;margin-top:4px;" id="phoneQuizQuestion">What is SIM swapping?</div>
+            </div>
+            <div style="color:var(--text-sub);font-weight:800;font-size:.88rem;" id="phoneQuizProgress">1/3</div>
+          </div>
+
+          <div id="phoneQuizOptions"></div>
+          <div id="phoneQuizExplain" class="quiz-explain"></div>
+
+          <div class="quiz-actions">
+            <button class="quiz-btn" type="button" id="phoneQuizNextBtn" style="display:none;">
+              Next <span class="material-symbols-outlined" style="font-size:20px;">arrow_right_alt</span>
+            </button>
+            <button class="quiz-btn" type="button" id="phoneQuizRetryBtn" style="display:none;background:rgba(255,180,171,0.10);border-color:rgba(255,180,171,0.28);">
+              Retry <span class="material-symbols-outlined" style="font-size:20px;">replay</span>
+            </button>
+          </div>
+
+          <div id="phoneQuizFinal" class="quiz-explain"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script>
+    (function(){
+      'use strict';
+
+      const PAGE_NAME = 'phone-security';
+      const STORAGE_KEY = `cg_checklist_${PAGE_NAME}`;
+
+      const checklistRoot = document.getElementById('phoneChecklist');
+      const progressFill = document.getElementById('phoneProgressFill');
+      const progressPct = document.getElementById('phoneProgressPct');
+      const progressMsg = document.getElementById('phoneProgressMsg');
+      const completionBadge = document.getElementById('phoneCompletionBadge');
+
+      const items = checklistRoot ? Array.from(checklistRoot.querySelectorAll('.checklist-item')) : [];
+
+      const readState = () => {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){ return {}; }
+      };
+      const saveState = (st) => {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch(e){}
+      };
+
+      function applyChecked(item, checked){
+        const cb = item.querySelector('input[type="checkbox"]');
+        if (!cb) return;
+        cb.checked = !!checked;
+        item.classList.toggle('checked', !!checked);
+      }
+
+      function updateProgress(){
+        const st = readState();
+        const total = items.length;
+        const done = items.reduce((acc, el) => acc + (st[el.dataset.key] ? 1 : 0), 0);
+        const pct = total ? Math.round((done / total) * 100) : 0;
+        if (progressFill) progressFill.style.width = pct + '%';
+        if (progressPct) progressPct.textContent = pct + '%';
+
+        if (pct === 100){
+          if (progressMsg) progressMsg.textContent = cgTranslate ? cgTranslate('topic_module_complete') : '✓ Module Complete — Well done!';
+          if (completionBadge) completionBadge.style.display = 'block';
+        } else {
+          if (completionBadge) completionBadge.style.display = 'none';
+          const remain = total - done;
+          if (progressMsg) progressMsg.textContent = remain + ' ' + (cgTranslate ? cgTranslate('topic_steps_remaining') : 'step(s) remaining');
+        }
+      }
+
+      function initChecklist(){
+        const st = readState();
+        items.forEach(item => applyChecked(item, st[item.dataset.key]));
+        updateProgress();
+
+        items.forEach(item => {
+  const cb = item.querySelector('input[type="checkbox"]');
+  if (!cb) return;
+  cb.addEventListener('change', () => {
+    const key = item.dataset.key;
+    const next = cb.checked;
+    const nextState = readState();
+    nextState[key] = next;
+    saveState(nextState);
+    applyChecked(item, next);
+    updateProgress();
+  });
+});
+      }
+
+      function initAccordion(){
+        const headers = Array.from(document.querySelectorAll('.accordion-header[data-acc]'));
+        const openClass = 'open';
+
+        const closeAll = () => {
+          headers.forEach(h => {
+            const accKey = h.dataset.acc;
+            const body = document.getElementById('acc_' + accKey);
+            if (body) body.classList.remove(openClass);
+          });
+        };
+
+        headers.forEach(header => {
+          const key = header.dataset.acc;
+          const body = document.getElementById('acc_' + key);
+          if (!body) return;
+
+          const toggle = () => {
+            const isOpen = body.classList.contains(openClass);
+            closeAll();
+            if (!isOpen) body.classList.add(openClass);
+          };
+
+          header.addEventListener('click', toggle);
+          header.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+          });
+        });
+      }
+
+      function initQuiz(){
+        const t = (k) => (typeof cgTranslate === 'function' ? cgTranslate(k) : k);
+const quizQuestions = [
+  {
+    q: t('phone_q1'),
+    options: [t('phone_q1_a'), t('phone_q1_b'), t('phone_q1_c'), t('phone_q1_d')],
+    correctIndex: 1,
+    explain: t('phone_q1_explain')
+  },
+  {
+    q: t('phone_q2'),
+    options: [t('phone_q2_a'), t('phone_q2_b'), t('phone_q2_c'), t('phone_q2_d')],
+    correctIndex: 0,
+    explain: t('phone_q2_explain')
+  },
+  {
+    q: t('phone_q3'),
+    options: [t('phone_q3_a'), t('phone_q3_b'), t('phone_q3_c'), t('phone_q3_d')],
+    correctIndex: 1,
+    explain: t('phone_q3_explain')
+  }
+];
+
+        const root = document.getElementById('phoneQuizOptions');
+        const questionTitle = document.getElementById('phoneQuizQuestionTitle');
+        const questionEl = document.getElementById('phoneQuizQuestion');
+        const progressEl = document.getElementById('phoneQuizProgress');
+        const explainEl = document.getElementById('phoneQuizExplain');
+        const nextBtn = document.getElementById('phoneQuizNextBtn');
+        const retryBtn = document.getElementById('phoneQuizRetryBtn');
+        const finalEl = document.getElementById('phoneQuizFinal');
+
+        const state = { idx: 0, score: 0, locked: false };
+
+        function render(){
+          const idx = state.idx;
+          const q = quizQuestions[idx];
+
+          questionTitle.textContent = 'Q' + (idx + 1);
+          questionEl.textContent = q.q;
+          progressEl.textContent = (idx + 1) + '/3';
+
+          explainEl.style.display = 'none';
+          explainEl.textContent = '';
+          nextBtn.style.display = 'none';
+          retryBtn.style.display = 'none';
+          finalEl.style.display = 'none';
+          finalEl.textContent = '';
+
+          root.innerHTML = '';
+
+          q.options.forEach((opt, i) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'quiz-option';
+            btn.textContent = opt;
+            btn.addEventListener('click', () => choose(i));
+            root.appendChild(btn);
+          });
+
+          state.locked = false;
+        }
+
+        function choose(optionIndex){
+          if (state.locked) return;
+          state.locked = true;
+
+          const q = quizQuestions[state.idx];
+          const correct = optionIndex === q.correctIndex;
+          if (correct) state.score += 1;
+
+          const buttons = Array.from(root.querySelectorAll('.quiz-option'));
+          buttons.forEach((b, i) => {
+            b.disabled = true;
+            if (i === q.correctIndex) b.classList.add('correct');
+            else if (i === optionIndex) b.classList.add('wrong');
+          });
+
+          explainEl.style.display = 'block';
+          explainEl.innerHTML = `<span style="font-weight:950;color:${correct ? '#4ade80' : '#f87171'};">${correct ? (cgTranslate ? cgTranslate('common_correct_title') : 'Correct') : (cgTranslate ? cgTranslate('common_incorrect_title') : 'Incorrect')}</span> — ${q.explain}`;
+
+          nextBtn.style.display = 'inline-flex';
+
+          nextBtn.onclick = () => {
+            const nextIdx = state.idx + 1;
+            if (nextIdx < quizQuestions.length){
+              state.idx = nextIdx;
+              render();
+            } else {
+              showFinal();
+            }
+          };
+        }
+
+        function showFinal(){
+          root.innerHTML = '';
+          nextBtn.style.display = 'none';
+          retryBtn.style.display = 'inline-flex';
+
+          questionTitle.textContent = cgTranslate ? cgTranslate('common_result') : 'Result';
+          questionEl.textContent = '';
+          progressEl.textContent = cgTranslate ? cgTranslate('common_done') : 'Done';
+
+          explainEl.style.display = 'none';
+
+          finalEl.style.display = 'block';
+          finalEl.textContent = state.score + '/3 correct';
+
+          retryBtn.onclick = () => {
+            state.idx = 0;
+            state.score = 0;
+            state.locked = false;
+            finalEl.style.display = 'none';
+            retryBtn.style.display = 'none';
+            state.idx = 0;
+            render();
+          };
+        }
+
+        render();
+      }
+
+      // Init
+      initChecklist();
+      initAccordion();
+      window.__cgInitQuiz = initQuiz;
+    })();
+  </script>
 </body>
 </html>

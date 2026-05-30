@@ -3,199 +3,591 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>💻 PC Security - CyberGuard Academy</title>
-  <link rel="stylesheet" href="game.css" />
+  <title>PC & Computer Security — CyberGuard AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}" type="text/javascript"></script>
+
+  <style>
+    .topic-hero{max-width:1440px;margin:0 auto;padding:120px 40px 60px;}
+    .topic-back-btn{display:inline-flex;align-items:center;gap:8px;color:var(--text-sub);font-size:.85rem;font-weight:600;margin-bottom:24px;transition:color .2s ease;text-decoration:none;}
+    .topic-back-btn:hover{color:var(--text);} 
+    .topic-grid{max-width:1440px;margin:0 auto;padding:0 40px 80px;display:grid;grid-template-columns:1fr;gap:24px;}
+    .topic-card{background:rgba(28,31,42,0.44);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:28px;}
+
+    .checklist-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:10px;cursor:pointer;transition:background .2s ease;user-select:none;}
+    .checklist-item:hover{background:rgba(255,255,255,0.06);} 
+    .checklist-item input[type="checkbox"]{accent-color:#d0bcff;width:18px;height:18px;}
+    .checklist-item.checked {
+  opacity: 0.7;
+}
+.checklist-item.checked span {
+  text-decoration: line-through;
+  color: var(--text-sub, #aaa);
+}
+
+    .progress-bar-track{height:8px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;margin:16px 0 8px;}
+    .progress-bar-fill{height:100%;border-radius:999px;background:#d0bcff;transition:width .4s ease;}
+
+    .threat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:18px;}
+    .threat-card{padding:18px;border-radius:16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);min-height:170px;}
+    .threat-card .t-title{display:flex;align-items:center;gap:10px;font-weight:950;margin-bottom:8px;}
+    .threat-card .t-title .material-symbols-outlined{color:#d0bcff;font-size:24px;}
+    .threat-card p{color:var(--text-sub);font-size:.92rem;line-height:1.7;margin:0;}
+
+    .backup-visual{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:12px;}
+    .backup-box{border-radius:16px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);padding:16px;min-height:120px;position:relative;overflow:hidden;cursor:pointer;transition:transform .2s ease,border-color .2s ease,background .2s ease;}
+    .backup-box:hover{transform:translateY(-3px);border-color:rgba(208,188,255,0.35);background:rgba(208,188,255,0.08);} 
+    .backup-box .label{font-weight:950;color:var(--text-sub);text-transform:uppercase;letter-spacing:.08em;font-size:.72rem;margin-bottom:8px;}
+    .backup-box .big{font-size:1.2rem;font-weight:950;color:#d0bcff;margin-bottom:8px;}
+    .backup-box ul{margin:0;padding-left:18px;color:var(--text-sub);line-height:1.6;font-weight:700;font-size:.9rem;}
+
+    .quiz-option{width:100%;padding:12px 18px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.10);color:var(--text);font-size:.9rem;text-align:left;margin-bottom:10px;cursor:pointer;transition:all .2s ease;}
+    .quiz-option:hover:not(:disabled){background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.2);} 
+    .quiz-option.correct{background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);color:#4ade80;}
+    .quiz-option.wrong{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4);color:#f87171;}
+
+    .quiz-explain{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.08);color:var(--text-sub);line-height:1.7;font-weight:700;display:none;}
+    .quiz-actions{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;}
+    .quiz-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:12px;background:rgba(208,188,255,0.10);border:1px solid rgba(208,188,255,0.28);color:var(--text);font-weight:950;cursor:pointer;transition:transform .2s ease, background .2s ease;}
+    .quiz-btn:hover{transform:translateY(-2px);background:rgba(208,188,255,0.14);} 
+
+    body.light-mode .topic-card,[data-theme='light'] .topic-card{background:rgba(255,255,255,0.85);border-color:rgba(0,0,0,0.08);color:#111827;}
+    body.light-mode .checklist-item,[data-theme='light'] .checklist-item{background:rgba(0,0,0,0.02);border-color:rgba(0,0,0,0.08);} 
+    body.light-mode .threat-card,[data-theme='light'] .threat-card{background:rgba(255,255,255,0.85);border-color:rgba(0,0,0,0.08);} 
+    body.light-mode .backup-box,[data-theme='light'] .backup-box{background:rgba(0,0,0,0.02);border-color:rgba(0,0,0,0.08);} 
+    body.light-mode .quiz-option,[data-theme='light'] .quiz-option{background:rgba(0,0,0,0.02);border-color:rgba(0,0,0,0.10);color:#111827;} 
+
+    /* ── Responsive: tablet ── */
+    @media (max-width: 1024px) {
+      .threat-cards { grid-template-columns: 1fr 1fr !important; }
+      .topic-grid { grid-template-columns: 1fr; padding: 0 28px 60px; }
+      .topic-hero { padding: 110px 28px 48px; }
+      .topic-card { padding: 22px; }
+    }
+    @media (max-width: 768px) {
+      .threat-cards { grid-template-columns: 1fr !important; gap: 12px; }
+      .topic-grid { grid-template-columns: 1fr; padding: 0 20px 48px; gap: 16px; }
+      .topic-hero { padding: 96px 20px 36px; }
+      .topic-card { padding: 18px; }
+      .quiz-card { padding: 14px !important; }
+      .table-wrap table { min-width: 440px; }
+      th, td { padding: 10px 12px; font-size: 0.82rem; }
+      .backup-boxes { grid-template-columns: 1fr !important; }
+    }
+    @media (max-width: 480px) {
+      .topic-hero { padding: 88px 16px 28px; }
+      .topic-grid { padding: 0 16px 40px; gap: 14px; }
+      .topic-card { padding: 14px; }
+      .topic-card h2 { font-size: 1rem !important; }
+      .threat-card { padding: 14px; min-height: auto !important; }
+      .checklist-item { padding: 9px 12px; font-size: 0.84rem; }
+      .quiz-option { padding: 9px 12px; font-size: 0.84rem; }
+      .accordion-header { padding: 12px 14px; }
+      .accordion-body.open { padding: 12px 14px; }
+      .topic-badge { font-size: 0.65rem !important; padding: 6px 10px !important; }
+      .chip { font-size: 0.76rem; padding: 8px 10px; }
+    }
+    @media (max-width: 360px) {
+      .topic-hero { padding: 84px 12px 24px; }
+      .topic-grid { padding: 0 12px 32px; }
+      .topic-card { padding: 12px; }
+    }
+  </style>
 </head>
-<body>
-  <div class="background-gradient"></div>
-  
-  <!-- Navigation -->
-  <nav class="navbar">
-    <div class="navbar-container">
-      <div class="navbar-brand">
-        <span class="shield-icon">🛡️</span>
-        <h1>CyberGuard Academy</h1>
+
+<body class="premium-page">
+  <div class="premium-bg" aria-hidden="true">
+    <div class="premium-glow premium-glow-one"></div>
+    <div class="premium-glow premium-glow-two"></div>
+    <div class="premium-noise"></div>
+  </div>
+
+  <nav class="navbar premium-navbar">
+    <div class="nav-inner premium-nav-inner">
+
+      <a href="{{ url_for('home') }}" class="nav-logo premium-logo">
+        <img src="{{ url_for('static', filename='logo.cybergard.png') }}" alt="CyberGuard AI" height="44" style="object-fit:contain;">
+        <span class="nav-logo-text">CyberGuard <span style="font-weight:900;opacity:0.85;">AI</span></span>
+      </a>
+
+      <div class="premium-nav-links" id="desktopNavLinks">
+        <a href="{{ url_for('home') }}" class="nav-link active">Home</a>
+        <a href="{{ url_for('history') }}" class="nav-link" data-i18n="navbar_history">History</a>
+        <a href="{{ url_for('academy') }}" class="nav-link">Academy</a>
       </div>
-      <ul class="nav-links">
-        <li><a href="game.html">← Back to Learn</a></li>
-      </ul>
+
+      <div class="nav-actions premium-actions">
+
+        <div id="userNav" class="user-nav">
+          <a href="{{ url_for('signin') }}" id="getStartedBtn" class="btn btn-primary" data-i18n="navbar_signin">Sign In</a>
+          <div id="profileMenu" class="profile-menu">
+            <div id="userButton" hidden></div>
+            <button id="profileBtn" class="profile-btn" onclick="toggleProfileDropdown()" type="button">
+              <span class="material-symbols-outlined">person</span>
+              <span id="profileEmail">User</span>
+              <span class="material-symbols-outlined small-icon">expand_more</span>
+            </button>
+            <div id="profileDropdown" class="profile-dropdown">
+  <div class="profile-dropdown-head">
+    <div class="profile-label" data-i18n="profile_logged_in">Your Account</div>
+    <div id="profileEmailFull" class="profile-email-full"></div>
+  </div>
+  <a href="{{ url_for('dashboard') }}" class="profile-menu-item" data-i18n="navbar_dashboard">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.6;">dashboard</span>
+    Dashboard
+  </a>
+  <a href="{{ url_for('history') }}" class="profile-menu-item" data-i18n="navbar_history">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.6;">history</span>
+    History
+  </a>
+  <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.7;">logout</span>
+    Sign Out
+  </button>
+</div>
+          </div>
+        </div>
+
+        <button id="themeToggleBtn" class="premium-icon-btn theme-toggle-inline" title="Toggle theme" type="button" aria-label="Toggle dark mode">
+          <span class="material-symbols-outlined">light_mode</span>
+        </button>
+
+        <div id="settings-toggle">
+          <button id="settingsBtn" class="premium-icon-btn" title="Settings" type="button">
+            <span class="material-symbols-outlined">settings</span>
+          </button>
+        </div>
+
+        <div id="settingsDropdown" class="settings-dropdown" style="display:none;">
+          <div class="settings-group">
+            <p data-i18n="navbar_language">Language</p>
+            <button type="button" data-lang="en" class="lang-btn">English</button>
+            <button type="button" data-lang="fr" class="lang-btn">Francais</button>
+            <button type="button" data-lang="ar" class="lang-btn">Arabic</button>
+          </div>
+          <div class="settings-group">
+            <p data-i18n="navbar_theme">Theme</p>
+            <button type="button" data-theme="dark" class="theme-btn">Dark Mode</button>
+            <button type="button" data-theme="light" class="theme-btn">Light Mode</button>
+          </div>
+          <div id="mobileProfile" class="settings-profile">
+            <div class="profile-label">Logged in as</div>
+            <div id="mobileProfileEmail" class="profile-email-full"></div>
+            <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">Sign Out</button>
+          </div>
+        </div>
+
+        <button class="burger-btn premium-icon-btn" id="burgerBtn" type="button" aria-label="Menu" onclick="toggleBurgerMenu()">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+
+      </div>
+    </div>
+
+    <div class="burger-menu" id="burgerMenu">
+      <a href="{{ url_for('home') }}" class="burger-link active">
+        <span class="material-symbols-outlined">home</span>
+        Home
+      </a>
+      <a href="{{ url_for('history') }}" class="burger-link" data-i18n="navbar_history">
+        <span class="material-symbols-outlined">history</span>
+        History
+      </a>
+      <a href="{{ url_for('academy') }}" class="burger-link">
+        <span class="material-symbols-outlined">school</span>
+        Academy
+      </a>
+
+      <div class="burger-settings-section">
+        <p class="burger-section-label" data-i18n="navbar_language">Language</p>
+        <div class="burger-lang-grid">
+          <button type="button" data-lang="en" class="lang-btn">EN</button>
+          <button type="button" data-lang="fr" class="lang-btn">FR</button>
+          <button type="button" data-lang="ar" class="lang-btn">AR</button>
+        </div>
+      </div>
+
+      <div class="burger-auth" id="burgerAuth">
+        <a href="{{ url_for('signin') }}" class="btn btn-primary burger-signin" data-i18n="navbar_signin">Sign In</a>
+      </div>
     </div>
   </nav>
 
-  <!-- Category Page -->
-  <section class="category-page">
-    <div class="container">
-      <div class="category-header">
-        <div class="category-icon-large">💻</div>
-        <h1>PC Security</h1>
-        <p class="category-subtitle">Protect your computer with smart security practices</p>
-      </div>
+  <main class="premium-main">
+    <section class="topic-hero">
+      <a class="topic-back-btn" href="{{ url_for('academy') }}" aria-label="Back to academy">
+        <span class="material-symbols-outlined" style="font-size:20px;">arrow_back</span>
+        <span data-i18n="topic_back_academy">Back to Academy</span>
+      </a>
 
-      <div class="category-content-full">
-        <section class="content-section">
-          <h2>💻 Why PC Security Matters</h2>
-          <p>
-            Your computer is like your digital headquarters! 🏠 It stores photos, homework, games, and all kinds of important files. Bad people want to break in and steal stuff or lock you out!
-          </p>
-          <p>
-            When you protect your PC with strong security, you're like a superhero guarding a fortress! 🦸 You keep your files safe, your money protected, and make sure nobody can spy on you. It's pretty cool! 🛡️
-          </p>
-        </section>
-
-        <section class="content-section">
-          <h2>🔐 Key Security Practices</h2>
-          
-          <div class="tips-full">
-            <div class="tip-card">
-              <div class="tip-number">1</div>
-              <h3>⬆️ Keep Your PC Updated</h3>
-              <p>
-                Updates are like giving your computer new armor! 🛡️ They fix holes that hackers try to use. Always update when your computer asks - it's super important!
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Update your computer regularly<br>
-                <strong>❌ Don't:</strong> Ignore update messages forever
-              </div>
+      <div class="topic-card" style="padding:22px 22px 18px; margin-bottom:18px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+          <div>
+            <div class="topic-badge" style="display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid rgba(208,188,255,0.28);background:rgba(208,188,255,0.10);color:#d0bcff;font-weight:900;letter-spacing:0.06em;font-size:0.7rem;text-transform:uppercase;">
+              <span class="material-symbols-outlined" style="font-size:18px;">computer</span>
+              <span data-i18n="pc_badge">PC & Computer Security</span>
             </div>
-
-            <div class="tip-card">
-              <div class="tip-number">2</div>
-              <h3>🛡️ Use Antivirus</h3>
-              <p>
-                Antivirus is like a bodyguard for your computer! 💪 It catches bad programs (viruses, malware) before they hurt you. Keep it turned on and updated - it's your computer's superhero!
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Keep antivirus turned on<br>
-                <strong>❌ Don't:</strong> Turn it off to download stuff
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">3</div>
-              <h3>🔒 Windows Defender is Your Friend</h3>
-              <p>
-                Windows Defender is built into Windows like a guard at the door! 🚪 It watches for bad stuff automatically. Make sure it's turned on - don't turn it off!
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Keep Windows Defender turned on<br>
-                <strong>❌ Don't:</strong> Turn off your security
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">4</div>
-              <h3>🔐 Use Super Passwords</h3>
-              <p>
-                Make your login password a strong secret code! 🕵️ Mix uppercase, lowercase, numbers, and symbols. Don't use your name or birthday - hackers will guess those!
-              </p>
-              <div class="tip-example">
-                <strong>✅ Strong:</strong> Tr0pic@lSunset2024!<br>
-                <strong>❌ Weak:</strong> password123 or your birthday
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">5</div>
-              <h3>💾 Backup (Save Copies!)</h3>
-              <p>
-                Make copies of your important files to the cloud or an external drive! 📦 It's like having a backup copy of your diary. If something happens, you can get your files back!
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Backup your files weekly<br>
-                <strong>❌ Don't:</strong> Keep files in only one place
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">6</div>
-              <h3>🧱 Firewall (Digital Wall!)</h3>
-              <p>
-                Firewall is a digital wall around your computer! 🧱 It decides what can come in and go out. Keep it turned on to block bad connections.
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Keep firewall turned on<br>
-                <strong>❌ Don't:</strong> Turn off firewall for games
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">7</div>
-              <h3>🔍 Download Safely</h3>
-              <p>
-                Only download games and programs from official websites! 🎮 Bad downloads can sneak malware onto your PC. Check that websites look real before downloading!
-              </p>
-              <div class="tip-example">
-                <strong>✅ Safe:</strong> Download from official game sites<br>
-                <strong>❌ Dangerous:</strong> Random websites you don't know
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">8</div>
-              <h3>🔓 Lock Your PC</h3>
-              <p>
-                Lock your screen when you leave your computer! 🚪 It's like locking your diary. Press Windows+L or click lock. Nobody can access your stuff!
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Lock before leaving (Windows+L)<br>
-                <strong>❌ Don't:</strong> Leave screen unlocked
-              </div>
-            </div>
+            <h1 style="margin:14px 0 8px;font-size:clamp(2rem,4vw,3rem);line-height:1.08;font-weight:950;letter-spacing:-0.02em;" data-i18n="pc_title">PC & Computer Security</h1>
+            <p style="margin:0;color:var(--text-sub);font-size:1.02rem;line-height:1.7;max-width:720px;font-weight:700;" data-i18n="pc_subtitle">
+              Protect endpoints against ransomware, keyloggers, and malicious USB devices.
+            </p>
           </div>
-        </section>
 
-        <section class="content-section">
-          <h2>💡 Cool PC Security Tips</h2>
-          <ul class="security-list">
-            <li>🗣️ Tell a trusted adult if websites look weird</li>
-            <li>📝 Create separate user accounts for different people</li>
-            <li>🧹 Turn off programs you don't use</li>
-            <li>📄 Don't open email attachments from people you don't know</li>
-            <li>🔒 Use VPN on public WiFi (ask adult to set it up)</li>
-            <li>🚪 Auto-lock your screen when you step away</li>
-            <li>🏠 Keep your computer in a safe place</li>
-            <li>🗳️ Encrypt important files (ask adult for help)</li>
-          </ul>
-        </section>
+          <div style="min-width:200px;flex:0 1 auto;max-width:100%;">
+            <div style="color:var(--text-sub);font-weight:900;letter-spacing:0.06em;text-transform:uppercase;font-size:0.72rem;margin-bottom:8px;" data-i18n="topic_checklist_progress">Checklist Progress</div>
+            <div class="progress-bar-track"><div class="progress-bar-fill" id="pcProgressFill" style="width:0%"></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;">
+              <strong id="pcProgressPct">0%</strong>
+              <span id="pcProgressMsg" style="color:var(--text-sub);font-weight:800;font-size:0.85rem;" data-i18n="common_progress_default">Complete steps to finish the module</span>
+            </div>
+            <div id="pcCompletionBadge" style="display:none;margin-top:10px;color:#d0bcff;font-weight:950;" data-i18n="topic_module_complete">✓ Module Complete — Well done!</div>
+          </div>
+        </div>
 
-        <section class="content-section">
-          <h2>😨 Signs Your PC Got Infected</h2>
-          <ul class="security-list">
-            <li>😫 Computer is really slow or crashes a lot</li>
-            <li>📺 Weird pop-ups keep appearing</li>
-            <li>🏠 Home page changed to something weird</li>
-            <li>🔊 Computer is loud (fans working hard)</li>
-            <li>📄 Files keep disappearing</li>
-            <li>⚠️ Strange security warnings pop up</li>
-            <li>🔒 Can't open antivirus or Windows Defender</li>
-            <li>📁 Folders look corrupted or broken</li>
-          </ul>
-        </section>
+        <div class="threat-cards" aria-label="Threat overview">
+          <article class="threat-card">
+            <div class="t-title"><span class="material-symbols-outlined">lock_person</span> <span data-i18n="pc_ransomware">Ransomware</span></div>
+            <p data-i18n="pc_ransomware_desc">Ransomware encrypts files and demands payment. Prevent with backups, patching, and least privilege.</p>
+          </article>
+          <article class="threat-card">
+            <div class="t-title"><span class="material-symbols-outlined">security</span> <span data-i18n="pc_keyloggers">Keyloggers</span></div>
+            <p data-i18n="pc_keyloggers_desc">Steal credentials via input capture. Detect suspicious processes and strengthen OS security.</p>
+          </article>
+          <article class="threat-card">
+            <div class="t-title"><span class="material-symbols-outlined">usb</span> <span data-i18n="pc_usb">USB Attacks (BadUSB)</span></div>
+            <p data-i18n="pc_usb_desc">Unknown USB drives can act like keyboards or storage. Treat USB as untrusted until verified.</p>
+          </article>
+        </div>
+      </div>
+    </section>
 
-        <section class="content-section">
-          <h2>🚨 My PC is Infected! Help!</h2>
-          <ul class="security-list">
-            <li>📴 Turn off internet RIGHT NOW (unplug WiFi)</li>
-            <li>🖱️ Run antivirus scans in Safe Mode</li>
-            <li>🔑 Change all passwords from another computer</li>
-            <li>👨‍👩‍👧 Tell a trusted adult immediately</li>
-            <li>🔎 Check if someone got into your accounts</li>
-            <li>💳 If money is involved, tell parents or police</li>
-            <li>🔍 Monitor your accounts for weird activity</li>
-            <li>🔗 Don't open old backup files - they might be infected too!</li>
-          </ul>
-        </section>
+    <section class="topic-grid" aria-label="PC security content">
+      <div class="topic-card" style="grid-column: 1 / -1;">
+        <h2 style="margin:0 0 10px;font-size:1.15rem;font-weight:950;letter-spacing:-0.01em;" data-i18n="common_interactive_checklist_title">Interactive Checklist</h2>
+        <p style="margin:0 0 14px;color:var(--text-sub);line-height:1.7;font-weight:700;" data-i18n="pc_checklist_subtitle">
+          Tick the protections you apply on your workstation.
+        </p>
+
+        <div id="pcChecklist" aria-label="PC security checklist">
+          <label class="checklist-item" data-key="pc_defender_xprotect">
+            <input type="checkbox" />
+            <span data-i18n="pc_check_defender">Enable Windows Defender / macOS XProtect</span>
+          </label>
+          <label class="checklist-item" data-key="pc_disk_encryption">
+            <input type="checkbox" />
+            <span data-i18n="pc_check_encryption">Enable full disk encryption (BitLocker/FileVault)</span>
+          </label>
+          <label class="checklist-item" data-key="pc_auto_updates">
+            <input type="checkbox" />
+            <span data-i18n="pc_check_auto_updates">Set up automatic updates</span>
+          </label>
+          <label class="checklist-item" data-key="pc_standard_account">
+            <input type="checkbox" />
+            <span data-i18n="pc_check_standard_account">Use a standard user account (not admin) daily</span>
+          </label>
+          <label class="checklist-item" data-key="pc_unknown_usb">
+            <input type="checkbox" />
+            <span data-i18n="pc_check_no_usb">Never plug in unknown USB drives</span>
+          </label>
+          <label class="checklist-item" data-key="pc_firewall">
+            <input type="checkbox" />
+            <span data-i18n="pc_check_firewall">Enable firewall</span>
+          </label>
+          <label class="checklist-item" data-key="pc_backup_3-2-1">
+            <input type="checkbox" />
+            <span data-i18n="pc_check_backup">Back up with 3-2-1 rule</span>
+          </label>
+          <label class="checklist-item" data-key="pc_lock_screen">
+            <input type="checkbox" />
+            <span data-i18n="pc_check_lock_screen">Lock screen when away (Win+L / Cmd+Ctrl+Q)</span>
+          </label>
+        </div>
       </div>
 
-      <div class="category-footer">
-        <a href="game.html" class="btn-back-full">← Back to Learning Center</a>
-      </div>
-    </div>
-  </section>
+      <div class="topic-card" style="grid-column: 1 / -1;">
+        <h2 style="margin:0 0 10px;font-size:1.15rem;font-weight:950;letter-spacing:-0.01em;" data-i18n="pc_backup_title">3-2-1 Backup Rule Visual Explainer</h2>
+        <p style="margin:0 0 14px;color:var(--text-sub);line-height:1.7;font-weight:700;" data-i18n="pc_backup_subtitle">Click each box to learn what it means and why it protects you.</p>
 
-  <footer class="footer">
-    <p>🛡️ CyberGuard Academy - Learn to protect your digital life</p>
-    <p class="footer-note">Educational content for cybersecurity awareness</p>
-  </footer>
+        <div class="backup-visual" aria-label="3-2-1 backup rule visual">
+          <div class="backup-box" data-step="3" role="button" tabindex="0" aria-label="3 copies">
+            <div class="label" data-i18n="pc_backup_copy_label">Copy Count</div>
+            <div class="big" data-i18n="pc_backup_3_big">3 Copies</div>
+            <ul>
+              <li data-i18n="pc_backup_3_li1">One primary working copy</li>
+              <li data-i18n="pc_backup_3_li2">Two backup versions</li>
+            </ul>
+          </div>
+          <div class="backup-box" data-step="2" role="button" tabindex="0" aria-label="2 different media">
+            <div class="label" data-i18n="pc_backup_media_label">Media Diversity</div>
+            <div class="big" data-i18n="pc_backup_2_big">2 Different Media</div>
+            <ul>
+              <li data-i18n="pc_backup_2_li1">Example: external HDD + cloud</li>
+              <li data-i18n="pc_backup_2_li2">Reduces single-point failure</li>
+            </ul>
+          </div>
+          <div class="backup-box" data-step="1" role="button" tabindex="0" aria-label="1 offsite">
+            <div class="label" data-i18n="pc_backup_offsite_label">Offsite</div>
+            <div class="big" data-i18n="pc_backup_1_big">1 Offsite</div>
+            <ul>
+              <li data-i18n="pc_backup_1_li1">Protects against ransomware</li>
+              <li data-i18n="pc_backup_1_li2">Supports disaster recovery</li>
+            </ul>
+          </div>
+        </div>
+
+        <div id="backupExplain" class="quiz-explain" style="display:none;"></div>
+      </div>
+
+      <div class="topic-card" style="grid-column: 1 / -1; margin-top:-12px;">
+        <h2 style="margin:0 0 10px;font-size:1.15rem;font-weight:950;letter-spacing:-0.01em;" data-i18n="common_quiz_3_questions_title">Quiz (3 Questions)</h2>
+
+        <div class="quiz-card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;">
+            <div>
+              <div style="font-weight:950;font-size:1.05rem;" id="pcQuizQuestionTitle">Q1</div>
+              <div style="font-weight:950;font-size:1.02rem;margin-top:4px;" id="pcQuizQuestion">What is ransomware?</div>
+            </div>
+            <div style="color:var(--text-sub);font-weight:800;font-size:.88rem;" id="pcQuizProgress">1/3</div>
+          </div>
+
+          <div id="pcQuizOptions"></div>
+          <div id="pcQuizExplain" class="quiz-explain"></div>
+
+          <div class="quiz-actions">
+            <button class="quiz-btn" type="button" id="pcQuizNextBtn" style="display:none;">
+              Next <span class="material-symbols-outlined" style="font-size:20px;">arrow_right_alt</span>
+            </button>
+            <button class="quiz-btn" type="button" id="pcQuizRetryBtn" style="display:none;">
+              Retry <span class="material-symbols-outlined" style="font-size:20px;">replay</span>
+            </button>
+          </div>
+
+          <div id="pcQuizFinal" class="quiz-explain"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script>
+    (function(){
+      'use strict';
+
+      const PAGE_NAME = 'pc-security';
+      const STORAGE_KEY = `cg_checklist_${PAGE_NAME}`;
+
+      const checklistRoot = document.getElementById('pcChecklist');
+      const progressFill = document.getElementById('pcProgressFill');
+      const progressPct = document.getElementById('pcProgressPct');
+      const progressMsg = document.getElementById('pcProgressMsg');
+      const completionBadge = document.getElementById('pcCompletionBadge');
+
+      const items = checklistRoot ? Array.from(checklistRoot.querySelectorAll('.checklist-item')) : [];
+
+      const readState = () => {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){ return {}; }
+      };
+      const saveState = (st) => {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch(e){}
+      };
+
+      function applyChecked(item, checked){
+        const cb = item.querySelector('input[type="checkbox"]');
+        if (!cb) return;
+        cb.checked = !!checked;
+        item.classList.toggle('checked', !!checked);
+      }
+
+      function updateProgress(){
+        const st = readState();
+        const total = items.length;
+        const done = items.reduce((acc, el) => acc + (st[el.dataset.key] ? 1 : 0), 0);
+        const pct = total ? Math.round((done / total) * 100) : 0;
+
+        if (progressFill) progressFill.style.width = pct + '%';
+        if (progressPct) progressPct.textContent = pct + '%';
+
+        if (pct === 100){
+          if (progressMsg) progressMsg.textContent = cgTranslate ? cgTranslate('topic_module_complete') : '✓ Module Complete — Well done!';
+          if (completionBadge) completionBadge.style.display = 'block';
+        } else {
+          if (completionBadge) completionBadge.style.display = 'none';
+          const remain = total - done;
+          if (progressMsg) progressMsg.textContent = remain + ' ' + (cgTranslate ? cgTranslate('topic_steps_remaining') : 'step(s) remaining');
+        }
+      }
+
+      function initChecklist(){
+        const st = readState();
+        items.forEach(item => applyChecked(item, st[item.dataset.key]));
+        updateProgress();
+
+        items.forEach(item => {
+  const cb = item.querySelector('input[type="checkbox"]');
+  if (!cb) return;
+  cb.addEventListener('change', () => {
+    const key = item.dataset.key;
+    const next = cb.checked;
+    const nextState = readState();
+    nextState[key] = next;
+    saveState(nextState);
+    applyChecked(item, next);
+    updateProgress();
+  });
+});
+      }
+
+      function initBackupVisual(){
+        const t = (k) => (typeof cgTranslate === 'function' ? cgTranslate(k) : k);
+        const explainEl = document.getElementById('backupExplain');
+        const steps = {
+          '3': t('pc_backup_explain_3'),
+          '2': t('pc_backup_explain_2'),
+          '1': t('pc_backup_explain_1')
+        };
+
+        const boxes = Array.from(document.querySelectorAll('.backup-box[data-step]'));
+        const open = (step) => {
+          if (!explainEl) return;
+          const title = step === '3' ? t('pc_backup_3_big') : step === '2' ? t('pc_backup_2_big') : t('pc_backup_1_big');
+          explainEl.style.display = 'block';
+          explainEl.innerHTML = `<span style="font-weight:950;color:#d0bcff;">${title}</span><div style="margin-top:8px;">${steps[step] || ''}</div>`;
+        };
+
+        boxes.forEach(box => {
+          const step = box.dataset.step;
+          box.addEventListener('click', () => open(step));
+          box.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(step); }
+          });
+        });
+      }
+function initQuiz(){
+        const t = (k) => (typeof cgTranslate === 'function' ? cgTranslate(k) : k);
+        const quizQuestions = [
+          {
+            q: t('pc_q1'),
+            options: [t('pc_q1_a'), t('pc_q1_b'), t('pc_q1_c'), t('pc_q1_d')],
+            correctIndex: 1,
+            explain: t('pc_q1_explain')
+          },
+          {
+            q: t('pc_q2'),
+            options: [t('pc_q2_a'), t('pc_q2_b'), t('pc_q2_c'), t('pc_q2_d')],
+            correctIndex: 1,
+            explain: t('pc_q2_explain')
+          },
+          {
+            q: t('pc_q3'),
+            options: [t('pc_q3_a'), t('pc_q3_b'), t('pc_q3_c'), t('pc_q3_d')],
+            correctIndex: 1,
+            explain: t('pc_q3_explain')
+          }
+        ];
+      
+
+        const root = document.getElementById('pcQuizOptions');
+        const questionTitle = document.getElementById('pcQuizQuestionTitle');
+        const questionEl = document.getElementById('pcQuizQuestion');
+        const progressEl = document.getElementById('pcQuizProgress');
+        const explainEl = document.getElementById('pcQuizExplain');
+        const nextBtn = document.getElementById('pcQuizNextBtn');
+        const retryBtn = document.getElementById('pcQuizRetryBtn');
+        const finalEl = document.getElementById('pcQuizFinal');
+
+        const state = { idx: 0, score: 0, locked: false };
+
+        function render(){
+          const idx = state.idx;
+          const q = quizQuestions[idx];
+          questionTitle.textContent = 'Q' + (idx + 1);
+          questionEl.textContent = q.q;
+          progressEl.textContent = (idx + 1) + '/3';
+
+          explainEl.style.display = 'none';
+          explainEl.textContent = '';
+          nextBtn.style.display = 'none';
+          retryBtn.style.display = 'none';
+          finalEl.style.display = 'none';
+          finalEl.textContent = '';
+
+          root.innerHTML = '';
+          q.options.forEach((opt, i) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'quiz-option';
+            b.textContent = opt;
+            b.addEventListener('click', () => choose(i));
+            root.appendChild(b);
+          });
+
+          state.locked = false;
+        }
+
+        function choose(optionIndex){
+          if (state.locked) return;
+          state.locked = true;
+
+          const q = quizQuestions[state.idx];
+          const correct = optionIndex === q.correctIndex;
+          if (correct) state.score += 1;
+
+          const btns = Array.from(root.querySelectorAll('.quiz-option'));
+          btns.forEach((b, i) => {
+            b.disabled = true;
+            if (i === q.correctIndex) b.classList.add('correct');
+            if (i === optionIndex && !correct) b.classList.add('wrong');
+          });
+
+          explainEl.style.display = 'block';
+          explainEl.innerHTML = `<span style="font-weight:950;color:${correct ? '#4ade80' : '#f87171'};">${correct ? (cgTranslate ? cgTranslate('common_correct_title') : 'Correct') : (cgTranslate ? cgTranslate('common_incorrect_title') : 'Incorrect')}</span> — ${q.explain}`;
+
+          nextBtn.style.display = 'inline-flex';
+          nextBtn.onclick = () => {
+            const nextIdx = state.idx + 1;
+            if (nextIdx < quizQuestions.length){
+              state.idx = nextIdx;
+              render();
+            } else {
+              showFinal();
+            }
+          };
+        }
+
+        function showFinal(){
+          root.innerHTML = '';
+          nextBtn.style.display = 'none';
+          retryBtn.style.display = 'inline-flex';
+          questionTitle.textContent = cgTranslate ? cgTranslate('common_result') : 'Result';
+          questionEl.textContent = '';
+          progressEl.textContent = cgTranslate ? cgTranslate('common_done') : 'Done';
+          explainEl.style.display = 'none';
+
+          finalEl.style.display = 'block';
+          finalEl.textContent = state.score + '/3 correct';
+
+          retryBtn.onclick = () => {
+            state.idx = 0;
+            state.score = 0;
+            state.locked = false;
+            finalEl.style.display = 'none';
+            retryBtn.style.display = 'none';
+            render();
+          };
+        }
+
+        render();
+      }
+
+      initChecklist();
+      initBackupVisual();
+      window.__cgInitQuiz = initQuiz;
+    })();
+  </script>
 </body>
 </html>

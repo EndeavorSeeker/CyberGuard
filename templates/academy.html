@@ -19,9 +19,9 @@
 
   <nav class="navbar premium-navbar">
     <div class="nav-inner premium-nav-inner">
-      <a href="{{ url_for('home') }}" class="nav-logo premium-logo" style="gap:6px;">
-        <img src="{{ url_for('static', filename='logo.cybergard.png') }}" alt="CyberGuard AI" height="36" style="object-fit:contain;">
-        <span class="nav-logo-text">CyberGuard AI</span>
+      <a href="{{ url_for('home') }}" class="nav-logo premium-logo">
+        <img src="{{ url_for('static', filename='logo.cybergard.png') }}" alt="CyberGuard AI" height="44" style="object-fit:contain;">
+        <span class="nav-logo-text">CyberGuard <span style="font-weight:900;opacity:0.85;">AI</span></span>
       </a>
       <div class="premium-nav-links">
         <a href="{{ url_for('home') }}" class="nav-link">Home</a>
@@ -56,8 +56,14 @@
           <span class="material-symbols-outlined">light_mode</span>
         </button>
 
-        <button id="settingsBtn" class="premium-icon-btn" title="Settings" type="button">
-          <span class="material-symbols-outlined">settings</span>
+        <div id="settings-toggle">
+          <button id="settingsBtn" class="premium-icon-btn" title="Settings" type="button">
+            <span class="material-symbols-outlined">settings</span>
+          </button>
+        </div>
+
+        <button class="burger-btn premium-icon-btn" id="burgerBtn" type="button" aria-label="Menu" onclick="toggleBurgerMenu()">
+          <span class="material-symbols-outlined">menu</span>
         </button>
 
         <div id="settingsDropdown" class="settings-dropdown" style="display:none;">
@@ -80,6 +86,29 @@
         </div>
       </div>
     </div>
+    <div class="burger-menu" id="burgerMenu">
+      <a href="{{ url_for('home') }}" class="burger-link">
+        <span class="material-symbols-outlined">home</span>Home
+      </a>
+      <a href="{{ url_for('history') }}" class="burger-link">
+        <span class="material-symbols-outlined">history</span>
+        <span data-i18n="navbar_history">History</span>
+      </a>
+      <a href="{{ url_for('academy') }}" class="burger-link active">
+        <span class="material-symbols-outlined">school</span>Academy
+      </a>
+      <div class="burger-settings-section">
+        <p class="burger-section-label" data-i18n="navbar_language">Language</p>
+        <div class="burger-lang-grid">
+          <button type="button" data-lang="en" class="lang-btn">EN</button>
+          <button type="button" data-lang="fr" class="lang-btn">FR</button>
+          <button type="button" data-lang="ar" class="lang-btn">AR</button>
+        </div>
+      </div>
+      <div class="burger-auth" id="burgerAuth">
+        <a href="{{ url_for('signin') }}" class="btn btn-primary burger-signin" data-i18n="navbar_signin">Sign In</a>
+      </div>
+    </div>
   </nav>
 
   <main class="academy-main">
@@ -96,7 +125,7 @@
         <span class="material-symbols-outlined">extension</span>
         <h2 data-i18n="academy_interactive_modules_title">Interactive Modules</h2>
       </div>
-      <div class="academy-grid" onclick="document.getElementById('history-table-container').scrollIntoView({ behavior: 'smooth' })">
+      <div class="academy-grid" onclick="document.getElementById('academySimulator').scrollIntoView({ behavior: 'smooth' })">
         
         <button class="academy-card active" data-academy-module="password" type="button">
           <span class="material-symbols-outlined">lock</span>
@@ -153,18 +182,18 @@
         </a>
         <a class="knowledge-app" href="{{ url_for('academy_topic', page='password-security.html') }}">
           <span class="knowledge-app-icon material-symbols-outlined">key</span>
-          <strong>Passwords</strong>
-          <small>Open app</small>
+          <strong data-i18n="academy_domain_passwords">Passwords</strong>
+          <small data-i18n="academy_knowledge_open_app">Open app</small>
         </a>
         <a class="knowledge-app" href="{{ url_for('academy_topic', page='phishing-prevention.html') }}">
           <span class="knowledge-app-icon material-symbols-outlined">book</span>
-          <strong>Phishing</strong>
-          <small>Open app</small>
+          <strong data-i18n="academy_domain_phishing">Phishing</strong>
+          <small data-i18n="academy_knowledge_open_app">Open app</small>
         </a>
         <a class="knowledge-app" href="{{ url_for('academy_topic', page='data-protection.html') }}">
           <span class="knowledge-app-icon material-symbols-outlined">database</span>
-          <strong>Data Protection</strong>
-          <small>Open app</small>
+          <strong data-i18n="academy_domain_data_protection">Data Protection</strong>
+          <small data-i18n="academy_knowledge_open_app">Open app</small>
         </a>
       </div>
     </section>
@@ -179,13 +208,27 @@
     </div>
   </footer>
 
-  <button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Retour en haut">
-    <div class="btn-ring"></div><div class="btn-ring btn-ring-2"></div>
-    <div class="btn-icon-wrap">
-      <svg class="icon-dark" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 16V4" stroke="white" stroke-width="2.2" stroke-linecap="round"/><path d="M4 10l6-6 6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <svg class="icon-light" width="20" height="20" viewBox="0 0 20 20" fill="none" style="display:none;"><path d="M10 16V4" stroke="#0066ff" stroke-width="2.2" stroke-linecap="round"/><path d="M4 10l6-6 6 6" stroke="#0066ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-  </button>
+  <div class="stt-container" id="scrollTopBtn" aria-label="Scroll to top" role="button" tabindex="0"
+     onclick="window.scrollTo({top:0,behavior:'smooth'})"
+     onkeydown="if(event.key==='Enter'||event.key===' ')window.scrollTo({top:0,behavior:'smooth'})">
+  <svg class="stt-svg" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle class="stt-track" cx="28" cy="28" r="24" stroke-width="3"/>
+    <circle class="stt-progress" id="sttProgressRing" cx="28" cy="28" r="24"
+            stroke="#ffffff" stroke-width="3" stroke-linecap="round"
+            stroke-dasharray="0 150.796" transform="rotate(-90 28 28)"/>
+  </svg>
+  <div class="stt-icon-wrap">
+    <svg class="stt-arrow stt-arrow-dark" width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M10 16V4" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M4 10l6-6 6 6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <svg class="stt-arrow stt-arrow-light" width="18" height="18" viewBox="0 0 20 20" fill="none" style="display:none;">
+      <path d="M10 16V4" stroke="#0055ff" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M4 10l6-6 6 6" stroke="#0055ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <span class="stt-tooltip" data-i18n="scroll_top_label">Back to top</span>
+</div>
 
   <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>

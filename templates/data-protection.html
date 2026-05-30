@@ -3,255 +3,654 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>📊 Data Protection - CyberGuard Academy</title>
-  <link rel="stylesheet" href="game.css" />
+  <title>Data Protection - CyberGuard AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}" type="text/javascript"></script>
+
+  <style>
+    .topic-hero { max-width:1200px; margin:0 auto; padding:120px 40px 48px; }
+    .topic-back-btn { display:inline-flex; align-items:center; gap:8px; color:rgba(255,255,255,0.5); font-size:.85rem; font-weight:700; margin-bottom:24px; transition:color .2s ease, background .2s ease; text-decoration:none; border-radius:10px; padding:7px 9px; }
+    .topic-back-btn:hover { color:#fff; background:rgba(255,255,255,0.04); }
+    .topic-grid { max-width:1200px; margin:0 auto; padding:0 40px 80px; display:grid; grid-template-columns:1fr; gap:20px; }
+    .topic-card { background:#0d1117; border:1px solid rgba(255,255,255,0.09); border-radius:20px; padding:28px; }
+    .topic-card-title { margin:0 0 10px; font-size:1.15rem; font-weight:950; letter-spacing:-0.01em; }
+    .topic-card-copy { margin:0 0 14px; color:var(--text-sub); line-height:1.7; font-weight:700; }
+    .topic-badge { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; border:1px solid rgba(34,197,94,0.28); background:rgba(34,197,94,0.10); color:#22c55e; font-weight:900; letter-spacing:.06em; font-size:.7rem; text-transform:uppercase; }
+
+    .progress-bar-track { height:6px; background:rgba(255,255,255,0.07); border-radius:999px; overflow:hidden; margin:14px 0 8px; }
+    .progress-bar-fill { height:100%; border-radius:999px; background:linear-gradient(90deg,#16a34a,#4ade80); transition:width .4s ease; }
+
+    .threat-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:16px; }
+    .threat-card { padding:18px; border-radius:16px; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.18); }
+    .threat-card .t-title { display:flex; align-items:center; gap:10px; font-weight:800; margin-bottom:8px; }
+    .threat-card .material-symbols-outlined { color:#4ade80; font-size:22px; }
+    .threat-card p { font-size:.88rem; line-height:1.7; margin:0; opacity:.75; }
+
+    .gdpr-rights-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:14px; }
+    .gdpr-right { padding:16px; border-radius:14px; border:1px solid rgba(34,197,94,0.2); background:rgba(34,197,94,0.06); }
+    .gdpr-right .row { display:flex; align-items:flex-start; gap:10px; }
+    .gdpr-right .material-symbols-outlined { color:#4ade80; font-size:22px; margin-top:1px; flex-shrink:0; }
+    .gdpr-right strong { display:block; font-weight:800; margin-bottom:4px; font-size:.9rem; }
+    .gdpr-right span:not(.material-symbols-outlined) { opacity:.72; font-size:.84rem; line-height:1.6; }
+
+    .encryption-visual { display:flex; flex-direction:column; gap:12px; align-items:center; margin-top:14px; width:100%; max-width:700px; margin-left:auto; margin-right:auto; }
+    .enc-step { padding:20px 24px; border-radius:16px; border:1px solid rgba(34,197,94,0.2); background:rgba(34,197,94,0.06); width:100%; box-sizing:border-box; }
+    .enc-step .label { opacity:.58; font-weight:800; text-transform:uppercase; letter-spacing:.08em; font-size:.7rem; margin-bottom:8px; }
+    .enc-step .big { font-size:1rem; font-weight:800; color:#4ade80; margin-bottom:6px; }
+    .enc-arrow { display:flex; align-items:center; justify-content:center; color:#4ade80; }
+    .enc-arrow .material-symbols-outlined { font-size:26px; transform:rotate(90deg); }
+    .enc-sub { opacity:.68; font-size:.87rem; line-height:1.7; margin-top:6px; }
+    .enc-mode-row { margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
+
+    .checklist-item { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px; background:rgba(34,197,94,0.05); border:1px solid rgba(34,197,94,0.15); margin-bottom:10px; cursor:pointer; transition:background .2s ease, opacity .2s ease; user-select:none; }
+    .checklist-item:hover { background:rgba(34,197,94,0.1); }
+    .checklist-item input[type="checkbox"] { accent-color:#22c55e; width:18px; height:18px; flex-shrink:0; }
+    .checklist-text { transition:opacity .2s ease, text-decoration-color .2s ease; }
+    .checklist-item.checked .checklist-text { text-decoration:line-through; opacity:.6; }
+
+    .quiz-card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:18px; }
+    .quiz-question-row { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
+    .quiz-kicker { font-weight:950; font-size:1.05rem; }
+    .quiz-question { font-weight:950; font-size:1.02rem; margin-top:4px; line-height:1.45; }
+    .quiz-progress { color:var(--text-sub); font-weight:800; font-size:.88rem; white-space:nowrap; }
+    .quiz-answers { display:grid; grid-template-columns:1fr; gap:10px; }
+    .quiz-option { width:100%; min-height:44px; padding:12px 18px; border-radius:12px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:var(--text); font-size:.9rem; text-align:left; cursor:pointer; transition:background .2s ease, border-color .2s ease, color .2s ease, transform .2s ease; white-space:normal; line-height:1.45; }
+    .quiz-option:hover:not(:disabled) { background:rgba(34,197,94,0.08); border-color:rgba(34,197,94,0.3); transform:translateY(-1px); }
+    .quiz-option.correct { background:rgba(34,197,94,0.15); border-color:rgba(34,197,94,0.42); color:#4ade80; }
+    .quiz-option.wrong { background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.35); color:#f87171; }
+    .quiz-explain { margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); opacity:.78; line-height:1.7; font-size:.88rem; display:none; }
+    .quiz-actions { margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; }
+    .quiz-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 18px; border-radius:12px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.28); color:#4ade80; font-weight:800; cursor:pointer; transition:background .2s ease, transform .2s ease; font-size:.88rem; }
+    .quiz-btn:hover { background:rgba(34,197,94,0.18); transform:translateY(-1px); }
+    .quiz-btn.secondary { background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.12); }
+
+    [data-theme='light'] .topic-back-btn { color:rgba(15,23,42,.62); }
+    [data-theme='light'] .topic-back-btn:hover { color:#0f172a; background:rgba(15,23,42,.05); }
+    [data-theme='light'] .topic-card { background:#fff; border-color:rgba(0,0,0,0.08); }
+    [data-theme='light'] .checklist-item,
+    [data-theme='light'] .threat-card,
+    [data-theme='light'] .gdpr-right,
+    [data-theme='light'] .enc-step { background:rgba(34,197,94,0.05); border-color:rgba(34,197,94,0.2); }
+    [data-theme='light'] .quiz-card { background:rgba(15,23,42,0.02); border-color:rgba(15,23,42,0.08); }
+    [data-theme='light'] .quiz-option { background:rgba(15,23,42,0.02); border-color:rgba(15,23,42,0.1); color:#111827; }
+    [data-theme='light'] .quiz-option:hover:not(:disabled) { background:rgba(34,197,94,0.08); border-color:rgba(34,197,94,0.3); }
+
+    @media (max-width:1024px) {
+      .threat-cards { grid-template-columns:1fr 1fr; }
+      .gdpr-rights-grid { grid-template-columns:1fr 1fr; }
+      .topic-hero { padding:110px 28px 48px; }
+      .topic-grid { padding:0 28px 60px; }
+      .topic-card { padding:22px; }
+    }
+    @media (max-width:768px) {
+      .threat-cards, .gdpr-rights-grid { grid-template-columns:1fr; }
+      .topic-hero { padding:96px 20px 36px; }
+      .topic-grid { padding:0 20px 48px; gap:16px; }
+      .topic-card { padding:18px; border-radius:16px; }
+      .checklist-item { padding:10px 12px; font-size:.88rem; }
+      .quiz-actions { flex-direction:column; }
+      .quiz-btn { width:100%; }
+    }
+    @media (max-width:480px) {
+      .topic-hero { padding:88px 16px 28px; }
+      .topic-grid { padding:0 16px 40px; gap:14px; }
+      .topic-card { padding:14px; }
+      .topic-card-title { font-size:1rem; }
+      .threat-card { padding:14px; }
+      .checklist-item { font-size:.84rem; }
+      .quiz-option { padding:10px 12px; font-size:.84rem; }
+      .topic-badge { font-size:.65rem; padding:6px 10px; }
+      .gdpr-right { padding:12px; }
+      .enc-step { padding:14px 16px; }
+    }
+  </style>
 </head>
-<body>
-  <div class="background-gradient"></div>
-  
-  <!-- Navigation -->
-  <nav class="navbar">
-    <div class="navbar-container">
-      <div class="navbar-brand">
-        <span class="shield-icon">🛡️</span>
-        <h1>CyberGuard Academy</h1>
+
+<body class="premium-page topic-page data-protection-page">
+  <div class="premium-bg" aria-hidden="true">
+    <div class="premium-glow premium-glow-one"></div>
+    <div class="premium-glow premium-glow-two"></div>
+    <div class="premium-noise"></div>
+  </div>
+
+  <nav class="navbar premium-navbar">
+    <div class="nav-inner premium-nav-inner">
+      <a href="{{ url_for('home') }}" class="nav-logo premium-logo">
+        <img src="{{ url_for('static', filename='logo.cybergard.png') }}" alt="CyberGuard AI" height="44" style="object-fit:contain;">
+        <span class="nav-logo-text">CyberGuard <span style="font-weight:900;opacity:0.85;">AI</span></span>
+      </a>
+
+      <div class="premium-nav-links" id="desktopNavLinks">
+        <a href="{{ url_for('home') }}" class="nav-link" data-i18n="navbar_home">Home</a>
+        <a href="{{ url_for('history') }}" class="nav-link" data-i18n="navbar_history">History</a>
+        <a href="{{ url_for('academy') }}" class="nav-link active" data-i18n="academy_title_nav">Academy</a>
       </div>
-      <ul class="nav-links">
-        <li><a href="game.html">← Back to Learn</a></li>
-      </ul>
+
+      <div class="nav-actions premium-actions">
+        <div id="userNav" class="user-nav">
+          <a href="{{ url_for('signin') }}" id="getStartedBtn" class="btn btn-primary" data-i18n="navbar_signin">Sign In</a>
+          <div id="profileMenu" class="profile-menu">
+            <div id="userButton" hidden></div>
+            <button id="profileBtn" class="profile-btn" onclick="toggleProfileDropdown()" type="button">
+              <span class="material-symbols-outlined">person</span>
+              <span id="profileEmail" data-i18n="profile_user">User</span>
+              <span class="material-symbols-outlined small-icon">expand_more</span>
+            </button>
+            <button id="profileCircular" class="profile-circular-badge" onclick="toggleProfileDropdown()" type="button">
+              <span class="material-symbols-outlined">account_circle</span>
+            </button>
+            <div id="profileDropdown" class="profile-dropdown">
+              <div class="profile-dropdown-head">
+                <div class="profile-label" data-i18n="profile_logged_in">Your Account</div>
+                <div id="profileEmailFull" class="profile-email-full"></div>
+              </div>
+              <a href="{{ url_for('dashboard') }}" class="profile-menu-item">
+                <span class="material-symbols-outlined" style="font-size:17px;opacity:0.6;">dashboard</span>
+                <span data-i18n="navbar_dashboard">Dashboard</span>
+              </a>
+              <a href="{{ url_for('history') }}" class="profile-menu-item">
+                <span class="material-symbols-outlined" style="font-size:17px;opacity:0.6;">history</span>
+                <span data-i18n="navbar_history">History</span>
+              </a>
+              <button onclick="signOut()" class="profile-menu-item profile-signout" type="button">
+                <span class="material-symbols-outlined" style="font-size:17px;opacity:0.7;">logout</span>
+                <span data-i18n="navbar_signout">Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button id="themeToggleBtn" class="premium-icon-btn theme-toggle-inline" title="Toggle theme" type="button" aria-label="Toggle dark mode">
+          <span class="material-symbols-outlined">light_mode</span>
+        </button>
+
+        <div id="settings-toggle">
+          <button id="settingsBtn" class="premium-icon-btn" title="Settings" type="button">
+            <span class="material-symbols-outlined">settings</span>
+          </button>
+        </div>
+
+        <div id="settingsDropdown" class="settings-dropdown" style="display:none;">
+          <div class="settings-group">
+            <p data-i18n="navbar_language">Language</p>
+            <button type="button" data-lang="en" class="lang-btn" data-i18n="lang_english">English</button>
+            <button type="button" data-lang="fr" class="lang-btn" data-i18n="lang_french">Francais</button>
+            <button type="button" data-lang="ar" class="lang-btn" data-i18n="lang_arabic">Arabic</button>
+          </div>
+          <div class="settings-group">
+            <p data-i18n="navbar_theme">Theme</p>
+            <button type="button" data-theme="dark" class="theme-btn" data-i18n="theme_dark">Dark Mode</button>
+            <button type="button" data-theme="light" class="theme-btn" data-i18n="theme_light">Light Mode</button>
+          </div>
+          <div id="mobileProfile" class="settings-profile">
+            <div class="profile-label" data-i18n="profile_logged_in">Your Account</div>
+            <div id="mobileProfileEmail" class="profile-email-full"></div>
+            <button onclick="signOut()" class="profile-menu-item profile-signout" type="button" data-i18n="navbar_signout">Sign Out</button>
+          </div>
+        </div>
+
+        <button class="burger-btn premium-icon-btn" id="burgerBtn" type="button" aria-label="Menu" onclick="toggleBurgerMenu()">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="burger-menu" id="burgerMenu">
+      <a href="{{ url_for('home') }}" class="burger-link">
+        <span class="material-symbols-outlined">home</span>
+        <span data-i18n="navbar_home">Home</span>
+      </a>
+      <a href="{{ url_for('history') }}" class="burger-link">
+        <span class="material-symbols-outlined">history</span>
+        <span data-i18n="navbar_history">History</span>
+      </a>
+      <a href="{{ url_for('academy') }}" class="burger-link active">
+        <span class="material-symbols-outlined">school</span>
+        <span data-i18n="academy_title_nav">Academy</span>
+      </a>
+
+      <div class="burger-settings-section">
+        <p class="burger-section-label" data-i18n="navbar_language">Language</p>
+        <div class="burger-lang-grid">
+          <button type="button" data-lang="en" class="lang-btn" data-i18n="lang_short_en">EN</button>
+          <button type="button" data-lang="fr" class="lang-btn" data-i18n="lang_short_fr">FR</button>
+          <button type="button" data-lang="ar" class="lang-btn" data-i18n="lang_short_ar">AR</button>
+        </div>
+      </div>
+
+      <div class="burger-auth" id="burgerAuth">
+        <a href="{{ url_for('signin') }}" class="btn btn-primary burger-signin" data-i18n="navbar_signin">Sign In</a>
+      </div>
     </div>
   </nav>
 
-  <!-- Category Page -->
-  <section class="category-page">
-    <div class="container">
-      <div class="category-header">
-        <div class="category-icon-large">📊</div>
-        <h1>Data Protection</h1>
-        <p class="category-subtitle">Safeguard your personal information from misuse and theft</p>
+  <main class="premium-main">
+    <section class="topic-hero">
+      <a class="topic-back-btn" href="{{ url_for('academy') }}">
+        <span class="material-symbols-outlined" style="font-size:20px;">arrow_back</span>
+        <span data-i18n="dp_back_academy">Back to Academy</span>
+      </a>
+
+      <div class="topic-card" style="padding:22px 22px 18px; margin-bottom:18px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+          <div>
+            <div class="topic-badge">
+              <span class="material-symbols-outlined" style="font-size:18px;">database</span>
+              <span data-i18n="dp_badge">Data Protection</span>
+            </div>
+            <h1 style="margin:14px 0 8px;font-size:clamp(2rem,4vw,3rem);line-height:1.08;font-weight:950;letter-spacing:-0.02em;" data-i18n="dp_title">Data Protection</h1>
+            <p style="margin:0;color:var(--text-sub);font-size:1.02rem;line-height:1.7;max-width:720px;font-weight:700;" data-i18n="dp_subtitle">Reduce breach impact and keep personal data private using practical habits.</p>
+          </div>
+
+          <div style="min-width:240px;flex:0 0 auto;">
+            <div style="color:var(--text-sub);font-weight:900;letter-spacing:0.06em;text-transform:uppercase;font-size:0.72rem;margin-bottom:8px;" data-i18n="dp_progress_label">Checklist Progress</div>
+            <div class="progress-bar-track"><div class="progress-bar-fill" id="dpProgressFill" style="width:0%"></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;">
+              <strong id="dpProgressPct">0%</strong>
+              <span id="dpProgressMsg" style="color:var(--text-sub);font-weight:800;font-size:0.85rem;" data-i18n="dp_progress_default">Complete steps to finish the module</span>
+            </div>
+            <div id="dpCompletionBadge" style="display:none;margin-top:10px;color:#22c55e;font-weight:950;" data-i18n="dp_complete_badge">Module Complete - Well done!</div>
+          </div>
+        </div>
+
+        <div class="threat-cards">
+          <article class="threat-card">
+            <div class="t-title"><span class="material-symbols-outlined">lock</span><span data-i18n="dp_breach_title">Data Breaches</span></div>
+            <p data-i18n="dp_breach_desc">Breaches expose personal data, enabling fraud, account takeover, and scams.</p>
+          </article>
+          <article class="threat-card">
+            <div class="t-title"><span class="material-symbols-outlined">psychology</span><span data-i18n="dp_social_title">Social Engineering</span></div>
+            <p data-i18n="dp_social_desc">Attackers manipulate people to reveal data or approve access.</p>
+          </article>
+          <article class="threat-card">
+            <div class="t-title"><span class="material-symbols-outlined">groups</span><span data-i18n="dp_insider_title">Insider Threats</span></div>
+            <p data-i18n="dp_insider_desc">Risk from within organizations: misuse, accidents, or compromised accounts.</p>
+          </article>
+        </div>
       </div>
+    </section>
 
-      <div class="category-content-full">
-        <section class="content-section">
-          <h2>Why Data Protection Matters</h2>
-          <p>
-            Your personal data is valuable - to criminals, marketers, and data brokers. Personal information can be used for identity theft, fraud, targeted scams, or sold to third parties. Once data is leaked, you can't undo it. Protecting your data prevents misuse and keeps you safe.
-          </p>
-          <p>
-            Data breaches affect millions of people annually. Companies like Target, Equifax, and Facebook have exposed hundreds of millions of records. You need to assume your data may be compromised and take protective measures.
-          </p>
-        </section>
+    <section class="topic-grid">
+      <article class="topic-card">
+        <h2 class="topic-card-title" data-i18n="dp_gdpr_title">GDPR Quick Reference</h2>
+        <p class="topic-card-copy" data-i18n="dp_gdpr_subtitle">Know what data rights you can exercise when personal information is collected or processed.</p>
 
-        <section class="content-section">
-          <h2>Key Security Practices</h2>
-          
-          <div class="tips-full">
-            <div class="tip-card">
-              <div class="tip-number">1</div>
-              <h3>Use Encryption Tools</h3>
-              <p>
-                Encrypt sensitive files and communications. Use VeraCrypt for files, Signal for messages, or ProtonMail for email. Encryption ensures that even if data is stolen, it remains unreadable without the encryption key.
-              </p>
-              <div class="tip-example">
-                <strong>✅ Tools:</strong> VeraCrypt, Signal, ProtonMail<br>
-                <strong>❌ Avoid:</strong> Storing sensitive files unencrypted
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">2</div>
-              <h3>Limit Personal Info Shared</h3>
-              <p>
-                Only provide necessary information when required. Question why data is needed. Many websites ask for unnecessary personal details. Declining to share reduces your exposure to data breaches.
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Ask "Why do you need this?"<br>
-                <strong>❌ Don't:</strong> Blindly fill out all form fields
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">3</div>
-              <h3>Review Privacy Settings</h3>
-              <p>
-                Regularly check privacy settings on social media, email, and online services. Minimize data sharing and make accounts private. Websites often have default settings that share more than you want.
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Monthly privacy setting reviews<br>
-                <strong>❌ Don't:</strong> Leave default privacy settings
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">4</div>
-              <h3>Don't Overshare on Social Media</h3>
-              <p>
-                Avoid posting sensitive information (address, phone, birthdate, vacation dates, workplace). Criminals use this information for targeted attacks, identity theft, or physical targeting (burglary while you're away).
-              </p>
-              <div class="tip-example">
-                <strong>❌ Don't post:</strong> Full birthdate, address, phone number<br>
-                <strong>✅ Do post:</strong> Only non-sensitive updates
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">5</div>
-              <h3>Use VPN on Public Networks</h3>
-              <p>
-                Always use a VPN (Virtual Private Network) when connecting to public WiFi. VPNs encrypt all your traffic, preventing hackers on the same network from seeing your data, passwords, or activity.
-              </p>
-              <div class="tip-example">
-                <strong>✅ Use:</strong> NordVPN, ExpressVPN, Proton VPN<br>
-                <strong>❌ Don't:</strong> Access sensitive data on unsecured WiFi
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">6</div>
-              <h3>Monitor Your Accounts</h3>
-              <p>
-                Regularly check bank statements, credit card transactions, and credit reports for suspicious activity. The earlier you detect fraud, the easier it is to stop. Check credit reports annually (free at annualcreditreport.com).
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Check accounts weekly/monthly<br>
-                <strong>❌ Don't:</strong> Ignore unknown transactions
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">7</div>
-              <h3>Use Privacy-Focused Services</h3>
-              <p>
-                Choose services that respect privacy. Use DuckDuckGo instead of Google, ProtonMail instead of Gmail, Signal instead of WhatsApp, Firefox instead of Chrome. These services don't track or sell your data.
-              </p>
-              <div class="tip-example">
-                <strong>✅ Privacy-focused:</strong> DuckDuckGo, ProtonMail, Signal<br>
-                <strong>❌ Data collectors:</strong> Google, Facebook, WhatsApp
-              </div>
-            </div>
-
-            <div class="tip-card">
-              <div class="tip-number">8</div>
-              <h3>Secure Your Home Network</h3>
-              <p>
-                Change default WiFi passwords, enable WPA3 (or WPA2) encryption, hide your SSID, disable WPS, and update your router firmware. A weak home network puts all connected devices at risk.
-              </p>
-              <div class="tip-example">
-                <strong>✅ Do:</strong> Use strong WiFi password + WPA3<br>
-                <strong>❌ Don't:</strong> Use default router password
-              </div>
+        <div class="gdpr-rights-grid">
+          <div class="gdpr-right">
+            <div class="row">
+              <span class="material-symbols-outlined">find_in_page</span>
+              <div><strong data-i18n="dp_gdpr_access_title">Access</strong><span data-i18n="dp_gdpr_access_desc">Request a copy of your personal data.</span></div>
             </div>
           </div>
-        </section>
-
-        <section class="content-section">
-          <h2>Understanding Data Breaches</h2>
-          <p>
-            A data breach occurs when attackers access a company's database containing your personal information. This can happen through hacking, insider theft, or negligent security practices. When a breach occurs, your data may be:
-          </p>
-          <ul class="security-list">
-            <li>Used directly for identity theft or fraud</li>
-            <li>Sold on the dark web to other criminals</li>
-            <li>Published publicly to embarrass or harm you</li>
-            <li>Held for ransom by ransomware attackers</li>
-            <li>Used for targeted phishing or scam attacks</li>
-          </ul>
-        </section>
-
-        <section class="content-section">
-          <h2>Types of Personal Data to Protect</h2>
-          <div class="tips-full sensitivity-types-grid">
-            <div class="tip-card sensitivity-highly-sensitive">
-              <h3>Highly Sensitive (🔴)</h3>
-              <p>Social Security Number, Passport Number, Financial account credentials, Medical records, Government IDs</p>
-            </div>
-            <div class="tip-card sensitivity-sensitive">
-              <h3>Sensitive (🟠)</h3>
-              <p>Full name, Address, Phone number, Email address, Date of birth, Credit card information</p>
-            </div>
-            <div class="tip-card sensitivity-moderately">
-              <h3>Moderately Sensitive (🟡)</h3>
-              <p>Employment history, Education records, Online usernames, IP addresses, Browsing history</p>
-            </div>
-            <div class="tip-card sensitivity-less">
-              <h3>Less Sensitive (🟢)</h3>
-              <p>Publicly shared information, Generic profile details, Non-identifying preferences</p>
+          <div class="gdpr-right">
+            <div class="row">
+              <span class="material-symbols-outlined">delete</span>
+              <div><strong data-i18n="dp_gdpr_erasure_title">Erasure</strong><span data-i18n="dp_gdpr_erasure_desc">Request deletion in specific cases.</span></div>
             </div>
           </div>
-        </section>
+          <div class="gdpr-right">
+            <div class="row">
+              <span class="material-symbols-outlined">swap_horiz</span>
+              <div><strong data-i18n="dp_gdpr_portability_title">Portability</strong><span data-i18n="dp_gdpr_portability_desc">Receive data in a usable format.</span></div>
+            </div>
+          </div>
+          <div class="gdpr-right">
+            <div class="row">
+              <span class="material-symbols-outlined">edit</span>
+              <div><strong data-i18n="dp_gdpr_rectification_title">Rectification</strong><span data-i18n="dp_gdpr_rectification_desc">Correct inaccurate data.</span></div>
+            </div>
+          </div>
+        </div>
+      </article>
 
-        <section class="content-section">
-          <h2>Privacy Rights and Resources</h2>
-          <ul class="security-list">
-            <li><strong>GDPR (Europe):</strong> Gives you right to know, access, delete, and port your data</li>
-            <li><strong>CCPA (California):</strong> Gives Californians privacy rights similar to GDPR</li>
-            <li><strong>PIPEDA (Canada):</strong> Protects personal information collection and use</li>
-            <li><strong>Your Rights:</strong> You can request companies delete your data (with limitations)</li>
-            <li><strong>Data Subject Requests:</strong> Legally request copies of your data from companies</li>
-            <li><strong>Opt-out Options:</strong> Opt out of data sales and targeted advertising</li>
-          </ul>
-        </section>
+      <article class="topic-card">
+        <h2 class="topic-card-title" data-i18n="dp_enc_title">Interactive Encryption Explainer</h2>
+        <p class="topic-card-copy" data-i18n="dp_enc_subtitle">Move between symmetric and asymmetric encryption to see how keys differ.</p>
 
-        <section class="content-section">
-          <h2>Free Tools and Resources</h2>
-          <ul class="security-list">
-            <li><strong>haveibeenpwned.com:</strong> Check if your email was in data breaches</li>
-            <li><strong>annualcreditreport.com:</strong> Free annual credit reports (all 3 bureaus)</li>
-            <li><strong>firefox.com/privacy/products:</strong> Firefox privacy tools</li>
-            <li><strong>privacytools.io:</strong> Directory of privacy-focused software</li>
-            <li><strong>1password.com/passwordgenerator:</strong> Secure password generator</li>
-            <li><strong>Signal:</strong> Encrypted messaging app</li>
-            <li><strong>ProtonMail:</strong> Encrypted email service (free version available)</li>
-            <li><strong>Tor Browser:</strong> Anonymous web browsing</li>
-          </ul>
-        </section>
+        <div class="encryption-visual">
+          <div class="enc-step">
+            <div class="label" data-i18n="dp_enc_your_data">Your Data</div>
+            <div class="big" data-i18n="dp_enc_sensitive">Sensitive info</div>
+            <div class="enc-sub" data-i18n="dp_enc_sensitive_desc">Emails, files, IDs, messages.</div>
+          </div>
 
-        <section class="content-section">
-          <h2>Data Protection Checklist</h2>
-          <ul class="security-list">
-            <li>☐ Review social media privacy settings monthly</li>
-            <li>☐ Check financial accounts for unauthorized activity</li>
-            <li>☐ Pull credit reports annually (all 3 bureaus)</li>
-            <li>☐ Use strong, unique passwords for all accounts</li>
-            <li>☐ Enable two-factor authentication where available</li>
-            <li>☐ Check "Have I Been Pwned" for email breaches</li>
-            <li>☐ Use a VPN on public WiFi</li>
-            <li>☐ Encrypt sensitive files</li>
-            <li>☐ Consider identity theft protection services</li>
-            <li>☐ Shred sensitive documents before discarding</li>
-            <li>☐ Opt out of data broker lists</li>
-            <li>☐ Review app permissions on phone/computer</li>
-          </ul>
-        </section>
+          <div class="enc-arrow"><span class="material-symbols-outlined">arrow_forward</span></div>
 
-        <section class="content-section">
-          <h2>If Your Data is Compromised</h2>
-          <ul class="security-list">
-            <li>Act quickly - time is critical in identity theft cases</li>
-            <li>Change passwords on all affected accounts immediately</li>
-            <li>Enable two-factor authentication on all accounts</li>
-            <li>Contact companies affected and request account freeze/lock</li>
-            <li>Place fraud alert with credit bureaus (free)</li>
-            <li>Consider credit freeze (prevents new accounts opened in your name)</li>
-            <li>Monitor credit reports closely for next 2-3 years</li>
-            <li>Report to FTC at identitytheft.gov</li>
-            <li>Document everything and keep records</li>
-            <li>Consider identity theft protection service</li>
-            <li>File police report if fraud occurred</li>
-            <li>Contact your insurance company about coverage</li>
-          </ul>
-        </section>
-      </div>
+          <div class="enc-step" style="border-color:rgba(34,197,94,0.35);">
+            <div class="label" data-i18n="dp_enc_label">Encryption</div>
+            <div class="big" id="encModeTitle" data-i18n="dp_enc_sym_title">Symmetric (shared key)</div>
+            <div class="enc-sub" id="encModeDesc" data-i18n="dp_enc_sym_desc">Same secret key encrypts and decrypts. Faster for bulk data. Share the key securely first.</div>
+            <div class="enc-mode-row">
+              <button class="quiz-btn" type="button" id="encModeSym" data-i18n="dp_enc_sym_btn">Symmetric</button>
+              <button class="quiz-btn secondary" type="button" id="encModeAsym" data-i18n="dp_enc_asym_btn">Asymmetric</button>
+            </div>
+          </div>
 
-      <div class="category-footer">
-        <a href="game.html" class="btn-back-full">← Back to Learning Center</a>
-      </div>
-    </div>
-  </section>
+          <div class="enc-arrow"><span class="material-symbols-outlined">arrow_forward</span></div>
 
-  <footer class="footer">
-    <p>🛡️ CyberGuard Academy - Learn to protect your digital life</p>
-    <p class="footer-note">Educational content for cybersecurity awareness</p>
-  </footer>
+          <div class="enc-step">
+            <div class="label" data-i18n="dp_enc_result_label">Encrypted Data</div>
+            <div class="big" data-i18n="dp_enc_result_title">Protected at rest / in transit</div>
+            <div class="enc-sub" data-i18n="dp_enc_result_desc">Even if stolen, it is unreadable without the correct keys.</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="topic-card">
+        <h2 class="topic-card-title" data-i18n="dp_checklist_title">Interactive Checklist</h2>
+        <p class="topic-card-copy" data-i18n="dp_checklist_subtitle">Tick the habits that reduce exposure. State is saved locally.</p>
+
+        <div id="dpChecklist">
+          <label class="checklist-item" data-key="dp_audit_data_shared"><input type="checkbox" /><span class="checklist-text" data-i18n="dp_check_1">Audit what data you share online</span></label>
+          <label class="checklist-item" data-key="dp_privacy_settings_social"><input type="checkbox" /><span class="checklist-text" data-i18n="dp_check_2">Use privacy settings on all social media</span></label>
+          <label class="checklist-item" data-key="dp_opt_out_brokers"><input type="checkbox" /><span class="checklist-text" data-i18n="dp_check_3">Opt out of data broker sites</span></label>
+          <label class="checklist-item" data-key="dp_encrypted_messaging"><input type="checkbox" /><span class="checklist-text" data-i18n="dp_check_4">Use encrypted messaging (Signal/WhatsApp)</span></label>
+          <label class="checklist-item" data-key="dp_read_privacy_policies"><input type="checkbox" /><span class="checklist-text" data-i18n="dp_check_5">Read privacy policies before signing up</span></label>
+          <label class="checklist-item" data-key="dp_separate_email"><input type="checkbox" /><span class="checklist-text" data-i18n="dp_check_6">Use a separate email for signups</span></label>
+          <label class="checklist-item" data-key="dp_breach_alerts"><input type="checkbox" /><span class="checklist-text" data-i18n="dp_check_7">Enable data breach alerts (HaveIBeenPwned)</span></label>
+        </div>
+      </article>
+
+      <article class="topic-card">
+        <h2 class="topic-card-title" data-i18n="dp_quiz_title">Quiz (3 Questions)</h2>
+        <div class="quiz-card">
+          <div class="quiz-question-row">
+            <div>
+              <div class="quiz-kicker" id="dpQuizQuestionTitle"></div>
+              <div class="quiz-question" id="dpQuizQuestion" data-i18n="dp_q1">What is a data breach?</div>
+            </div>
+            <div class="quiz-progress" id="dpQuizProgress"></div>
+          </div>
+
+          <div id="dpQuizOptions" class="quiz-answers"></div>
+          <div id="dpQuizExplain" class="quiz-explain"></div>
+
+          <div class="quiz-actions">
+            <button class="quiz-btn" type="button" id="dpQuizNextBtn" style="display:none;">
+              <span data-i18n="common_next">Next</span>
+              <span class="material-symbols-outlined" style="font-size:20px;">arrow_right_alt</span>
+            </button>
+            <button class="quiz-btn" type="button" id="dpQuizRetryBtn" style="display:none;">
+              <span data-i18n="dp_quiz_retry">Retry</span>
+              <span class="material-symbols-outlined" style="font-size:20px;">replay</span>
+            </button>
+          </div>
+
+          <div id="dpQuizFinal" class="quiz-explain"></div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script>
+    (function(){
+      'use strict';
+
+      const PAGE_NAME = 'data-protection';
+      const STORAGE_KEY = `cg_checklist_${PAGE_NAME}`;
+
+      const checklistRoot = document.getElementById('dpChecklist');
+      const progressFill = document.getElementById('dpProgressFill');
+      const progressPct = document.getElementById('dpProgressPct');
+      const progressMsg = document.getElementById('dpProgressMsg');
+      const completionBadge = document.getElementById('dpCompletionBadge');
+      const items = checklistRoot ? Array.from(checklistRoot.querySelectorAll('.checklist-item')) : [];
+
+      function readState(){
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e){ return {}; }
+      }
+
+      function saveState(state){
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+      }
+
+      function applyChecked(item, checked){
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if(!checkbox) return;
+        checkbox.checked = checked;
+        item.classList.toggle('checked', checked);
+      }
+
+      function updateProgress(){
+        const totalCount = items.length;
+        const checkedCount = items.filter(item => item.querySelector('input[type="checkbox"]')?.checked).length;
+        const pct = totalCount ? Math.round((checkedCount / totalCount) * 100) : 0;
+
+        if(progressFill) progressFill.style.width = pct + '%';
+        if(progressPct) progressPct.textContent = pct + '%';
+
+        if(pct === 100){
+          if(progressMsg) progressMsg.textContent = cgTranslate('dp_complete_badge');
+          if(completionBadge) completionBadge.style.display = 'block';
+        } else {
+          if(completionBadge) completionBadge.style.display = 'none';
+          if(progressMsg) progressMsg.textContent = (totalCount - checkedCount) + ' ' + cgTranslate('topic_steps_remaining');
+        }
+      }
+
+      function initChecklist(){
+        const savedState = readState();
+        items.forEach(item => {
+          const checkbox = item.querySelector('input[type="checkbox"]');
+          const key = item.dataset.key;
+          applyChecked(item, !!savedState[key]);
+
+          if(checkbox){
+            checkbox.addEventListener('change', () => {
+              const nextState = readState();
+              nextState[key] = checkbox.checked;
+              saveState(nextState);
+              applyChecked(item, checkbox.checked);
+              updateProgress();
+            });
+          }
+        });
+        updateProgress();
+      }
+
+      const encTitle = document.getElementById('encModeTitle');
+      const encDesc = document.getElementById('encModeDesc');
+      const btnSym = document.getElementById('encModeSym');
+      const btnAsym = document.getElementById('encModeAsym');
+
+      function setEncMode(mode){
+        const isSymmetric = mode === 'sym';
+        if(encTitle) encTitle.textContent = cgTranslate(isSymmetric ? 'dp_enc_sym_title' : 'dp_enc_asym_title');
+        if(encDesc) encDesc.textContent = cgTranslate(isSymmetric ? 'dp_enc_sym_desc' : 'dp_enc_asym_desc');
+        if(btnSym) btnSym.classList.toggle('secondary', !isSymmetric);
+        if(btnAsym) btnAsym.classList.toggle('secondary', isSymmetric);
+      }
+
+      if(btnSym) btnSym.addEventListener('click', () => setEncMode('sym'));
+      if(btnAsym) btnAsym.addEventListener('click', () => setEncMode('asym'));
+
+      function getQuizQuestions(){
+        return [
+          { q:'dp_q1', options:['dp_q1_a','dp_q1_b','dp_q1_c','dp_q1_d'], correctIndex:0, explain:'dp_q1_explain' },
+          { q:'dp_q2', options:['dp_q2_a','dp_q2_b','dp_q2_c','dp_q2_d'], correctIndex:0, explain:'dp_q2_explain' },
+          { q:'dp_q3', options:['dp_q3_a','dp_q3_b','dp_q3_c','dp_q3_d'], correctIndex:0, explain:'dp_q3_explain' }
+        ];
+      }
+
+      function initQuiz(){
+        const quizQuestions = getQuizQuestions();
+        const root = document.getElementById('dpQuizOptions');
+        const questionTitle = document.getElementById('dpQuizQuestionTitle');
+        const questionEl = document.getElementById('dpQuizQuestion');
+        const progressEl = document.getElementById('dpQuizProgress');
+        const explainEl = document.getElementById('dpQuizExplain');
+        const nextBtn = document.getElementById('dpQuizNextBtn');
+        const retryBtn = document.getElementById('dpQuizRetryBtn');
+        const finalEl = document.getElementById('dpQuizFinal');
+        if(!root || !questionTitle || !questionEl || !progressEl || !explainEl || !nextBtn || !retryBtn || !finalEl) return;
+
+        const state = { idx:0, score:0, locked:false };
+
+        function render(){
+          const question = quizQuestions[state.idx];
+          questionTitle.textContent = cgTranslate('dp_quiz_question_prefix') + (state.idx + 1);
+          questionEl.textContent = cgTranslate(question.q);
+          progressEl.textContent = (state.idx + 1) + '/' + quizQuestions.length;
+          explainEl.style.display = 'none';
+          explainEl.textContent = '';
+          finalEl.style.display = 'none';
+          finalEl.textContent = '';
+          nextBtn.style.display = 'none';
+          retryBtn.style.display = 'none';
+          root.innerHTML = '';
+
+          question.options.forEach((optionKey, optionIndex) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'quiz-option';
+            button.textContent = cgTranslate(optionKey);
+            button.addEventListener('click', () => choose(optionIndex));
+            root.appendChild(button);
+          });
+
+          state.locked = false;
+        }
+
+        function choose(optionIndex){
+          if(state.locked) return;
+          state.locked = true;
+
+          const question = quizQuestions[state.idx];
+          const correct = optionIndex === question.correctIndex;
+          if(correct) state.score += 1;
+
+          Array.from(root.querySelectorAll('.quiz-option')).forEach((button, index) => {
+            button.disabled = true;
+            if(index === question.correctIndex) button.classList.add('correct');
+            if(index === optionIndex && !correct) button.classList.add('wrong');
+          });
+
+          explainEl.style.display = 'block';
+          explainEl.textContent = cgTranslate(correct ? 'common_correct_title' : 'common_incorrect_title') + ' - ' + cgTranslate(question.explain);
+          nextBtn.style.display = 'inline-flex';
+        }
+
+        nextBtn.onclick = () => {
+          if(state.idx + 1 < quizQuestions.length){
+            state.idx += 1;
+            render();
+          } else {
+            showFinal();
+          }
+        };
+
+        retryBtn.onclick = () => {
+          state.idx = 0;
+          state.score = 0;
+          state.locked = false;
+          render();
+        };
+
+        function showFinal(){
+          root.innerHTML = '';
+          nextBtn.style.display = 'none';
+          retryBtn.style.display = 'inline-flex';
+          questionTitle.textContent = cgTranslate('common_result');
+          questionEl.textContent = '';
+          progressEl.textContent = cgTranslate('common_done');
+          explainEl.style.display = 'none';
+          finalEl.style.display = 'block';
+          finalEl.textContent = cgTranslate('academy_quiz_final_score_label') + ': ' + state.score + '/' + quizQuestions.length;
+        }
+
+        render();
+      }
+
+      initChecklist();
+      setEncMode('sym');
+      initQuiz();
+      window.__cgInitQuiz = initQuiz;
+    })();
+  </script>
+
+  <script type="application/json" id="data-protection-i18n-map">
+{
+  "profile_user": "User",
+  "lang_french": "Francais",
+  "lang_arabic": "Arabic",
+  "lang_short_en": "EN",
+  "lang_short_fr": "FR",
+  "lang_short_ar": "AR",
+  "dp_quiz_question_prefix": "Q",
+  "dp_quiz_retry": "Retry",
+  "dp_back_academy": "Back to Academy",
+  "dp_badge": "Data Protection",
+  "dp_title": "Data Protection",
+  "dp_subtitle": "Reduce breach impact and keep personal data private using practical habits.",
+  "dp_progress_label": "Checklist Progress",
+  "dp_progress_default": "Complete steps to finish the module",
+  "dp_complete_badge": "Module Complete - Well done!",
+  "dp_breach_title": "Data Breaches",
+  "dp_breach_desc": "Breaches expose personal data, enabling fraud, account takeover, and scams.",
+  "dp_social_title": "Social Engineering",
+  "dp_social_desc": "Attackers manipulate people to reveal data or approve access.",
+  "dp_insider_title": "Insider Threats",
+  "dp_insider_desc": "Risk from within organizations: misuse, accidents, or compromised accounts.",
+  "dp_gdpr_title": "GDPR Quick Reference",
+  "dp_gdpr_subtitle": "Know what data rights you can exercise when personal information is collected or processed.",
+  "dp_gdpr_access_title": "Access",
+  "dp_gdpr_access_desc": "Request a copy of your personal data.",
+  "dp_gdpr_erasure_title": "Erasure",
+  "dp_gdpr_erasure_desc": "Request deletion in specific cases.",
+  "dp_gdpr_portability_title": "Portability",
+  "dp_gdpr_portability_desc": "Receive data in a usable format.",
+  "dp_gdpr_rectification_title": "Rectification",
+  "dp_gdpr_rectification_desc": "Correct inaccurate data.",
+  "dp_enc_title": "Interactive Encryption Explainer",
+  "dp_enc_subtitle": "Move between symmetric and asymmetric encryption to see how keys differ.",
+  "dp_enc_your_data": "Your Data",
+  "dp_enc_sensitive": "Sensitive info",
+  "dp_enc_sensitive_desc": "Emails, files, IDs, messages.",
+  "dp_enc_label": "Encryption",
+  "dp_enc_sym_title": "Symmetric (shared key)",
+  "dp_enc_sym_desc": "Same secret key encrypts and decrypts. Faster for bulk data. Share the key securely first.",
+  "dp_enc_sym_btn": "Symmetric",
+  "dp_enc_asym_btn": "Asymmetric",
+  "dp_enc_asym_title": "Asymmetric (public/private keys)",
+  "dp_enc_asym_desc": "A public key encrypts; a private key decrypts. No need to share the private key. Common for key exchange and signatures.",
+  "dp_enc_result_label": "Encrypted Data",
+  "dp_enc_result_title": "Protected at rest / in transit",
+  "dp_enc_result_desc": "Even if stolen, it is unreadable without the correct keys.",
+  "dp_checklist_title": "Interactive Checklist",
+  "dp_checklist_subtitle": "Tick the habits that reduce exposure. State is saved locally.",
+  "dp_check_1": "Audit what data you share online",
+  "dp_check_2": "Use privacy settings on all social media",
+  "dp_check_3": "Opt out of data broker sites",
+  "dp_check_4": "Use encrypted messaging (Signal/WhatsApp)",
+  "dp_check_5": "Read privacy policies before signing up",
+  "dp_check_6": "Use a separate email for signups",
+  "dp_check_7": "Enable data breach alerts (HaveIBeenPwned)",
+  "dp_quiz_title": "Quiz (3 Questions)",
+  "dp_q1": "What is a data breach?",
+  "dp_q1_a": "Unauthorized access that exposes personal data",
+  "dp_q1_b": "When your device battery drains quickly",
+  "dp_q1_c": "When your password manager updates automatically",
+  "dp_q1_d": "When a browser clears cookies",
+  "dp_q1_explain": "A data breach occurs when sensitive personal information is accessed or exposed without authorization.",
+  "dp_q2": "GDPR gives you the right to...",
+  "dp_q2_a": "Access, erasure, portability, and rectification of personal data",
+  "dp_q2_b": "Only change your browser settings",
+  "dp_q2_c": "Disable all encryption",
+  "dp_q2_d": "Automatically delete all unrelated accounts",
+  "dp_q2_explain": "GDPR includes rights such as access, erasure, portability, and rectification.",
+  "dp_q3": "Which app uses end-to-end encryption?",
+  "dp_q3_a": "Signal",
+  "dp_q3_b": "A public Wi-Fi portal page",
+  "dp_q3_c": "A basic browser cache viewer",
+  "dp_q3_d": "A search engine without messaging",
+  "dp_q3_explain": "Signal is widely known for implementing end-to-end encryption for all messages."
+}
+  </script>
 </body>
 </html>

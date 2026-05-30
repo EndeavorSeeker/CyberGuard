@@ -6,55 +6,1153 @@
   <title>Dashboard — CyberGuard AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}" type="text/javascript"></script>
+  <style>
+    /* ===== CyberGuard SOC Dashboard (embedded) ===== */
+    :root{
+      --soc-bg:#0f131d;
+      --soc-glass-dark: rgba(28,31,42,0.4);
+      --soc-glass-dark-border: rgba(255,255,255,0.08);
+      --soc-glass-light: rgba(255,255,255,0.8);
+      --soc-glass-light-border: rgba(0,0,0,0.08);
+      --soc-cyan:#4cd7f6;
+      --soc-blue:#adc6ff;
+      --soc-red:#ffb4ab;
+      --soc-text:#dfe2f1;
+      --soc-text-sub:#c2c6d6;
+    }
+
+    [data-theme='light']{
+      --soc-bg:#f8fafc;
+      --soc-glass-dark: rgba(255,255,255,0.8);
+      --soc-glass-dark-border: rgba(0,0,0,0.08);
+      --soc-glass-light: rgba(255,255,255,0.8);
+      --soc-glass-light-border: rgba(0,0,0,0.08);
+      --soc-cyan:#006874;
+      --soc-blue:#005ac2;
+      --soc-red:#ff5a54;
+      --soc-text:#1d1b20;
+      --soc-text-sub:#334155;
+    }
+
+    body{ background: var(--soc-bg); }
+
+    .soc-main{
+      position:relative;
+      z-index:1;
+      padding-top: 112px; /* account for fixed navbar */
+      padding-bottom: 56px;
+    }
+
+    /* Layout container */
+    .soc-container{
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Premium glass card base */
+    .soc-glass{
+      background: var(--soc-glass-dark);
+      border: 1px solid var(--soc-glass-dark-border);
+      box-shadow:
+        0 40px 120px rgba(0,0,0,0.30),
+        0 10px 35px rgba(0,0,0,0.22),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 22px;
+    }
+
+    [data-theme='light'] .soc-glass{
+      background: var(--soc-glass-light);
+      border-color: var(--soc-glass-light-border);
+      box-shadow:
+        0 30px 90px rgba(15,23,42,0.10),
+        0 10px 35px rgba(15,23,42,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+
+    /* Hover lift */
+    .soc-card{
+      transition: transform .35s cubic-bezier(.2,.8,.2,1), border-color .35s ease, box-shadow .35s ease;
+      will-change: transform;
+    }
+    .soc-card:hover{
+      transform: translateY(-3px) scale(1.02);
+      box-shadow:
+        0 55px 150px rgba(0,0,0,0.35),
+        0 18px 46px rgba(0,0,0,0.22);
+      border-color: rgba(173,198,255,0.22);
+    }
+
+    /* HERO security pulse */
+    .soc-hero{
+      overflow:hidden;
+      padding: 22px;
+      margin-top: 18px;
+      margin-bottom: 18px;
+    }
+
+    .soc-hero-inner{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 18px;
+      padding: 22px 18px;
+    }
+
+    .soc-hero-left{
+      flex: 1 1 auto;
+      min-width: 260px;
+      padding: 6px 10px;
+    }
+
+    .soc-live-label{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-size: .74rem;
+      color: var(--soc-text-sub);
+      margin-bottom: 10px;
+    }
+
+    .soc-pulse-dot{
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--soc-cyan);
+      box-shadow: 0 0 0 0 rgba(76,215,246,0.65);
+      animation: pulse-cyan 1.4s ease-in-out infinite;
+    }
+
+    .pulse-cyan{
+      animation: pulse-cyan 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse-cyan{
+      0%{ box-shadow: 0 0 0 0 rgba(76,215,246,0.50); transform: scale(1); }
+      50%{ box-shadow: 0 0 0 12px rgba(76,215,246,0.18); transform: scale(1.08); }
+      100%{ box-shadow: 0 0 0 0 rgba(76,215,246,0.00); transform: scale(1); }
+    }
+
+    .soc-hero-title{
+      font-size: clamp(1.7rem, 2.8vw, 2.6rem);
+      font-weight: 950;
+      line-height: 1.06;
+      margin: 0 0 10px;
+      color: var(--soc-cyan);
+      text-shadow:
+        0 0 22px rgba(76,215,246,0.35),
+        0 0 48px rgba(76,215,246,0.18);
+    }
+
+    .soc-hero-sub{
+      margin: 0;
+      font-size: 1rem;
+      color: var(--soc-text-sub);
+      line-height: 1.7;
+      max-width: 620px;
+    }
+
+    .soc-hero-right{
+      flex: 0 0 auto;
+      width: 190px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .soc-ring-wrap{
+      position:relative;
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      display:grid;
+      place-items:center;
+    }
+
+    .soc-ring-bg{
+      position:absolute;
+      inset: 0;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center,
+          rgba(173,198,255,0.18) 0%,
+          rgba(76,215,246,0.08) 45%,
+          rgba(255,255,255,0) 72%);
+      filter: blur(0px);
+    }
+
+    .soc-ring-svg{
+      position:relative;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+      display:block;
+    }
+
+    .soc-ring-track{
+      fill:none;
+      stroke: rgba(255,255,255,0.10);
+      stroke-width: 10;
+    }
+
+    [data-theme='light'] .soc-ring-track{ stroke: rgba(2,6,23,0.10); }
+
+    .soc-ring-progress{
+      fill:none;
+      stroke: var(--soc-cyan);
+      stroke-width: 10;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 12px rgba(76,215,246,0.35));
+      stroke-dasharray: 439.82;
+      stroke-dashoffset: calc(439.82 * (1 - 0.68));
+      transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1);
+    }
+
+    .soc-ring-center{
+      position:absolute;
+      inset: 18px;
+      border-radius: 50%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+
+    [data-theme='light'] .soc-ring-center{
+      background: rgba(255,255,255,0.62);
+      border-color: rgba(2,6,23,0.08);
+    }
+
+    .soc-ring-value{
+      font-weight: 950;
+      font-size: 2rem;
+      color: var(--soc-cyan);
+      line-height: 1;
+      text-shadow: 0 0 26px rgba(76,215,246,0.25);
+    }
+
+    .soc-ring-label{
+      font-size: .74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .10em;
+      margin-top: 6px;
+      color: var(--soc-text-sub);
+    }
+
+    /* Animated wave at bottom */
+    .soc-wave{
+      position:absolute;
+      left: -20%;
+      right: -20%;
+      bottom: -40px;
+      height: 120px;
+      opacity: .95;
+      pointer-events:none;
+      background:
+        linear-gradient(90deg,
+          rgba(76,215,246,0) 0%,
+          rgba(76,215,246,0.35) 30%,
+          rgba(173,198,255,0.25) 55%,
+          rgba(76,215,246,0) 100%);
+      filter: blur(2px);
+      transform: skewY(-6deg);
+    }
+
+    .data-wave{
+      background-size: 220% 100%;
+      animation: wave-slide 2.8s ease-in-out infinite;
+    }
+
+    @keyframes wave-slide{
+      0%{ background-position: 0% 0%; }
+      50%{ background-position: 100% 0%; }
+      100%{ background-position: 0% 0%; }
+    }
+
+    /* KEY METRICS */
+    .soc-metrics{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 18px 0;
+    }
+
+    .soc-metric{
+      padding: 18px;
+      overflow:hidden;
+      position:relative;
+    }
+
+    .soc-metric-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .soc-metric-title{
+      font-weight: 900;
+      color: var(--soc-text-sub);
+      font-size: .86rem;
+      letter-spacing: .02em;
+    }
+
+    .soc-metric-num{
+      font-size: 2.05rem;
+      font-weight: 950;
+      letter-spacing: -0.03em;
+      margin-top: 6px;
+      color: var(--soc-text);
+    }
+
+    .soc-trend{
+      display:inline-flex;
+      align-items:center;
+      gap: 7px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: .72rem;
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      border: 1px solid rgba(76,215,246,0.25);
+      background: rgba(76,215,246,0.10);
+      color: var(--soc-cyan);
+      white-space:nowrap;
+    }
+
+    [data-theme='light'] .soc-trend{ background: rgba(0,104,116,0.10); }
+
+    .soc-spark{
+      height: 54px;
+      margin-top: 6px;
+      position:relative;
+    }
+
+    .soc-spark svg{ width:100%; height:100%; }
+
+    .soc-integrity{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+
+    .soc-mini-ring{
+      width: 62px;
+      height: 62px;
+      position:relative;
+      display:grid;
+      place-items:center;
+    }
+
+    .soc-mini-ring svg{ width: 62px; height: 62px; transform: rotate(-90deg); }
+    .soc-mini-track{ fill:none; stroke: rgba(255,255,255,0.12); stroke-width: 7; }
+    [data-theme='light'] .soc-mini-track{ stroke: rgba(2,6,23,0.10); }
+    .soc-mini-prog{ fill:none; stroke: var(--soc-cyan); stroke-width: 7; stroke-linecap:round; filter: drop-shadow(0 0 10px rgba(76,215,246,0.25)); }
+
+    .soc-integrity-right{
+      flex:1;
+      min-width: 140px;
+    }
+
+    .soc-status-text{
+      font-size: .9rem;
+      font-weight: 900;
+      color: var(--soc-text);
+      margin-bottom: 6px;
+    }
+
+    .soc-status-sub{
+      color: var(--soc-text-sub);
+      font-size: .86rem;
+      line-height:1.5;
+    }
+
+    .soc-last-scan{
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+
+    .soc-scan-time{
+      color: var(--soc-text-sub);
+      font-weight: 700;
+      font-size: .92rem;
+    }
+
+    .soc-secure-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      width: fit-content;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-size: .72rem;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--soc-cyan);
+      border:1px solid rgba(76,215,246,0.25);
+      background: rgba(76,215,246,0.10);
+    }
+
+    [data-theme='light'] .soc-secure-badge{ background: rgba(0,104,116,0.10); }
+
+    .soc-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      font-weight: 950;
+      font-size: .86rem;
+      color: rgba(0,15,25,0.95);
+      background: linear-gradient(135deg,var(--soc-blue),var(--soc-cyan));
+      border: 1px solid rgba(173,198,255,0.35);
+      box-shadow: 0 0 0 rgba(0,0,0,0);
+      transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease;
+      cursor:pointer;
+      width: fit-content;
+    }
+
+    [data-theme='light'] .soc-btn{ color: #001a42; }
+
+    .soc-btn:hover{ transform: translateY(-2px); box-shadow: 0 0 30px rgba(76,215,246,0.30); }
+
+    /* BENTO GRID */
+    .soc-bento{
+      display:grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin: 18px 0;
+    }
+
+    .soc-map{
+      padding: 18px;
+      min-height: 330px;
+      overflow:hidden;
+      position:relative;
+    }
+
+    .soc-map-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .soc-map-title{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .soc-map-title h3{
+      margin:0;
+      font-size: 1.05rem;
+      font-weight: 950;
+      letter-spacing: -0.01em;
+      color: var(--soc-text);
+    }
+
+    .soc-map-title p{ margin:0; color: var(--soc-text-sub); font-size:.9rem; }
+
+    .soc-map-badge{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(173,198,255,0.22);
+      background: rgba(173,198,255,0.08);
+      color: var(--soc-blue);
+      font-weight: 950;
+      font-size: .72rem;
+      letter-spacing:.08em;
+      text-transform: uppercase;
+      white-space:nowrap;
+    }
+
+    .soc-dotted-grid{
+      position:absolute;
+      inset: 86px 12px 12px 12px;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(173,198,255,0.18) 1px, transparent 1.5px) 0 0 / 20px 20px,
+        radial-gradient(circle at 1px 1px, rgba(76,215,246,0.10) 1px, transparent 1.5px) 10px 10px / 20px 20px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 45%, rgba(0,0,0,0.2) 100%);
+      opacity: 0.9;
+      pointer-events:none;
+    }
+
+    .soc-nodes-layer{
+      position:absolute;
+      inset: 86px 12px 12px 12px;
+      pointer-events:none;
+    }
+
+    .soc-node{
+      position:absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--soc-cyan);
+      box-shadow: 0 0 0 0 rgba(76,215,246,0.55);
+      animation: soc-node-pulse 1.8s ease-in-out infinite;
+    }
+
+    .soc-node::after{
+      content:'';
+      position:absolute;
+      inset:-12px;
+      border-radius:999px;
+      border: 1px solid rgba(76,215,246,0.25);
+      opacity: .0;
+    }
+
+    @keyframes soc-node-pulse{
+      0%{ transform: translate(-50%,-50%) scale(0.9); opacity: 0.9; }
+      50%{ transform: translate(-50%,-50%) scale(1.12); opacity: 1; }
+      100%{ transform: translate(-50%,-50%) scale(0.9); opacity: 0.9; }
+    }
+
+    .soc-connections{
+      position:absolute;
+      inset: 86px 0 12px 0;
+      pointer-events:none;
+    }
+
+    .soc-connections svg{ width:100%; height:100%; }
+
+    .soc-connection{ stroke: rgba(173,198,255,0.22); stroke-width: 1.2; fill:none; stroke-linecap:round; }
+
+    .soc-connection.glow{ stroke: rgba(76,215,246,0.35); filter: drop-shadow(0 0 12px rgba(76,215,246,0.25)); }
+
+    /* Right stacked cards */
+    .soc-side-stack{
+      display:flex;
+      flex-direction:column;
+      gap: 16px;
+    }
+
+    .soc-side-card{
+      padding: 18px;
+      overflow:hidden;
+      position:relative;
+      min-height: 160px;
+    }
+
+    .soc-academy-thumb{
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      border: 1px solid rgba(173,198,255,0.30);
+      background:
+        linear-gradient(135deg, rgba(173,198,255,0.16), rgba(76,215,246,0.08));
+      display:grid;
+      place-items:center;
+      flex: 0 0 auto;
+      overflow:hidden;
+    }
+
+    .soc-academy-thumb img{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: .9;
+    }
+
+    .soc-academy-row{
+      display:flex;
+      gap: 14px;
+      align-items:flex-start;
+    }
+
+    .soc-side-card h3{
+      margin:0;
+      font-size: 1.05rem;
+      font-weight: 950;
+      letter-spacing: -0.01em;
+      color: var(--soc-text);
+    }
+
+    .soc-side-card p{ margin: 8px 0 14px; color: var(--soc-text-sub); line-height:1.7; font-size: .92rem; }
+
+    .soc-side-cta{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      font-weight: 950;
+      font-size: .86rem;
+      color: var(--soc-text);
+      border:1px solid rgba(173,198,255,0.25);
+      background: rgba(173,198,255,0.08);
+      transition: transform .35s cubic-bezier(.2,.8,.2,1), border-color .35s ease, background .35s ease;
+      width: fit-content;
+    }
+
+    [data-theme='light'] .soc-side-cta{ background: rgba(0,90,194,0.06); }
+
+    .soc-side-cta:hover{ transform: translateY(-2px); border-color: rgba(173,198,255,0.40); background: rgba(173,198,255,0.12); }
+
+    .soc-ai-quote{
+      margin: 0;
+      font-size: .95rem;
+      color: var(--soc-text-sub);
+      line-height:1.7;
+      font-style: italic;
+    }
+
+    .soc-ai-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .soc-ai-icon{
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display:grid;
+      place-items:center;
+      background: rgba(76,215,246,0.08);
+      border:1px solid rgba(76,215,246,0.22);
+      color: var(--soc-cyan);
+      font-weight: 900;
+      flex: 0 0 auto;
+    }
+
+    /* Recent events */
+    .soc-events{
+      padding: 18px;
+      margin-top: 18px;
+      overflow:hidden;
+    }
+
+    .soc-events-head{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .soc-events-head h3{
+      margin:0;
+      font-size: 1.1rem;
+      font-weight: 950;
+      color: var(--soc-text);
+    }
+
+    .soc-events-head p{
+      margin:0;
+      color: var(--soc-text-sub);
+      font-size: .9rem;
+      line-height:1.6;
+    }
+
+    .soc-table-wrap{ overflow:auto; border-radius: 14px; border:1px solid rgba(255,255,255,0.06); }
+    [data-theme='light'] .soc-table-wrap{ border-color: rgba(2,6,23,0.08); }
+
+    table{ width:100%; border-collapse: collapse; min-width: 720px; background: rgba(0,0,0,0); }
+
+    th, td{ padding: 14px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: .88rem; }
+    [data-theme='light'] th, [data-theme='light'] td{ border-bottom-color: rgba(15,23,42,0.07); }
+
+    th{
+      color: var(--soc-text-sub);
+      text-transform: uppercase;
+      letter-spacing: .10em;
+      font-size: .72rem;
+      font-weight: 950;
+      background: rgba(255,255,255,0.03);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    [data-theme='light'] th{ background: rgba(2,6,23,0.03); }
+
+    tbody tr{ transition: background .25s ease; }
+    tbody tr:hover{ background: rgba(76,215,246,0.06); }
+
+    .soc-ip{ color: var(--soc-text); font-weight: 800; }
+    .soc-action{ text-align:right; vertical-align:middle; }
+
+    .soc-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-weight: 950;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-size: .72rem;
+      border:1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.03);
+      white-space:nowrap;
+    }
+
+    .soc-badge.prevented{ color: var(--soc-cyan); border-color: rgba(76,215,246,0.25); background: rgba(76,215,246,0.10); }
+    .soc-badge.flagged{ color: var(--soc-red); border-color: rgba(255,180,171,0.30); background: rgba(255,180,171,0.10); }
+    .soc-badge.mitigated{ color: var(--soc-cyan); border-color: rgba(76,215,246,0.25); background: rgba(76,215,246,0.10); }
+
+    [data-theme='light'] .soc-badge.flagged{ background: rgba(255,90,84,0.10); border-color: rgba(255,90,84,0.26); }
+
+    .soc-events-footer{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding-top: 12px;
+    }
+
+    .soc-link{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      font-weight: 950;
+      color: var(--soc-blue);
+      transition: transform .25s ease, color .25s ease;
+      white-space:nowrap;
+    }
+
+    .soc-link:hover{ transform: translateY(-2px); color: var(--soc-cyan); }
+
+    .soc-event-note{
+      color: var(--soc-text-sub);
+      font-size: .9rem;
+    }
+
+    /* Responsiveness */
+    @media (max-width: 1100px){
+      .soc-hero-inner{ flex-direction: column; align-items:flex-start; }
+      .soc-hero-right{ width: 100%; justify-content:flex-start; }
+      .soc-ring-wrap{ margin-top: 10px; }
+    }
+
+    @media (max-width: 980px){
+      .soc-metrics{ grid-template-columns: 1fr; }
+      .soc-bento{ grid-template-columns: 1fr; }
+      .soc-map{ min-height: 300px; }
+      table{ min-width: 640px; }
+    }
+
+    @media (max-width: 520px){
+      .soc-container{ padding: 0 16px; }
+      .soc-hero-inner{ padding: 14px 10px; }
+      .soc-metric-num{ font-size: 1.9rem; }
+      table{ min-width: 600px; }
+    }
+  </style>
 </head>
-<body>
-  <nav class="navbar">
-    <div class="nav-inner">
-      <a href="{{ url_for('home') }}" class="nav-logo">
-        <svg width="34" height="34" viewBox="0 0 32 32" fill="none">
-          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" fill="url(#sf1)"/>
-          <path d="M16 2L3 8V17C3 24.7 8.9 31.9 16 34C23.1 31.9 29 24.7 29 17V8L16 2Z" stroke="#3B82F6" stroke-width="1.2" fill="none"/>
-          <path d="M11 17L14.5 20.5L21 14" stroke="#06B6D4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-          <defs>
-            <linearGradient id="sf1" x1="3" y1="2" x2="29" y2="34" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#1e3a5f"/>
-              <stop offset="100%" stop-color="#0D1117"/>
-            </linearGradient>
-          </defs>
-        </svg>
-        <span class="nav-logo-text">CyberGuard AI</span>
+
+<body class="premium-page">
+
+  <!-- Fixed navbar: MUST remain exactly as in templates/index.html -->
+  <nav class="navbar premium-navbar">
+    <div class="nav-inner premium-nav-inner">
+
+      <!-- Logo (toujours visible) -->
+      <a href="{{ url_for('home') }}" class="nav-logo premium-logo">
+        <img src="{{ url_for('static', filename='logo.cybergard.png') }}" alt="CyberGuard AI" height="44" style="object-fit:contain;">
+        <span class="nav-logo-text">CyberGuard <span style="font-weight:900;opacity:0.85;">AI</span></span>
       </a>
-      <div class="nav-actions">
-        <a href="{{ url_for('home') }}" class="nav-link">Home</a>
-        <div id="userButton"></div>
-        <a href="#" onclick="signOut(); return false;" class="nav-link">Sign Out</a>
+
+      <!-- Links desktop (cachés < 1000px) -->
+      <div class="premium-nav-links" id="desktopNavLinks">
+        <a href="{{ url_for('home') }}" class="nav-link active">Home</a>
+        <a href="{{ url_for('history') }}" class="nav-link" data-i18n="navbar_history">History</a>
+        <a href="{{ url_for('academy') }}" class="nav-link">Academy</a>
+      </div>
+
+      <!-- Actions droite (toujours visibles) -->
+      <div class="nav-actions premium-actions">
+
+        <!-- Sign In (desktop uniquement) -->
+        <div id="userNav" class="user-nav">
+          <a href="{{ url_for('signin') }}" id="getStartedBtn" class="btn btn-primary" data-i18n="navbar_signin">Sign In</a>
+          <div id="profileMenu" class="profile-menu">
+            <div id="userButton" hidden></div>
+            <button id="profileBtn" class="profile-btn" onclick="toggleProfileDropdown()" type="button">
+              <span class="material-symbols-outlined">person</span>
+              <span id="profileEmail">User</span>
+              <span class="material-symbols-outlined small-icon">expand_more</span>
+            </button>
+            <button id="profileCircular" class="profile-circular-badge" onclick="toggleProfileDropdown()" type="button">
+              <span class="material-symbols-outlined">account_circle</span>
+            </button>
+            <div id="profileDropdown" class="profile-dropdown">
+  <div class="profile-dropdown-head">
+    <div class="profile-label" data-i18n="profile_logged_in">Your Account</div>
+    <div id="profileEmailFull" class="profile-email-full"></div>
+  </div>
+  <a href="{{ url_for('dashboard') }}" class="profile-menu-item" data-i18n="navbar_dashboard">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.6;">dashboard</span>
+    Dashboard
+  </a>
+  <a href="{{ url_for('history') }}" class="profile-menu-item" data-i18n="navbar_history">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.6;">history</span>
+    History
+  </a>
+  <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.7;">logout</span>
+    Sign Out
+  </button>
+</div>
+          </div>
+        </div>
+
+        <!-- Theme toggle (toujours visible) -->
+        <button id="themeToggleBtn" class="premium-icon-btn theme-toggle-inline" title="Toggle theme" type="button" aria-label="Toggle dark mode">
+          <span class="material-symbols-outlined">light_mode</span>
+        </button>
+
+        <!-- Settings (toujours visible) -->
+        <div id="settings-toggle">
+          <button id="settingsBtn" class="premium-icon-btn" title="Settings" type="button">
+            <span class="material-symbols-outlined">settings</span>
+          </button>
+        </div>
+        <div id="settingsDropdown" class="settings-dropdown" style="display:none;">
+          <div class="settings-group">
+            <p data-i18n="navbar_language">Language</p>
+            <button type="button" data-lang="en" class="lang-btn">English</button>
+            <button type="button" data-lang="fr" class="lang-btn">Francais</button>
+            <button type="button" data-lang="ar" class="lang-btn">Arabic</button>
+          </div>
+          <div class="settings-group">
+            <p data-i18n="navbar_theme">Theme</p>
+            <button type="button" data-theme="dark" class="theme-btn">Dark Mode</button>
+            <button type="button" data-theme="light" class="theme-btn">Light Mode</button>
+          </div>
+          <div id="mobileProfile" class="settings-profile">
+            <div class="profile-label">Logged in as</div>
+            <div id="mobileProfileEmail" class="profile-email-full"></div>
+            <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">Sign Out</button>
+          </div>
+        </div>
+
+        <!-- Burger (visible < 1000px uniquement) -->
+        <button class="burger-btn premium-icon-btn" id="burgerBtn" type="button" aria-label="Menu" onclick="toggleBurgerMenu()">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Burger dropdown menu -->
+    <div class="burger-menu" id="burgerMenu">
+      <a href="{{ url_for('home') }}" class="burger-link active">
+        <span class="material-symbols-outlined">home</span>
+        Home
+      </a>
+      <a href="{{ url_for('history') }}" class="burger-link" data-i18n="navbar_history">
+        <span class="material-symbols-outlined">history</span>
+        History
+      </a>
+      <a href="{{ url_for('academy') }}" class="burger-link">
+        <span class="material-symbols-outlined">school</span>
+        Academy
+      </a>
+
+      <!-- Langues dans le burger -->
+      <div class="burger-settings-section">
+        <p class="burger-section-label" data-i18n="navbar_language">Language</p>
+        <div class="burger-lang-grid">
+          <button type="button" data-lang="en" class="lang-btn">EN</button>
+          <button type="button" data-lang="fr" class="lang-btn">FR</button>
+          <button type="button" data-lang="ar" class="lang-btn">AR</button>
+        </div>
+      </div>
+
+      <!-- Sign In dans le burger (caché si connecté) -->
+      <div class="burger-auth" id="burgerAuth">
+        <a href="{{ url_for('signin') }}" class="btn btn-primary burger-signin" data-i18n="navbar_signin">Sign In</a>
       </div>
     </div>
   </nav>
 
-  <div class="page-section">
-    <h1 class="page-title">Dashboard</h1>
-    <p class="page-sub">A unified view of your CyberGuard AI account and activity.</p>
+  <main class="soc-main">
+    <div class="soc-container">
 
-    <div class="history-card" style="padding: 32px;">
-      <p style="font-size: 1rem; color: var(--text); margin-bottom: 18px;">
-        Welcome back, <strong id="userWelcome">user</strong>.
-      </p>
+      <!-- 1) HERO SECURITY PULSE CARD -->
+      <section class="soc-hero soc-glass soc-card" aria-label="Live network status">
+        <div class="soc-hero-inner">
+            <div class="soc-hero-left">
+            <div class="soc-live-label">
+              <span class="soc-pulse-dot pulse-cyan" aria-hidden="true"></span>
+              <span>LIVE NETWORK STATUS</span>
+            </div>
+            <h2 class="soc-hero-title" id="socThreatTitle" data-i18n="dash_global_threat">Global Threat Level: Elevated</h2>
+               <p class="soc-hero-sub" id="socThreatSub" data-i18n="dash_threat_sub">
+              Threat telemetry indicates active probing patterns across perimeter services. Automated containment is recommended for suspicious sessions.
+               </p>
+            </div>
+  
 
-      <div style="display: flex; flex-wrap: wrap; gap: 16px;">
-        <a href="{{ url_for('history') }}" class="btn btn-primary">View History</a>
-        <a href="{{ url_for('admin') }}" class="btn btn-secondary">Admin Users</a>
-      </div>
+          <div class="soc-hero-right" aria-label="Threat index 68%">
+            <div class="soc-ring-wrap">
+              <div class="soc-ring-bg" aria-hidden="true"></div>
+              <svg class="soc-ring-svg" viewBox="0 0 180 180" role="img" aria-hidden="true">
+                <circle class="soc-ring-track" cx="90" cy="90" r="70"></circle>
+                <circle class="soc-ring-progress" cx="90" cy="90" r="70"></circle>
+              </svg>
+              <div class="soc-ring-center">
+                <div class="soc-ring-value"><span id="dashThreatIndex">68</span><span style="font-size:.95rem;opacity:.9">%</span></div>
+                <div class="soc-ring-label">Threat Index</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="soc-wave data-wave" aria-hidden="true"></div>
+      </section>
+
+      <!-- 2) KEY METRICS ROW -->
+      <section class="soc-metrics" aria-label="Key metrics">
+
+        <article class="soc-metric soc-glass soc-card" aria-label="Active threats blocked">
+          <div class="soc-metric-top">
+            <div>
+              <div class="soc-metric-title">Active Threats Blocked</div>
+              <div class="soc-metric-num" id="dashThreatsBlocked">—</div>
+            </div>
+            <div class="soc-trend" id="dashThreatTrend" title="Trending up">
+              <span class="material-symbols-outlined" id="dashTrendIcon" style="font-size:18px;">trending_up</span>
+              <span id="dashTrendValue">+12.4%</span>
+            </div>
+          </div>
+          <div class="soc-spark" aria-hidden="true">
+            <svg viewBox="0 0 320 54" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="socSpark" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="#4cd7f6" stop-opacity="0.75" />
+                  <stop offset="1" stop-color="#adc6ff" stop-opacity="0.55" />
+                </linearGradient>
+              </defs>
+              <g fill="url(#socSpark)" opacity="0.95">
+                <rect x="0" y="28" width="60" height="26" rx="8"></rect>
+                <rect x="66" y="18" width="55" height="36" rx="8" opacity="0.95"></rect>
+                <rect x="126" y="24" width="48" height="30" rx="8" opacity="0.9"></rect>
+                <rect x="180" y="10" width="52" height="44" rx="8" opacity="0.95"></rect>
+                <rect x="236" y="16" width="42" height="38" rx="8" opacity="0.85"></rect>
+              </g>
+              <path d="M0,28 L60,28 L60,28 L66,18 L121,18 L126,24 L174,24 L180,10 L232,10 L236,16 L278,16 L320,16" fill="none" stroke="#4cd7f6" stroke-opacity="0.8" stroke-width="2"/>
+            </svg>
+          </div>
+        </article>
+
+        <article class="soc-metric soc-glass soc-card" aria-label="System integrity">
+          <div class="soc-integrity">
+            <div>
+              <div class="soc-metric-title">System Integrity</div>
+              <div class="soc-metric-num" style="font-size:1.6rem; margin-top:8px;">Stable</div>
+            </div>
+
+            <div class="soc-mini-ring" aria-hidden="true">
+              <svg viewBox="0 0 64 64">
+                <circle class="soc-mini-track" cx="32" cy="32" r="24"></circle>
+<circle class="soc-mini-prog" cx="32" cy="32" r="24" stroke-dasharray="150.8" stroke-dashoffset="150.8" style="stroke-dashoffset: calc(150.8 * 0.05);"></circle>
+              </svg>
+            </div>
+          </div>
+          <div class="soc-integrity-right" style="margin-top: 10px;">
+            <div class="soc-status-text" id="dashSafePercent">95% Protected</div>
+            <div class="soc-status-sub">Integrity checks completed. No critical drift detected.</div>
+          </div>
+        </article>
+
+        <article class="soc-metric soc-glass soc-card" aria-label="Last full scan">
+          <div class="soc-last-scan">
+            <div>
+              <div class="soc-metric-title">Last Full Scan</div>
+              <div class="soc-scan-time" id="dashLastScan">Loading...</div>
+            </div>
+            <div class="soc-secure-badge">
+              <span class="material-symbols-outlined" style="font-size:18px;">verified</span>
+              SECURE
+            </div>
+            <button class="soc-btn" type="button" onclick="location.href='{{ url_for('history') }}'">
+              <span>Re-scan</span>
+              <span class="material-symbols-outlined" style="font-size:20px;">refresh</span>
+            </button>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- 3) BENTO GRID -->
+      <section class="soc-bento" aria-label="Live connection map and shortcuts">
+
+        <!-- Left: Live Connection Map -->
+        <article class="soc-map soc-glass soc-card" aria-label="Live connection map">
+          <div class="soc-map-head">
+            <div class="soc-map-title">
+              <h3>Live Connection Map</h3>
+              <p>Dotted topology with active SOC telemetry nodes and link traces.</p>
+            </div>
+            <div class="soc-map-badge">
+              <span class="material-symbols-outlined" style="font-size:18px;">radar</span>
+              ACTIVE STREAM
+            </div>
+          </div>
+
+          <div class="soc-dotted-grid" aria-hidden="true"></div>
+
+          <div class="soc-connections" aria-hidden="true">
+            <svg viewBox="0 0 1200 420" preserveAspectRatio="none">
+              <path class="soc-connection" d="M120,240 C240,170 330,140 430,160 C560,190 610,110 740,120 C860,130 920,210 1040,210" />
+              <path class="soc-connection glow" d="M160,300 C260,250 340,240 440,250 C560,260 640,190 740,190 C870,190 920,240 1060,260" />
+              <path class="soc-connection" d="M260,140 C350,150 420,180 520,210 C640,250 720,320 860,320" />
+              <path class="soc-connection" d="M150,210 C240,230 300,250 420,290 C560,340 650,330 780,300 C910,270 980,250 1060,230" />
+            </svg>
+          </div>
+
+          <div class="soc-nodes-layer" aria-hidden="true">
+            <span class="soc-node" style="left: 18%; top: 58%; animation-delay: .0s;"></span>
+            <span class="soc-node" style="left: 28%; top: 34%; animation-delay: .2s; background: var(--soc-blue);"></span>
+            <span class="soc-node" style="left: 41%; top: 44%; animation-delay: .4s;"></span>
+            <span class="soc-node" style="left: 58%; top: 30%; animation-delay: .1s; background: var(--soc-blue);"></span>
+            <span class="soc-node" style="left: 66%; top: 58%; animation-delay: .3s;"></span>
+            <span class="soc-node" style="left: 78%; top: 45%; animation-delay: .25s; background: var(--soc-cyan);"></span>
+            <span class="soc-node" style="left: 88%; top: 70%; animation-delay: .45s; background: var(--soc-blue);"></span>
+            <span class="soc-node" style="left: 35%; top: 72%; animation-delay: .55s;"></span>
+          </div>
+        </article>
+
+        <!-- Right: Academy + AI Insight -->
+        <div class="soc-side-stack">
+
+          <article class="soc-side-card soc-glass soc-card" aria-label="Academy shortcut">
+            <div class="soc-academy-row">
+              <div class="soc-academy-thumb" aria-hidden="true">
+                <img src="{{ url_for('static', filename='js/screen.png') }}" alt="" />
+              </div>
+              <div style="flex:1; min-width:0;">
+                <h3>CyberGuard Academy</h3>
+                <p>Train SOC playbooks with guided simulations and real-time risk exercises built for fast response.</p>
+                <a class="soc-side-cta" href="{{ url_for('academy') }}">
+                  <span>Enter Training</span>
+                  <span class="material-symbols-outlined" style="font-size:20px;">arrow_right_alt</span>
+                </a>
+              </div>
+            </div>
+          </article>
+
+          <article class="soc-side-card soc-glass soc-card" aria-label="AI Insight">
+            <div class="soc-ai-head">
+              <div class="soc-ai-icon" aria-hidden="true">
+                <span class="material-symbols-outlined" style="font-size:22px;">bolt</span>
+              </div>
+              <div class="soc-map-badge" style="border-color: rgba(76,215,246,0.22); background: rgba(76,215,246,0.08); color: var(--soc-cyan);">
+                <span class="material-symbols-outlined" style="font-size:18px;">insights</span>
+                AI INSIGHT
+              </div>
+            </div>
+            <p class="soc-ai-quote">“Anomalies are forming a coordinated scan pattern. Prioritize perimeter sessions and tighten egress rules.”</p>
+          </article>
+
+        </div>
+
+      </section>
+
+      <!-- 4) RECENT SECURITY EVENTS TABLE -->
+      <section class="soc-events soc-glass soc-card" aria-label="Recent security events">
+        <div class="soc-events-head">
+          <div>
+            <h3>Recent Security Events</h3>
+            <p>Actioned detections from the last monitoring window.</p>
+          </div>
+          <div class="soc-event-note">Realtime updates • Live data</div>
+        </div>
+
+        <div class="soc-table-wrap" role="region" aria-label="Events table">
+          <table class="soc-table">
+            <thead>
+              <tr>
+                <th style="width: 140px;">Time</th>
+                <th style="width: 180px;">Event Type</th>
+                <th style="width: 200px;">Source IP</th>
+                <th style="width: 150px;">Status</th>
+                <th style="width: 170px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="securityEventsBody">
+            </tbody>
+          </table>
+        </div>
+
+        <div class="soc-events-footer">
+          <div class="soc-event-note">Tip: Click an action to open the full monitoring log.</div>
+          <a class="soc-link" href="{{ url_for('history') }}">
+            <span>View Complete Log</span>
+            <span class="material-symbols-outlined" style="font-size:20px;">arrow_right_alt</span>
+          </a>
+        </div>
+      </section>
+
     </div>
+  </main>
+
+  <!-- Keep existing JS-based scroll-to-top button intact -->
+  <div class="stt-container" id="scrollTopBtn" aria-label="Scroll to top" role="button" tabindex="0"
+       onclick="window.scrollTo({top:0,behavior:'smooth'})"
+       onkeydown="if(event.key==='Enter'||event.key===' ')window.scrollTo({top:0,behavior:'smooth'})">
+    <svg class="stt-svg" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle class="stt-track" cx="28" cy="28" r="24" stroke-width="3"/>
+      <circle class="stt-progress" id="sttProgressRing" cx="28" cy="28" r="24"
+              stroke="#ffffff" stroke-width="3"
+              stroke-linecap="round"
+              stroke-dasharray="0 150.796"
+              transform="rotate(-90 28 28)"/>
+    </svg>
+    <div class="stt-icon-wrap" id="sttIconWrap">
+      <svg class="stt-arrow stt-arrow-dark" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M10 16V4" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M4 10l6-6 6 6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <svg class="stt-arrow stt-arrow-light" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true" style="display:none;">
+        <path d="M10 16V4" stroke="#0055ff" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M4 10l6-6 6 6" stroke="#0055ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="stt-tooltip" data-i18n="scroll_top_label">Back to top</span>
   </div>
 
-  <footer class="footer">
-    <div class="footer-inner">
-      <span class="footer-logo">CyberGuard AI</span>
-      <span class="footer-copy">© 2026 CyberGuard AI. All rights reserved.</span>
+  <footer class="footer premium-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <h2 class="footer-logo">CyberGuard <span style="-webkit-text-fill-color:rgba(0,212,255,0.7);font-weight:900;">AI</span></h2>
+        <p class="footer-description">Advanced threat detection and neutralisation for modern digital ecosystems.</p>
+      </div>
+      <div class="footer-links"><h3>Platform</h3><a href="{{ url_for('home') }}">Home</a><a href="#tool-section">Features</a><a href="{{ url_for('history') }}">History</a></div>
+      <div class="footer-links"><h3>Resources</h3><a href="{{ url_for('academy') }}">Academy</a><a href="mailto:ai.cybergard@gmail.com?subject=Help Center">Help Center</a><a href="mailto:ai.cybergard@gmail.com?subject=Contact">Contact</a></div>
+      <div class="footer-links"><h3>Legal</h3><a href="mailto:ai.cybergard@gmail.com?subject=Privacy Policy">Privacy Policy</a><a href="mailto:ai.cybergard@gmail.com?subject=Terms of Service">Terms of Service</a></div>
     </div>
+    <div class="footer-bottom">© 2026 CyberGuard AI. Secure Intelligence.</div>
   </footer>
 
   <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
@@ -71,19 +1169,169 @@
           window.location.href = '{{ url_for("signin") }}';
           return;
         }
-
-        document.getElementById('userWelcome').textContent = user.primaryEmailAddress.emailAddress;
-        await fetch('/api/sync-user', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: user.id, email: user.primaryEmailAddress.emailAddress }),
-        });
       } catch (err) {
         console.error('Dashboard initialization failed:', err);
       }
     }
 
     document.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
+
+  <script>
+  /* ── DASHBOARD: REAL DATA ── */
+
+  async function loadDashboardStats() {
+    try {
+      const res = await fetch('/api/stats');
+      if (!res.ok) return;
+      const d = await res.json();
+
+      // Threat Index ring
+      const ti = d.threat_index ?? 0;
+      const el = document.getElementById('dashThreatIndex');
+      if (el) el.textContent = ti;
+      const ring = document.querySelector('.soc-ring-progress');
+      if (ring) {
+        const c = 2 * Math.PI * 70;
+        ring.style.strokeDasharray = c;
+        ring.style.strokeDashoffset = c - (c * ti / 100);
+        ring.style.transition = 'stroke-dashoffset 1.2s ease';
+      }
+      const title = document.getElementById('socThreatTitle');
+      if (title) {
+        const t = (key, fallback) =>
+          (typeof cgTranslate === 'function' ? cgTranslate(key) : fallback);
+        if (ti < 20) title.textContent = t('dash_global_threat_low', 'Global Threat Level: Low');
+        else if (ti < 50) title.textContent = t('dash_global_threat_moderate', 'Global Threat Level: Moderate');
+        else if (ti < 75) title.textContent = t('dash_global_threat_elevated', 'Global Threat Level: Elevated');
+        else title.textContent = t('dash_global_threat_critical', 'Global Threat Level: Critical');
+      }
+
+      const tb = document.getElementById('dashThreatsBlocked');
+      if (tb) tb.textContent = (d.threats ?? 0).toLocaleString();
+
+      const sp = document.getElementById('dashSafePercent');
+      if (sp && d.scans > 0) {
+        const pct = Math.round((d.safe / d.scans) * 100);
+        sp.textContent = pct + '% Protected';
+      }
+
+      const ls = document.getElementById('dashLastScan');
+      if (ls) {
+        if (d.last_scan) {
+          const dt = new Date(d.last_scan);
+          ls.textContent = dt.toLocaleString('en-GB', {
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          }) + ' UTC';
+        } else {
+          ls.textContent = 'No scans yet';
+        }
+      }
+    } catch(e) { console.error('Stats error:', e); }
+  }
+
+  async function loadSecurityEvents() {
+    const tbody = document.getElementById('securityEventsBody');
+    if (!tbody) return;
+
+    // Wait for Clerk user
+    let userId = null;
+    for (let i = 0; i < 20; i++) {
+      if (window.clerkUser && window.clerkUser.id) { userId = window.clerkUser.id; break; }
+      await new Promise(r => setTimeout(r, 300));
+    }
+    if (!userId) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;opacity:.5;">Sign in to see your events.</td></tr>';
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/history?user_id=' + encodeURIComponent(userId));
+      const data = await res.json();
+      const all = data.success ? data.history : [];
+      const list = all.slice(0, 5);
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;opacity:.5;">No security events yet.</td></tr>';
+        return;
+      }
+
+      // Compute real trend: threats this month vs last month
+      const now = new Date();
+      const isThreat = s => ['Phishing','Social Engineering','Image Phishing','Alert','Suspicious'].includes(s.category);
+      const thisMonth = all.filter(s => {
+        const d = new Date(s.created_at);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && isThreat(s);
+      }).length;
+      const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonth = all.filter(s => {
+        const d = new Date(s.created_at);
+        return d.getMonth() === lm.getMonth() && d.getFullYear() === lm.getFullYear() && isThreat(s);
+      }).length;
+
+      const trendEl = document.getElementById('dashTrendValue');
+      const trendIcon = document.getElementById('dashTrendIcon');
+      if (trendEl) {
+        if (lastMonth === 0 && thisMonth === 0) {
+          trendEl.textContent = '0%';
+          if (trendIcon) trendIcon.textContent = 'trending_flat';
+        } else if (lastMonth === 0) {
+          trendEl.textContent = '+' + (thisMonth * 100) + '%';
+          if (trendIcon) trendIcon.textContent = 'trending_up';
+        } else {
+          const pct = Math.round(((thisMonth - lastMonth) / lastMonth) * 100);
+          trendEl.textContent = (pct >= 0 ? '+' : '') + pct + '%';
+          if (trendIcon) trendIcon.textContent = pct >= 0 ? 'trending_up' : 'trending_down';
+        }
+      }
+
+      const eventLabel = {
+        'Phishing': 'Phishing Pattern Detected',
+        'Social Engineering': 'Social Engineering Attempt',
+        'Image Phishing': 'Image Phishing Detected',
+        'Alert': 'Threat Signature Match',
+        'Suspicious': 'Suspicious Activity',
+        'Safe': 'Clean Scan'
+      };
+      const badgeMap = {
+        'Phishing':           { cls: 'prevented', icon: 'shield',   label: 'PREVENTED' },
+        'Social Engineering': { cls: 'flagged',   icon: 'warning',  label: 'FLAGGED'   },
+        'Image Phishing':     { cls: 'prevented', icon: 'shield',   label: 'PREVENTED' },
+        'Alert':              { cls: 'mitigated', icon: 'verified', label: 'MITIGATED' },
+        'Suspicious':         { cls: 'flagged',   icon: 'warning',  label: 'FLAGGED'   },
+        'Safe':               { cls: 'mitigated', icon: 'verified', label: 'CLEAN'     }
+      };
+      const actionLabel = { 'prevented': 'View', 'flagged': 'Review', 'mitigated': 'Inspect' };
+
+      tbody.innerHTML = '';
+      list.forEach(function(scan) {
+        const dt = new Date(scan.created_at);
+        const time = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const b = badgeMap[scan.category] || { cls: 'mitigated', icon: 'info', label: scan.category.toUpperCase() };
+        const evLabel = eventLabel[scan.category] || scan.category;
+        const act = actionLabel[b.cls] || 'View';
+        const src = scan.content.length > 28 ? scan.content.substring(0, 28) + '...' : scan.content;
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + time + '</td>'
+          + '<td>' + evLabel + '</td>'
+          + '<td class="soc-ip">' + src + '</td>'
+          + '<td><span class="soc-badge ' + b.cls + '"><span class="material-symbols-outlined" style="font-size:18px;">' + b.icon + '</span>' + b.label + '</span></td>'
+          + '<td class="soc-action"><a class="soc-link" href="/history"><span>' + act + '</span>'
+          + '<span class="material-symbols-outlined" style="font-size:20px;">open_in_new</span></a></td>';
+        tbody.appendChild(tr);
+      });
+
+    } catch(e) {
+      console.error('Events error:', e);
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;opacity:.5;">Failed to load events.</td></tr>';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardStats();
+    loadSecurityEvents();
+  });
   </script>
 </body>
 </html>

@@ -9,6 +9,38 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}"></script>
+<style>
+    .scroll-top-btn {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      z-index: 999;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s, transform .3s, background .2s;
+      transform: translateY(12px);
+    }
+    .scroll-top-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    .scroll-top-btn:hover {
+      background: rgba(255,255,255,0.15);
+      transform: translateY(-2px);
+    }
+    .btn-ring { display:none; }
+  </style>
 </head>
 <body class="premium-page">
   <div class="premium-bg" aria-hidden="true">
@@ -18,34 +50,98 @@
   </div>
 
   <nav class="navbar premium-navbar">
-    <div class="nav-inner premium-nav-inner">
+    <div class="nav-inner premium-nav-inner" style="flex-wrap:nowrap; min-width:0;">
       <a href="{{ url_for('home') }}" class="nav-logo premium-logo" style="gap:6px;">
-        <img src="{{ url_for('static', filename='logo.cybergard.png') }}" alt="CyberGuard AI" height="36" style="object-fit:contain;">
+        <img src="{{ url_for('static', filename='logo.cybergard.png') }}" alt="CyberGuard AI" height="44" style="object-fit:contain;">
         <span class="nav-logo-text">CyberGuard AI</span>
       </a>
-      <div class="premium-nav-links">
+      <div class="premium-nav-links" id="desktopNavLinks">
         <a href="{{ url_for('home') }}" class="nav-link">Home</a>
         <a href="{{ url_for('history') }}" class="nav-link active">History</a>
         <a href="{{ url_for('academy') }}" class="nav-link">Academy</a>
       </div>
-      <div class="nav-actions">
+      <div class="nav-actions premium-actions">
+        <div id="userNav" class="user-nav desktop-only">
+          <a href="{{ url_for('signin') }}" id="getStartedBtn" class="btn btn-primary" data-i18n="navbar_signin">Sign In</a>
+          <div id="profileMenu" class="profile-menu">
+            <div id="userButton" hidden></div>
+            <button id="profileBtn" class="profile-btn" onclick="toggleProfileDropdown()" type="button">
+              <span class="material-symbols-outlined">person</span>
+              <span id="profileEmail">User</span>
+              <span class="material-symbols-outlined small-icon">expand_more</span>
+            </button>
+            <button id="profileCircular" class="profile-circular-badge" onclick="toggleProfileDropdown()" type="button">
+              <span class="material-symbols-outlined">account_circle</span>
+            </button>
+            <div id="profileDropdown" class="profile-dropdown">
+              <div class="profile-dropdown-head">
+                <div class="profile-label" data-i18n="profile_logged_in">Your Account</div>
+                <div id="profileEmailFull" class="profile-email-full"></div>
+              </div>
+              <a href="{{ url_for('dashboard') }}" class="profile-menu-item" data-i18n="navbar_dashboard">
+                <span class="material-symbols-outlined" style="font-size:17px;opacity:0.6;">dashboard</span>Dashboard
+              </a>
+              <a href="{{ url_for('history') }}" class="profile-menu-item" data-i18n="navbar_history">
+                <span class="material-symbols-outlined" style="font-size:17px;opacity:0.6;">history</span>History
+              </a>
+              <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">
+                <span class="material-symbols-outlined" style="font-size:17px;opacity:0.7;">logout</span>Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
         <button id="themeToggleBtn" class="premium-icon-btn theme-toggle-inline" title="Toggle theme" type="button" aria-label="Toggle dark mode">
           <span class="material-symbols-outlined">light_mode</span>
         </button>
-        <div id="profileMenu" class="profile-menu" style="display:flex;">
-          <button id="profileBtn" onclick="toggleProfileDropdown()" class="profile-btn" type="button">
-            <span class="material-symbols-outlined">person</span>
-            <span id="profileEmail">User</span>
-            <span class="material-symbols-outlined small-icon">expand_more</span>
+        <div id="settings-toggle">
+          <button id="settingsBtn" class="premium-icon-btn" title="Settings" type="button">
+            <span class="material-symbols-outlined">settings</span>
           </button>
-          <div id="profileDropdown" class="profile-dropdown">
-            <div class="profile-dropdown-head">
-              <div class="profile-label" data-i18n="profile_logged_in">Logged in as</div>
-              <div id="profileEmailFull" class="profile-email-full"></div>
-            </div>
-            <button onclick="signOut()" class="profile-menu-item profile-signout" type="button">Sign Out</button>
+        </div>
+        <div id="settingsDropdown" class="settings-dropdown" style="display:none;">
+          <div class="settings-group">
+            <p data-i18n="navbar_language">Language</p>
+            <button type="button" data-lang="en" class="lang-btn">English</button>
+            <button type="button" data-lang="fr" class="lang-btn">Francais</button>
+            <button type="button" data-lang="ar" class="lang-btn">Arabic</button>
+          </div>
+          <div class="settings-group">
+            <p data-i18n="navbar_theme">Theme</p>
+            <button type="button" data-theme="dark" class="theme-btn">Dark Mode</button>
+            <button type="button" data-theme="light" class="theme-btn">Light Mode</button>
+          </div>
+          <div id="mobileProfile" class="settings-profile">
+            <div class="profile-label">Logged in as</div>
+            <div id="mobileProfileEmail" class="profile-email-full"></div>
+            <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">Sign Out</button>
           </div>
         </div>
+        <button class="burger-btn premium-icon-btn" id="burgerBtn" type="button" aria-label="Menu" onclick="toggleBurgerMenu()">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+      </div>
+    </div>
+    <div class="burger-menu" id="burgerMenu">
+      <a href="{{ url_for('home') }}" class="burger-link">
+        <span class="material-symbols-outlined">home</span>Home
+      </a>
+      <a href="{{ url_for('history') }}" class="burger-link active">
+        <span class="material-symbols-outlined">history</span>
+        <span data-i18n="navbar_history">History</span>
+      </a>
+      <a href="{{ url_for('academy') }}" class="burger-link">
+        <span class="material-symbols-outlined">school</span>Academy
+      </a>
+      <div class="burger-settings-section">
+        <p class="burger-section-label" data-i18n="navbar_language">Language</p>
+        <div class="burger-lang-grid">
+          <button type="button" data-lang="en" class="lang-btn">EN</button>
+          <button type="button" data-lang="fr" class="lang-btn">FR</button>
+          <button type="button" data-lang="ar" class="lang-btn">AR</button>
+        </div>
+      </div>
+      <div class="burger-auth" id="burgerAuth">
+        <a href="{{ url_for('signin') }}" class="btn btn-primary burger-signin" data-i18n="navbar_signin">Sign In</a>
       </div>
     </div>
   </nav>
@@ -57,8 +153,10 @@
         <p>Review past security analyses, threat intelligence reports, and payload evaluations across your account.</p>
       </div>
       <div class="premium-history-actions">
-        <button class="premium-secondary-btn light-flat-filter bg-transparent border border-slate-700/70 light:border-slate-200" type="button"><span class="material-symbols-outlined">filter_list</span> Filter</button>
-        <a class="premium-primary-btn compact" href="{{ url_for('home') }}#tool-section"><span class="material-symbols-outlined">play_arrow</span> New Scan</a>
+        <button class="premium-secondary-btn light-flat-filter" type="button">
+  <span class="material-symbols-outlined">filter_list</span> <span data-i18n="history_filter">Filter</span></button>
+<a class="premium-primary-btn compact" href="{{ url_for('home') }}#tool-section">
+  <span class="material-symbols-outlined">play_arrow</span> <span data-i18n="history_new_scan">New Scan</span></a>
       </div>
     </header>
 
@@ -68,11 +166,11 @@
           <table class="history-table premium-history-table" id="historyTable" style="display:none;">
             <thead>
               <tr>
-                <th class="light-flat-th bg-transparent">Target / Content</th>
-                <th class="light-flat-th bg-transparent">Category</th>
-                <th class="light-flat-th bg-transparent">Risk Score</th>
-                <th class="light-flat-th bg-transparent">Date Analyzed</th>
-              </tr>
+  <th class="light-flat-th bg-transparent" data-i18n="history_col_target">Target / Content</th>
+<th class="light-flat-th bg-transparent" data-i18n="history_col_category">Category</th>
+<th class="light-flat-th bg-transparent" data-i18n="history_col_risk">Risk Score</th>
+<th class="light-flat-th bg-transparent" data-i18n="history_col_date">Date Analyzed</th>
+</tr>
             </thead>
             <tbody id="historyTableBody"></tbody>
           </table>
@@ -84,7 +182,8 @@
           <a href="{{ url_for('home') }}#tool-section" class="btn btn-primary" data-i18n="history_action">Go to Analyzer</a>
         </div>
         <div class="premium-table-footer light-flat-meta bg-transparent">
-          <span>Saved securely with your Clerk account</span>
+          <span data-i18n="history_saved">Saved securely with your Clerk account</span>
+
           <div><span class="material-symbols-outlined light-flat-page-key">chevron_left</span><span class="material-symbols-outlined light-flat-page-key">chevron_right</span></div>
         </div>
       </div>

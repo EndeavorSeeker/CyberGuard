@@ -62,13 +62,19 @@ function updateNavbar() {
   const profileEmailFull = document.getElementById('profileEmailFull');
   const mobileProfile = document.getElementById('mobileProfile');
   const mobileProfileEmail = document.getElementById('mobileProfileEmail');
-
+  const burgerAuth = document.getElementById('burgerAuthSection');
+  if (clerkUser) {
+    const displayName = clerkUser.fullName || clerkUser.firstName || clerkUser.emailAddresses?.[0]?.emailAddress || 'Account';
+    const el = document.getElementById('profileDisplayName');
+    if (el) el.textContent = displayName;
+  }
   const email = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || '';
   const name = clerkUser?.fullName || clerkUser?.firstName || email.split('@')[0] || 'User';
 
   if (clerkUser && email) {
     if (getStartedBtn) getStartedBtn.style.display = 'none';
     if (signInLink) signInLink.style.display = 'none';
+    if (burgerAuth) burgerAuth.style.display = 'none';
     if (profileMenu) profileMenu.style.display = 'flex';
     if (profileBtn) profileBtn.style.display = 'flex';
     if (profileEmail) profileEmail.textContent = name;
@@ -80,12 +86,38 @@ function updateNavbar() {
   } else {
     if (getStartedBtn) getStartedBtn.style.display = 'inline-flex';
     if (signInLink) signInLink.style.display = 'block';
+    if (burgerAuth) burgerAuth.style.display = 'block';
     if (profileMenu) profileMenu.style.display = 'none';
     if (mobileProfile) mobileProfile.style.display = 'none';
   }
 }
 
 async function signOut() {
+  const btn = document.getElementById('signOutBtn') || document.querySelector('[data-signout-button="1"]');
+
+  // Same morph animation as theme toggle (if we can find a button)
+  if (btn && btn.querySelector('.material-symbols-outlined')) {
+    const icon = btn.querySelector('.material-symbols-outlined');
+    if (btn.dataset.signOutMorphing !== '1') {
+      btn.dataset.signOutMorphing = '1';
+      btn.classList.remove('theme-morph-complete');
+      btn.classList.add('theme-morph');
+      if (icon) icon.style.willChange = 'transform, filter, opacity';
+
+      // Small delay so the morph CSS feels responsive
+      requestAnimationFrame(() => {
+        btn.classList.add('theme-morph-complete');
+      });
+
+      setTimeout(() => {
+        btn.classList.remove('theme-morph');
+        btn.classList.remove('theme-morph-complete');
+        btn.dataset.signOutMorphing = '0';
+        if (icon) icon.style.willChange = '';
+      }, 520);
+    }
+  }
+
   if (window.Clerk) {
     await window.Clerk.signOut();
   }
@@ -187,6 +219,17 @@ function scrollToModules() {
   }
 }
 
+function scrollToAcademy() {
+  const academySection = document.getElementById('academy-section');
+  if (academySection) {
+    academySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  // Fallback: section not found, go to academy page
+  window.location.href = '/academy';
+}
+
+
 function openModule(mod) {
   if (!clerkUser) {
     window.location.href = '/signin';
@@ -211,6 +254,7 @@ function openModule(mod) {
   // Open overlay + panel
   document.getElementById('toolOverlay').classList.add('active');
   document.getElementById('toolPanel').classList.add('open');
+  document.getElementById('scrollTopBtn')?.classList.remove('stt-visible');
 
   // Scroll panel into view on mobile
   setTimeout(() => {
@@ -222,6 +266,10 @@ function closeModule() {
   document.getElementById('toolOverlay')?.classList.remove('active');
   document.getElementById('toolPanel')?.classList.remove('open');
   state.currentModule = null;
+  const y = window.scrollY || window.pageYOffset;
+  if (y > 280) {
+    document.getElementById('scrollTopBtn')?.classList.add('stt-visible');
+  }
 }
 
 /* ─────────────────────────────────────
@@ -257,7 +305,7 @@ function handleDrop(e) {
   if (file && file.type.startsWith('image/')) {
     processImageFile(file);
   } else {
-    showError('Please drop a valid image file (PNG, JPG, WEBP).');
+    showError(cgTranslate('tool_error_invalid_image_drop'));
   }
 }
 
@@ -269,7 +317,7 @@ function handleFileSelect(e) {
 function processImageFile(file) {
   // Validate size (10 MB max)
   if (file.size > 10 * 1024 * 1024) {
-    showError('Image is too large. Maximum size is 10 MB.');
+    showError(cgTranslate('tool_error_image_too_large'));
     return;
   }
 
@@ -390,7 +438,7 @@ async function analyzeNow() {
 
   } catch (err) {
     console.error('[CyberGuard]', err);
-    showError('Analysis failed. Please check your connection and try again.');
+    showError(cgTranslate('tool_error_analysis_failed'));
   } finally {
     setLoading(false);
   }
@@ -470,13 +518,17 @@ function renderResult(r) {
   badge.classList.add('level-' + r.level);
   bar.classList.add('level-' + r.level);
 
-  const labels = { safe:'✓ Safe', suspicious:'⚠ Suspicious', dangerous:'✕ Dangerous' };
+  const labels = {
+    safe: `✓ ${cgTranslate('scale_safe')}`,
+    suspicious: `⚠ ${cgTranslate('scale_suspicious')}`,
+    dangerous: `✕ ${cgTranslate('scale_dangerous')}`
+  };
   document.getElementById('threatLabel').textContent   = labels[r.level] || r.level;
   document.getElementById('resultCategory').textContent = r.category;
 
   state.explanationMode = 'technical';
   document.getElementById('explainText').textContent   = r.explanation;
-  document.getElementById('explainToggle').textContent = '🧠 Explain like I\'m human';
+  document.getElementById('explainToggle').textContent = cgTranslate('explain_toggle');
 
   card.classList.remove('hidden');
 
@@ -567,12 +619,12 @@ function toggleExplanation() {
   setTimeout(() => {
     if (state.explanationMode === 'technical') {
       state.explanationMode = 'human';
-      txt.textContent = humanExplanation || 'No simplified explanation available.';
-      btn.textContent = '⚙ Show technical details';
+      txt.textContent = humanExplanation || cgTranslate('explain_no_simple');
+      btn.textContent = cgTranslate('explain_show_technical');
     } else {
       state.explanationMode = 'technical';
       txt.textContent = explanation;
-      btn.textContent = '🧠 Explain like I\'m human';
+      btn.textContent = cgTranslate('explain_toggle');
     }
     txt.style.opacity = '1';
   }, 180);
@@ -615,13 +667,13 @@ async function handleAuthForm(e, endpoint) {
   errorEl.classList.add('hidden');
 
   if (confirm !== undefined && password !== confirm) {
-    errorEl.textContent = 'Passwords do not match.';
+    errorEl.textContent = cgTranslate('auth_passwords_no_match');
     errorEl.classList.remove('hidden');
     return;
   }
 
   submitBtn.disabled    = true;
-  submitBtn.textContent = 'Please wait…';
+  submitBtn.textContent = cgTranslate('auth_please_wait');
 
   try {
     const res  = await fetch(endpoint, {
@@ -635,20 +687,20 @@ async function handleAuthForm(e, endpoint) {
       if (endpoint.includes('signin')) {
         window.location.href = '/';
       } else {
-        errorEl.textContent = data.message || 'Account created! You can now sign in.';
+        errorEl.textContent = data.message || cgTranslate('auth_account_created');
         errorEl.style.color = 'var(--green)';
         errorEl.classList.remove('hidden');
       }
     } else {
-      errorEl.textContent = data.message || 'An error occurred. Please try again.';
+      errorEl.textContent = data.message || cgTranslate('auth_error_generic');
       errorEl.classList.remove('hidden');
     }
   } catch {
-    errorEl.textContent = 'Network error. Check your connection and try again.';
+    errorEl.textContent = cgTranslate('auth_network_error');
     errorEl.classList.remove('hidden');
   } finally {
     submitBtn.disabled    = false;
-    submitBtn.textContent = endpoint.includes('signin') ? 'Sign In' : 'Create Account';
+    submitBtn.textContent = endpoint.includes('signin') ? cgTranslate('navbar_signin') : cgTranslate('auth_create_account');
   }
 }
 
@@ -733,7 +785,7 @@ async function loadHistory() {
     });
   } catch (err) {
     console.error('Error loading history:', err);
-    if (empty) { empty.textContent = 'Failed to load history.'; empty.style.display = 'block'; }
+    if (empty) { empty.textContent = cgTranslate('history_load_failed'); empty.style.display = 'block'; }
     table.style.display = 'none';
   }
 }
@@ -792,23 +844,23 @@ function escapeHtml(text) {
 const ACADEMY_MODULES = {
   password: {
     icon: 'lock',
-    title: 'academy_password_strength_title',
-    subtitle: 'academy_password_strength_subtitle',
+    get title() { return cgTranslate('academy_password_strength_title'); },
+    get subtitle() { return cgTranslate('academy_password_strength_subtitle'); },
   },
   phishing: {
     icon: 'phishing',
-    title: 'module_msg_title',
-    subtitle: 'module_msg_desc',
+    get title() { return cgTranslate('academy_phishing_title'); },
+    get subtitle() { return cgTranslate('academy_phishing_subtitle'); },
   },
   quiz: {
     icon: 'quiz',
-    title: 'module_msg_title',
-    subtitle: 'module_msg_desc',
+    get title() { return cgTranslate('academy_quiz_title'); },
+    get subtitle() { return cgTranslate('academy_quiz_subtitle'); },
   },
   network: {
     icon: 'security',
-    title: 'module_url_title',
-    subtitle: 'module_url_desc',
+    get title() { return cgTranslate('academy_network_title'); },
+    get subtitle() { return cgTranslate('academy_network_subtitle'); },
   },
 };
 
@@ -822,24 +874,74 @@ function cgI18n(key) {
 
 const academyQuizQuestions = [
   {
-    question: 'You receive a login link from a sender you do not recognize. What is the safest first action?',
-    options: ['Open the link in private mode', 'Verify the sender and domain first', 'Forward it to everyone'],
+    questionText: 'You receive a login link from a sender you do not recognize. What is the safest first action?',
+    optionsText: ['Open the link in private mode', 'Verify the sender and domain first', 'Forward it to everyone'],
     answer: 1,
-    detail: 'Verifying the sender and domain prevents credential theft before any click happens.',
+    detailText: 'Verifying the sender and domain prevents credential theft before any click happens.',
   },
   {
-    question: 'Which password is strongest?',
-    options: ['Company2026!', 'blue-car-9', 'Mango!River#72Vault'],
+    questionText: 'Which password is strongest?',
+    optionsText: ['Company2026!', 'blue-car-9', 'Mango!River#72Vault'],
     answer: 2,
-    detail: 'Long, mixed, less predictable passphrases are harder to crack.',
+    detailText: 'Long, mixed, less predictable passphrases are harder to crack.',
   },
   {
-    question: 'A public Wi-Fi network asks you to install a certificate. What should you do?',
-    options: ['Install it quickly', 'Avoid it unless your organization confirms it', 'Disable your firewall'],
+    questionText: 'A public Wi-Fi network asks you to install a certificate. What should you do?',
+    optionsText: ['Install it quickly', 'Avoid it unless your organization confirms it', 'Disable your firewall'],
     answer: 1,
-    detail: 'Unexpected certificates can let attackers inspect encrypted traffic.',
+    detailText: 'Unexpected certificates can let attackers inspect encrypted traffic.',
+  },
+  {
+    questionText: 'What is a zero-day exploit?',
+    optionsText: ['An attack that targets a vulnerability unknown to the vendor', 'A patch released for a known bug', 'A password reused across accounts', 'A type of firewall rule'],
+    answer: 0,
+    detailText: 'A zero-day exploit takes advantage of a flaw the vendor has not patched yet.',
+  },
+  {
+    questionText: 'What does HTTPS ensure?',
+    optionsText: ['Confidentiality and integrity between client and server', 'That the site is always legitimate', 'That the server never gets hacked', 'That passwords are never stored in plaintext'],
+    answer: 0,
+    detailText: 'HTTPS provides encryption (confidentiality) and protects data integrity in transit.',
+  },
+  {
+    questionText: 'What is social engineering?',
+    optionsText: ['Tricking people into revealing credentials or performing unsafe actions', 'Encrypting network traffic with TLS', 'Blocking inbound connections with a firewall', 'Updating antivirus signatures automatically'],
+    answer: 0,
+    detailText: 'Social engineering manipulates humans—not software—to get sensitive info or access.',
+  },
+  {
+    questionText: 'Which is the safest way to store passwords?',
+    optionsText: ['Plaintext in a database', 'Reversible encryption with a shared key', 'Strong salted hashing (e.g., bcrypt/Argon2)', 'Encoding with Base64'],
+    answer: 2,
+    detailText: 'Passwords should be stored as salted hashes using a strong password hashing function.',
+  },
+  {
+    questionText: 'What is a man-in-the-middle attack?',
+    optionsText: ['An attacker secretly relays and/or alters communication between two parties', 'A firewall that blocks malicious IPs', 'A backup system for servers', 'A secure boot process'],
+    answer: 0,
+    detailText: 'In MITM attacks, the attacker intercepts traffic so victims think they’re connected directly.',
+  },
+  {
+    questionText: 'What does a VPN primarily protect?',
+    optionsText: ['Your internet traffic from eavesdropping by creating an encrypted tunnel', 'Your device from malware without any updates', 'Your passwords from phishing links', 'The physical security of your router'],
+    answer: 0,
+    detailText: 'A VPN creates an encrypted tunnel that helps protect data in transit on untrusted networks.',
+  },
+  {
+    questionText: 'What is two-factor authentication?',
+    optionsText: ['Authentication using only one factor (password)', 'Authentication using two separate verification methods', 'Authentication that disables all login attempts', 'A backup for expired passwords'],
+    answer: 1,
+    detailText: '2FA adds an extra verification step (e.g., code/app + password).',
+  },
+  {
+    questionText: 'What is the purpose of a firewall?',
+    optionsText: ['Allow or block network traffic based on security rules', 'Automatically generate strong passwords', 'Encrypt all files on disk', 'Turn a public network into a private one'],
+    answer: 0,
+    detailText: 'Firewalls enforce inbound/outbound traffic policies to reduce the attack surface.',
   },
 ];
+
+
 
 let academyQuizIndex = 0;
 let academyQuizScore = 0;
@@ -850,11 +952,21 @@ function initAcademy() {
   if (!body) return;
 
   document.querySelectorAll('[data-academy-module]').forEach((card) => {
+    // Prevent double-binding if initAcademy() is ever called again.
+    if (card.dataset.academyBound === '1') return;
+    card.dataset.academyBound = '1';
     card.addEventListener('click', () => setAcademyModule(card.dataset.academyModule));
   });
 
-  setAcademyModule('password');
+  // Only set default module if nothing is active yet.
+  const active = document.querySelector('[data-academy-module].active');
+  if (!active) setAcademyModule('password');
 }
+
+
+
+
+
 
 function setAcademyModule(moduleName) {
   const config = ACADEMY_MODULES[moduleName] || ACADEMY_MODULES.password;
@@ -882,9 +994,9 @@ function renderPasswordTrainer() {
       <input id="academyPassword" type="password" value="CyberSec2026!" aria-label="Password payload" />
       <button type="button" id="academyPasswordToggle"><span class="material-symbols-outlined">visibility</span></button>
     </div>
-    <div class="strength-row"><span>Resilience Level</span><strong id="academyStrengthLabel">Strong</strong></div>
+    <div class="strength-row"><span>${cgTranslate('academy_password_strength_label')}</span><strong id="academyStrengthLabel">${cgTranslate('academy_password_strength_strong') || 'Strong'}</strong></div>
     <div class="strength-meter" id="academyStrengthMeter"><span></span><span></span><span></span><span class="empty"></span></div>
-    <div class="academy-score-line"><span id="academyPasswordScore">Score: 0/100</span></div>
+    <div class="academy-score-line"><span id="academyPasswordScore">${cgTranslate('academy_password_strength_score_label')}: 0/100</span></div>
     <div class="feedback-chips" id="academyPasswordFeedback"></div>
   `;
 
@@ -901,18 +1013,24 @@ function renderPasswordTrainer() {
 function updatePasswordTrainer() {
   const value = document.getElementById('academyPassword')?.value || '';
   const checks = [
-    { ok: value.length >= 12, label: 'Length >= 12' },
-    { ok: /[A-Z]/.test(value) && /[a-z]/.test(value), label: 'Upper and lower case' },
-    { ok: /\d/.test(value), label: 'Number included' },
-    { ok: /[^A-Za-z0-9]/.test(value), label: 'Special character' },
-    { ok: !/(password|admin|cyber|qwerty|1234)/i.test(value), label: 'No common dictionary word' },
+    { ok: value.length >= 12, label: cgTranslate('academy_rule_length') },
+    { ok: /[A-Z]/.test(value) && /[a-z]/.test(value), label: cgTranslate('academy_rule_upper_lower') },
+    { ok: /\d/.test(value), label: cgTranslate('academy_rule_number') },
+    { ok: /[^A-Za-z0-9]/.test(value), label: cgTranslate('academy_rule_special') },
+    { ok: !/(password|admin|cyber|qwerty|1234)/i.test(value), label: cgTranslate('academy_rule_no_dict_word') },
   ];
   const score = Math.min(100, checks.filter(check => check.ok).length * 20 + Math.min(10, Math.max(0, value.length - 12)));
-  const level = score >= 85 ? 'Excellent' : score >= 65 ? 'Strong' : score >= 40 ? 'Medium' : 'Weak';
+  const level = score >= 85
+    ? cgTranslate('academy_password_strength_excellent')
+    : score >= 65
+      ? cgTranslate('academy_password_strength_strong')
+      : score >= 40
+        ? cgTranslate('academy_password_strength_medium')
+        : cgTranslate('academy_password_strength_weak');
   const bars = score >= 85 ? 4 : score >= 65 ? 3 : score >= 40 ? 2 : 1;
 
   document.getElementById('academyStrengthLabel').textContent = level;
-  document.getElementById('academyPasswordScore').textContent = `Score: ${score}/100`;
+  document.getElementById('academyPasswordScore').textContent = `${cgTranslate('academy_password_strength_score_label')}: ${score}/100`;
   document.getElementById('academyStrengthMeter').innerHTML = [0, 1, 2, 3]
     .map(index => `<span class="${index >= bars ? 'empty' : ''}"></span>`)
     .join('');
@@ -923,28 +1041,134 @@ function updatePasswordTrainer() {
 
 function renderPhishingTrainer() {
   const body = document.getElementById('academySimBody');
+
+  const phishingScenarios = [
+  {
+    prompt: cgTranslate('academy_phishing_s1_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s1_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s1_wrong')
+  },
+  {
+    prompt: cgTranslate('academy_phishing_s2_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s2_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s2_wrong')
+  },
+  {
+    prompt: cgTranslate('academy_phishing_s3_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s3_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s3_wrong')
+  },
+  {
+    prompt: cgTranslate('academy_phishing_s4_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s4_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s4_wrong')
+  },
+  {
+    prompt: cgTranslate('academy_phishing_s5_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s5_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s5_wrong')
+  },
+  {
+    prompt: cgTranslate('academy_phishing_s6_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s6_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s6_wrong')
+  },
+  {
+    prompt: cgTranslate('academy_phishing_s7_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s7_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s7_wrong')
+  }
+];
+
+  if (typeof renderPhishingTrainer.currentScenarioIndex !== 'number') {
+    renderPhishingTrainer.currentScenarioIndex = Math.floor(Math.random() * phishingScenarios.length);
+  }
+
+  const scenario = phishingScenarios[renderPhishingTrainer.currentScenarioIndex];
+
+  function rerenderScenario() {
+    const nextIndex = phishingScenarios.length > 1
+      ? (() => {
+          let idx = renderPhishingTrainer.currentScenarioIndex;
+          while (idx === renderPhishingTrainer.currentScenarioIndex) {
+            idx = Math.floor(Math.random() * phishingScenarios.length);
+          }
+          return idx;
+        })()
+      : renderPhishingTrainer.currentScenarioIndex;
+
+    renderPhishingTrainer.currentScenarioIndex = nextIndex;
+    const nextScenario = phishingScenarios[renderPhishingTrainer.currentScenarioIndex];
+
+    document.getElementById('academySimBody').innerHTML = `
+      <div class="academy-challenge" style="position:relative;">
+        <button type="button" class="premium-primary-btn compact" id="academyNewPhishingScenarioBtn" disabled style="display:flex;align-items:center;gap:6px;margin-top:16px;margin-left:auto;padding:8px 20px;font-size:0.82rem;opacity:0.35;border-radius:10px;cursor:not-allowed;transition:opacity 0.2s ease;">${cgTranslate('common_next')} <span class="material-symbols-outlined" style="font-size:18px;">navigate_next</span></button>
+        <div class="message-card">
+          <strong>${cgTranslate('academy_phishing_notice_title')}</strong>
+          <p>${escapeHtml(nextScenario.prompt)}</p>
+        </div>
+        <div class="academy-options">
+          <button type="button" data-phishing-answer="safe">${cgTranslate('academy_phishing_choice_safe')}</button>
+          <button type="button" data-phishing-answer="phishing">${cgTranslate('academy_phishing_choice_phishing')}</button>
+        </div>
+        <div class="academy-result" id="academyPhishingResult">${cgTranslate('academy_phishing_result_choose')}</div>
+      </div>
+    `;
+
+    document.querySelectorAll('[data-phishing-answer]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const correct = button.dataset.phishingAnswer === nextScenario.correctAnswer;
+        renderAcademyResult(
+          'academyPhishingResult',
+          correct,
+          correct ? nextScenario.correctDetail : nextScenario.wrongDetail
+        );
+        const nextBtn = document.getElementById('academyNewPhishingScenarioBtn');
+        if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '0.65'; nextBtn.style.cursor = 'pointer'; }
+        document.querySelectorAll('[data-phishing-answer]').forEach(b => b.disabled = true);
+      });
+    });
+
+    const btn = document.getElementById('academyNewPhishingScenarioBtn');
+    if (btn) btn.addEventListener('click', rerenderScenario);
+  }
+
   body.innerHTML = `
-    <div class="academy-challenge">
+    <div class="academy-challenge" style="position:relative;">
+      <button type="button" class="premium-primary-btn compact" id="academyNewPhishingScenarioBtn" disabled style="display:flex;align-items:center;gap:6px;margin-top:16px;margin-left:auto;padding:8px 20px;font-size:0.82rem;opacity:0.35;border-radius:10px;cursor:not-allowed;transition:opacity 0.2s ease;">${cgTranslate('common_next')} <span class="material-symbols-outlined" style="font-size:18px;">navigate_next</span></button>
       <div class="message-card">
-        <strong>Security Notice</strong>
-        <p>Your account will be suspended in 30 minutes. Confirm your password now at secure-paypa1.account-verify.xyz/login.</p>
+        <strong>${cgTranslate('academy_phishing_notice_title')}</strong>
+        <p>${escapeHtml(scenario.prompt)}</p>
       </div>
       <div class="academy-options">
-        <button type="button" data-phishing-answer="safe">Safe</button>
-        <button type="button" data-phishing-answer="phishing">Phishing</button>
+        <button type="button" data-phishing-answer="safe">${cgTranslate('academy_phishing_choice_safe')}</button>
+        <button type="button" data-phishing-answer="phishing">${cgTranslate('academy_phishing_choice_phishing')}</button>
       </div>
-      <div class="academy-result" id="academyPhishingResult">Choose an answer.</div>
+      <div class="academy-result" id="academyPhishingResult">${cgTranslate('academy_phishing_result_choose')}</div>
     </div>
   `;
 
   document.querySelectorAll('[data-phishing-answer]').forEach((button) => {
     button.addEventListener('click', () => {
-      const correct = button.dataset.phishingAnswer === 'phishing';
+      const correct = button.dataset.phishingAnswer === scenario.correctAnswer;
       renderAcademyResult('academyPhishingResult', correct, correct
-        ? 'Correct. Urgency, password request, and typosquatted domain are strong phishing signals.'
-        : 'Not quite. This message uses urgency and a fake PayPal-like domain.');
+        ? scenario.correctDetail
+        : scenario.wrongDetail);
+      const nextBtn = document.getElementById('academyNewPhishingScenarioBtn');
+      if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '0.65'; nextBtn.style.cursor = 'pointer'; }
+      document.querySelectorAll('[data-phishing-answer]').forEach(b => b.disabled = true);
     });
   });
+
+  const btn = document.getElementById('academyNewPhishingScenarioBtn');
+  if (btn) btn.addEventListener('click', rerenderScenario);
 }
 
 function renderSecurityQuiz() {
@@ -956,23 +1180,39 @@ function renderSecurityQuiz() {
 function renderQuizQuestion() {
   const body = document.getElementById('academySimBody');
   const item = academyQuizQuestions[academyQuizIndex];
+
+  // Quiz is translated via i18n keys stored in static/js/i18n.js
+  const q = cgTranslate(`academy_quiz_q${academyQuizIndex + 1}`) || '';
+  const options = [0, 1, 2, 3].map((idx) => {
+    const letter = ['a','b','c','d'][idx];
+    return cgTranslate(`academy_quiz_q${academyQuizIndex + 1}_${letter}`) || '';
+  }).filter(Boolean);
+  const detail = cgTranslate(`academy_quiz_q${academyQuizIndex + 1}_explain`) || '';
+
+  // Keep consistent: question/options are translated, but scoring uses item.answer.
+
+
+
+
+
   body.innerHTML = `
     <div class="academy-challenge">
-      <div class="academy-score-line">Question ${academyQuizIndex + 1}/${academyQuizQuestions.length} · Score ${academyQuizScore}</div>
-      <h3>${escapeHtml(item.question)}</h3>
+      <div class="academy-score-line">${academyQuizIndex + 1}/${academyQuizQuestions.length} · ${cgTranslate('academy_password_strength_score_label')} ${academyQuizScore}</div>
+      <h3>${escapeHtml(q)}</h3>
       <div class="academy-options">
-        ${item.options.map((option, index) => `<button type="button" data-quiz-answer="${index}">${escapeHtml(option)}</button>`).join('')}
+        ${options.map((option, index) => `<button type="button" data-quiz-answer="${index}">${escapeHtml(option)}</button>`).join('')}
       </div>
-      <div class="academy-result" id="academyQuizResult">Select one answer.</div>
+      <div class="academy-result" id="academyQuizResult">${cgTranslate('academy_quiz_result_choose')}</div>
     </div>
   `;
+
 
   document.querySelectorAll('[data-quiz-answer]').forEach((button) => {
     button.addEventListener('click', () => {
       const selected = Number(button.dataset.quizAnswer);
       const correct = selected === item.answer;
       if (correct) academyQuizScore += 1;
-      renderAcademyResult('academyQuizResult', correct, item.detail);
+      renderAcademyResult('academyQuizResult', correct, detail);
       document.querySelectorAll('[data-quiz-answer]').forEach(btn => btn.disabled = true);
       setTimeout(() => {
         academyQuizIndex += 1;
@@ -983,12 +1223,13 @@ function renderQuizQuestion() {
   });
 }
 
+
 function renderQuizSummary() {
   document.getElementById('academySimBody').innerHTML = `
     <div class="academy-challenge">
-      <h3>Quiz complete</h3>
-      <p class="academy-score-line">Final score: ${academyQuizScore}/${academyQuizQuestions.length}</p>
-      <button class="premium-primary-btn compact" type="button" onclick="renderSecurityQuiz()">Restart Quiz</button>
+      <h3>${cgTranslate('academy_quiz_complete_title')}</h3>
+      <p class="academy-score-line">${cgTranslate('academy_quiz_final_score_label')}: ${academyQuizScore}/${academyQuizQuestions.length}</p>
+      <button class="premium-primary-btn compact" type="button" onclick="renderSecurityQuiz()">${cgTranslate('academy_quiz_restart')}</button>
     </div>
   `;
 }
@@ -996,30 +1237,110 @@ function renderQuizSummary() {
 function renderNetworkDefense() {
   academyNetworkScore = 0;
   const body = document.getElementById('academySimBody');
+
+  const networkScenarios = [
+  { prompt: cgTranslate('academy_network_s1_prompt'), correctAnswer: 'isolate' },
+  { prompt: cgTranslate('academy_network_s2_prompt'), correctAnswer: 'isolate' },
+  { prompt: cgTranslate('academy_network_s3_prompt'), correctAnswer: 'isolate' },
+  { prompt: cgTranslate('academy_network_s4_prompt'), correctAnswer: 'isolate' },
+  { prompt: cgTranslate('academy_network_s5_prompt'), correctAnswer: 'isolate' },
+  { prompt: cgTranslate('academy_network_s6_prompt'), correctAnswer: 'isolate' },
+];
+
+  if (typeof renderNetworkDefense.currentScenarioIndex !== 'number') {
+    renderNetworkDefense.currentScenarioIndex = Math.floor(Math.random() * networkScenarios.length);
+  }
+
+  const scenario = networkScenarios[renderNetworkDefense.currentScenarioIndex];
+
+  function rerenderScenario() {
+    const nextIndex = networkScenarios.length > 1
+      ? (() => {
+          let idx = renderNetworkDefense.currentScenarioIndex;
+          while (idx === renderNetworkDefense.currentScenarioIndex) {
+            idx = Math.floor(Math.random() * networkScenarios.length);
+          }
+          return idx;
+        })()
+      : renderNetworkDefense.currentScenarioIndex;
+
+    renderNetworkDefense.currentScenarioIndex = nextIndex;
+    const nextScenario = networkScenarios[renderNetworkDefense.currentScenarioIndex];
+
+    document.getElementById('academySimBody').innerHTML = `
+      <div class="academy-challenge" style="position:relative;">
+        <button type="button" class="premium-primary-btn compact" id="academyNewNetworkScenarioBtn" disabled style="display:flex;align-items:center;gap:6px;margin-top:16px;margin-left:auto;padding:8px 20px;font-size:0.82rem;opacity:0.35;border-radius:10px;cursor:not-allowed;transition:opacity 0.2s ease;">${cgTranslate('common_next')} <span class="material-symbols-outlined" style="font-size:18px;">navigate_next</span></button>
+        <div class="message-card">
+          <strong>${cgTranslate('academy_network_incident_title')}</strong>
+          <p>${escapeHtml(nextScenario.prompt)}</p>
+        </div>
+        <div class="academy-options">
+          <button type="button" data-network-answer="ignore">${cgTranslate('academy_network_choice_ignore')}</button>
+          <button type="button" data-network-answer="isolate">${cgTranslate('academy_network_choice_isolate')}</button>
+          <button type="button" data-network-answer="wipe">${cgTranslate('academy_network_choice_wipe')}</button>
+        </div>
+        <div class="academy-result" id="academyNetworkResult">${cgTranslate('academy_network_result_choose')}</div>
+      </div>
+    `;
+
+    document.querySelectorAll('[data-network-answer]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const correct = button.dataset.networkAnswer === nextScenario.correctAnswer;
+        academyNetworkScore = correct ? 100 : 35;
+        renderAcademyResult(
+          'academyNetworkResult',
+          correct,
+          correct
+            ? `${cgTranslate('academy_network_result_correct_prefix')} ${academyNetworkScore}/100${cgTranslate('academy_network_result_correct_suffix')}`
+            : `${cgTranslate('academy_network_result_risky_prefix')} ${academyNetworkScore}/100${cgTranslate('academy_network_result_risky_suffix')}`
+        );
+
+        const nextBtn = document.getElementById('academyNewNetworkScenarioBtn');
+        if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '0.65'; nextBtn.style.cursor = 'pointer'; }
+        document.querySelectorAll('[data-network-answer]').forEach(b => b.disabled = true);
+      });
+    });
+
+    const btn = document.getElementById('academyNewNetworkScenarioBtn');
+    if (btn) btn.addEventListener('click', rerenderScenario);
+  }
+
   body.innerHTML = `
-    <div class="academy-challenge">
+    <div class="academy-challenge" style="position:relative;">
+      <button type="button" class="premium-primary-btn compact" id="academyNewNetworkScenarioBtn" disabled style="display:flex;align-items:center;gap:6px;margin-top:16px;margin-left:auto;padding:8px 20px;font-size:0.82rem;opacity:0.35;border-radius:10px;cursor:not-allowed;transition:opacity 0.2s ease;">${cgTranslate('common_next')} <span class="material-symbols-outlined" style="font-size:18px;">navigate_next</span></button>
       <div class="message-card">
-        <strong>Incident: suspicious outbound traffic</strong>
-        <p>An endpoint is sending encrypted traffic to an unknown IP every 10 seconds. What is your first response?</p>
+        <strong>${cgTranslate('academy_network_incident_title')}</strong>
+        <p>${escapeHtml(scenario.prompt)}</p>
       </div>
       <div class="academy-options">
-        <button type="button" data-network-answer="ignore">Ignore until users complain</button>
-        <button type="button" data-network-answer="isolate">Isolate endpoint and preserve evidence</button>
-        <button type="button" data-network-answer="wipe">Wipe the device immediately</button>
+        <button type="button" data-network-answer="ignore">${cgTranslate('academy_network_choice_ignore')}</button>
+        <button type="button" data-network-answer="isolate">${cgTranslate('academy_network_choice_isolate')}</button>
+        <button type="button" data-network-answer="wipe">${cgTranslate('academy_network_choice_wipe')}</button>
       </div>
-      <div class="academy-result" id="academyNetworkResult">Choose the response.</div>
+      <div class="academy-result" id="academyNetworkResult">${cgTranslate('academy_network_result_choose')}</div>
     </div>
   `;
 
   document.querySelectorAll('[data-network-answer]').forEach((button) => {
     button.addEventListener('click', () => {
-      const correct = button.dataset.networkAnswer === 'isolate';
+      const correct = button.dataset.networkAnswer === scenario.correctAnswer;
       academyNetworkScore = correct ? 100 : 35;
-      renderAcademyResult('academyNetworkResult', correct, correct
-        ? `Correct. Score ${academyNetworkScore}/100: isolate first, then investigate with evidence intact.`
-        : `Risky. Score ${academyNetworkScore}/100: this can spread or destroy evidence.`);
+      renderAcademyResult(
+        'academyNetworkResult',
+        correct,
+        correct
+          ? `${cgTranslate('academy_network_result_correct_prefix')} ${academyNetworkScore}/100${cgTranslate('academy_network_result_correct_suffix')}`
+          : `${cgTranslate('academy_network_result_risky_prefix')} ${academyNetworkScore}/100${cgTranslate('academy_network_result_risky_suffix')}`
+      );
+
+      const nextBtn = document.getElementById('academyNewNetworkScenarioBtn');
+      if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '0.65'; nextBtn.style.cursor = 'pointer'; }
+      document.querySelectorAll('[data-network-answer]').forEach(b => b.disabled = true);
     });
   });
+
+  const btn = document.getElementById('academyNewNetworkScenarioBtn');
+  if (btn) btn.addEventListener('click', rerenderScenario);
 }
 
 function renderAcademyResult(id, correct, message) {
@@ -1144,6 +1465,9 @@ function initializeStatsScrollAnimation() {
     rootMargin: '0px 0px -50px 0px'
   };
 
+  // NOTE UX: animations doivent démarrer quand on arrive proche du bloc,
+  // et ne pas “pousser” le rendu en haut de page.
+  // On anime au moment où .hero-stats est à 80% visible.
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting && !entry.target.classList.contains('stats-animated')) {
@@ -1153,7 +1477,7 @@ function initializeStatsScrollAnimation() {
         observer.unobserve(entry.target);
       }
     });
-  }, observerOptions);
+  }, { ...observerOptions, threshold: 0.8 });
 
   observer.observe(statsElement);
 }
@@ -1170,9 +1494,37 @@ function initializeThemeToggleButton() {
   if (!button) return;
 
   button.addEventListener('click', () => {
+    const btn = document.getElementById('themeToggleBtn');
+    const icon = btn?.querySelector('.material-symbols-outlined');
+    if (!btn) return;
+
+    // Anti double-click during morph
+    if (btn.dataset.themeMorphing === '1') return;
+    btn.dataset.themeMorphing = '1';
+
+    // Morph sun ↔ moon illusion
+    btn.classList.remove('theme-morph-complete');
+    btn.classList.add('theme-morph');
+    if (icon) icon.style.willChange = 'transform, filter, opacity';
+
+    // Apply theme change while morph is playing
     if (typeof toggleTheme === 'function') toggleTheme();
-    updateThemeToggleIcon();
-    updateScrollBtnIcon();
+
+    // Next frame: finish morph
+    requestAnimationFrame(() => {
+      updateThemeToggleIcon();
+      btn.classList.add('theme-morph-complete');
+
+      // Cleanup after animation
+      setTimeout(() => {
+        btn.classList.remove('theme-morph');
+        btn.classList.remove('theme-morph-complete');
+        btn.dataset.themeMorphing = '0';
+        if (icon) icon.style.willChange = '';
+      }, 520);
+    });
+
+    updateScrollBtnIcon?.();
     updateSettingsHighlights();
   });
 
@@ -1194,37 +1546,60 @@ function updateThemeToggleIcon() {
 /* ─────────────────────────────────────
    SETTINGS MENU (Language / Theme)
 ───────────────────────────────────── */
-(function initializeSettings() {
+function initializeSettings() {
   const settingsBtn = document.getElementById('settingsBtn');
   const settingsDropdown = document.getElementById('settingsDropdown');
 
-  if (!settingsBtn || !settingsDropdown) return;
+  if (settingsBtn && settingsDropdown) {
+    /* ── Sortir le dropdown du conteneur relatif
+          et l'attacher directement au body ── */
+    document.body.appendChild(settingsDropdown);
 
-  // Toggle dropdown on settings button click
+    function positionDropdown() {
+    const rect = settingsBtn.getBoundingClientRect();
+    settingsDropdown.style.position   = 'fixed';
+    /* APRÈS */
+    settingsDropdown.style.top        = (rect.bottom + 8) + 'px';
+    settingsDropdown.style.right      = (window.innerWidth - rect.right) + 'px';
+    settingsDropdown.style.left       = 'auto';
+    settingsDropdown.style.width      = 'auto';
+    settingsDropdown.style.minWidth   = '238px';
+    settingsDropdown.style.zIndex     = '99999';
+
+    /* Sur petit écran → pleine largeur sous la navbar */
+    if (window.innerWidth <= 768) {
+      settingsDropdown.style.left   = '0';
+      settingsDropdown.style.right  = '0';
+      settingsDropdown.style.width  = '100%';
+      settingsDropdown.style.borderRadius = '0';
+    } else {
+      settingsDropdown.style.borderRadius = '14px';
+    }
+  }
+
   settingsBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    const isVisible = settingsDropdown.style.display === 'none';
-    settingsDropdown.style.display = isVisible ? 'block' : 'none';
-    if (isVisible) {
+    e.preventDefault();
+    const isOpen = settingsDropdown.style.display === 'block';
+    if (isOpen) {
+      settingsDropdown.style.display = 'none';
+    } else {
+      positionDropdown();
+      settingsDropdown.style.display = 'block';
       updateSettingsHighlights();
     }
   });
 
-  // Close dropdown when clicking outside
   document.addEventListener('click', (e) => {
     if (!settingsBtn.contains(e.target) && !settingsDropdown.contains(e.target)) {
       settingsDropdown.style.display = 'none';
     }
   });
 
-  // Close when a language button is clicked - removed to allow seeing language changes
-  // document.querySelectorAll('.lang-btn').forEach(btn => {
-  //   btn.addEventListener('click', () => {
-  //     setTimeout(() => {
-  //       settingsDropdown.style.display = 'none';
-  //     }, 800);
-  //   });
-  // });
+  window.addEventListener('resize', () => {
+    if (settingsDropdown.style.display === 'block') positionDropdown();
+  });
+  }
 
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1241,14 +1616,14 @@ function updateThemeToggleIcon() {
       if (!theme) return;
       changeTheme(theme);
       updateSettingsHighlights();
-      setTimeout(() => {
-        settingsDropdown.style.display = 'none';
-      }, 400);
+      if (settingsDropdown) {
+        setTimeout(() => { settingsDropdown.style.display = 'none'; }, 400);
+      }
     });
   });
 
   updateSettingsHighlights();
-})();
+}
 
 function updateSettingsHighlights() {
   const currentLang = localStorage.getItem('cg_language') || 'en';
@@ -1281,42 +1656,185 @@ const revealObserver = new IntersectionObserver((entries) => {
 
 revealTargets.forEach(el => revealObserver.observe(el));
 
-/* ─────────────────────────────────────
-   SCROLL TO TOP BUTTON
-───────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
-  const scrollTopBtn = document.getElementById('scrollTopBtn');
-  if (!scrollTopBtn) return;
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 300) {
-      scrollTopBtn.classList.add('visible');
+/* ── Scroll-to-Top: Radial Progress Engine ── */
+(function () {
+  'use strict';
+  var CIRC = 2 * Math.PI * 24; // ≈ 150.796 (circumference of r=24)
+  var _btn, _ring, _arrowD, _arrowL, _rafId, _lastScroll = -1;
+
+  function _getDocHeight() {
+    return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
+  }
+  function _updateRing(y) {
+    if (!_ring) return;
+    var pct = Math.min(y / (_getDocHeight() || 1), 1);
+    var filled = Math.round(pct * CIRC * 100) / 100;
+    _ring.setAttribute('stroke-dasharray', filled + ' ' + Math.round((CIRC - filled) * 100) / 100);
+  }
+  function _updateVisibility(y) {
+    if (!_btn) return;
+    const panelOpen = document.getElementById('toolPanel')?.classList.contains('open');
+    if (y > 280 && !panelOpen) {
+      _btn.classList.add('stt-visible');
     } else {
-      scrollTopBtn.classList.remove('visible');
+      _btn.classList.remove('stt-visible');
     }
-  });
+  }
+  function _onScroll() {
+    var y = window.scrollY || window.pageYOffset;
+    if (y === _lastScroll) return;
+    _lastScroll = y;
+    if (_rafId) cancelAnimationFrame(_rafId);
+    _rafId = requestAnimationFrame(function () { _updateVisibility(y); _updateRing(y); });
+  }
+  function _updateArrows() {
+    if (!_arrowD || !_arrowL) return;
+    var light = document.body.classList.contains('light-mode');
+    _arrowD.style.display = light ? 'none' : '';
+    _arrowL.style.display = light ? ''     : 'none';
+  }
+  function _init() {
+    _btn    = document.getElementById('scrollTopBtn');
+    _ring   = document.getElementById('sttProgressRing');
+    _arrowD = document.querySelector('.stt-arrow-dark');
+    _arrowL = document.querySelector('.stt-arrow-light');
+    if (!_btn) return;
+    var tip = _btn.querySelector('.stt-tooltip');
+    if (tip && typeof cgTranslate === 'function') tip.textContent = cgTranslate('scroll_top_label') || 'Back to top';
+    window.addEventListener('scroll', _onScroll, { passive: true });
+    _updateArrows();
+  }
+  var _orig = window.applyTheme;
+  window.applyTheme = function (t) {
+    if (typeof _orig === 'function') _orig(t);
+    if (typeof updateThemeToggleIcon === 'function') updateThemeToggleIcon();
+    _updateArrows();
+  };
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', _init) : _init();
+})();
+
+/* Home page: float the desktop navbar only after it begins leaving its original spot. */
+(function () {
+  'use strict';
+  var _nav, _media, _rafId, _triggerY = 0;
+
+  function _isHomePage() {
+    return document.body && document.body.classList.contains('home-page');
+  }
+
+  function _sync() {
+    if (!_nav) return;
+    var isDesktop = !_media || _media.matches;
+    var y = window.scrollY || window.pageYOffset;
+    _nav.classList.toggle('home-nav-floating', isDesktop && y > _triggerY);
+  }
+
+  function _requestSync() {
+    if (_rafId) cancelAnimationFrame(_rafId);
+    _rafId = requestAnimationFrame(_sync);
+  }
+
+  function _measure() {
+    if (!_nav) return;
+    var wasFloating = _nav.classList.contains('home-nav-floating');
+    _nav.classList.remove('home-nav-floating');
+    var height = _nav.offsetHeight || 76;
+    _triggerY = Math.max(16, _nav.offsetTop + (height * 0.55));
+    if (wasFloating) _nav.classList.add('home-nav-floating');
+    _sync();
+  }
+
+  function _init() {
+    if (!_isHomePage()) return;
+    _nav = document.querySelector('.navbar.premium-navbar');
+    if (!_nav) return;
+
+    _media = window.matchMedia('(min-width: 601px)');
+    window.addEventListener('scroll', _requestSync, { passive: true });
+    window.addEventListener('resize', _measure, { passive: true });
+
+    if (_media.addEventListener) {
+      _media.addEventListener('change', _measure);
+    } else if (_media.addListener) {
+      _media.addListener(_measure);
+    }
+
+    _measure();
+  }
+
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', _init) : _init();
+})();
+
+/* Hide navbar on scroll down, show it as soon as the user scrolls up. */
+(function () {
+  'use strict';
+  var _nav, _lastY = 0, _rafId;
+
+  function _sync() {
+    if (!_nav) return;
+    var y = window.scrollY || window.pageYOffset || 0;
+
+    if (y === 0 || y < _lastY) {
+      _nav.classList.remove('nav-hidden');
+    } else if (y > _lastY) {
+      _nav.classList.add('nav-hidden');
+    }
+
+    _lastY = y;
+  }
+
+  function _requestSync() {
+    if (_rafId) cancelAnimationFrame(_rafId);
+    _rafId = requestAnimationFrame(_sync);
+  }
+
+  function _init() {
+    _nav = document.querySelector('.navbar');
+    if (!_nav) return;
+    _lastY = window.scrollY || window.pageYOffset || 0;
+    _sync();
+    window.addEventListener('scroll', _requestSync, { passive: true });
+  }
+
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', _init) : _init();
+})();
+
+function safeInitSettings() {
+  if (document.getElementById('settingsBtn')) {
+    initializeSettings();
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', safeInitSettings);
+} else {
+  safeInitSettings();
+}
+
+function toggleBurgerMenu() {
+  const menu       = document.getElementById('burgerMenu');
+  const btn        = document.getElementById('burgerBtn');
+  const burgerAuth = document.getElementById('burgerAuth');
+  const isOpen     = menu.classList.toggle('open');
+
+  btn.querySelector('.material-symbols-outlined').textContent = isOpen ? 'close' : 'menu';
+
+  // Cache le bouton Sign In si l'utilisateur est connecté
+  if (burgerAuth) {
+    const isLoggedIn = document.getElementById('profileMenu') &&
+                       document.getElementById('profileMenu').style.display !== 'none' &&
+                       document.getElementById('getStartedBtn') &&
+                       document.getElementById('getStartedBtn').style.display === 'none';
+    burgerAuth.style.display = isLoggedIn ? 'none' : 'block';
+  }
+}
+
+// Ferme le burger si on clique ailleurs
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('burgerMenu');
+  const btn  = document.getElementById('burgerBtn');
+  if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.classList.remove('open');
+    btn.querySelector('.material-symbols-outlined').textContent = 'menu';
+  }
 });
-// Scroll button: show/hide
-const scrollBtn = document.getElementById('scrollTopBtn');
-if (scrollBtn) {
-  window.addEventListener('scroll', () => {
-    scrollBtn.classList.toggle('visible', window.scrollY > 300);
-  }, { passive: true });
-}
-
-// Swap arrow color on theme change
-function updateScrollBtnIcon() {
-  if (!document.querySelector('.icon-dark') || !document.querySelector('.icon-light')) return;
-  const isLight = document.body.classList.contains('light-mode');
-  document.querySelector('.icon-dark').style.display = isLight ? 'none'  : 'flex';
-  document.querySelector('.icon-light').style.display = isLight ? 'flex' : 'none';
-}
-
-// Call after each theme change in theme.js
-const origApplyTheme = window.applyTheme;
-window.applyTheme = function(theme) {
-  if (typeof origApplyTheme === 'function') origApplyTheme(theme);
-  updateThemeToggleIcon();
-  updateScrollBtnIcon();
-};
-updateThemeToggleIcon();
-updateScrollBtnIcon(); // init

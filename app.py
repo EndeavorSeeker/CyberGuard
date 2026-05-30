@@ -1,4 +1,3 @@
-
 import base64
 import os
 import re
@@ -460,7 +459,13 @@ def academy_topic(page):
     }
     if page not in allowed_pages:
         return redirect(url_for("academy"))
-    return send_from_directory(app.root_path, page)
+    # FIX: templates are stored in the Flask templates/ directory.
+    # Using render_template avoids directory ambiguity.
+    return render_template(
+        page,
+        clerk_publishable_key=CLERK_PUBLISHABLE_KEY,
+        clerk_js_url=CLERK_JS_URL
+    )
 
 
 @app.route("/signin")
@@ -597,7 +602,29 @@ def api_stats():
     clerk_users = db.execute("SELECT COUNT(*) FROM clerk_users").fetchone()[0]
     users_count = password_users + clerk_users
     scans_count = db.execute("SELECT COUNT(*) FROM scans").fetchone()[0]
-    return jsonify({"users": users_count, "scans": scans_count})
+    threats_count = db.execute(
+        "SELECT COUNT(*) FROM scans WHERE category IN ('Phishing','Social Engineering','Image Phishing','Alert')"
+    ).fetchone()[0]
+    safe_count = db.execute(
+        "SELECT COUNT(*) FROM scans WHERE category = 'Safe'"
+    ).fetchone()[0]
+    suspicious_count = db.execute(
+        "SELECT COUNT(*) FROM scans WHERE category = 'Suspicious'"
+    ).fetchone()[0]
+    last_scan_row = db.execute(
+        "SELECT created_at FROM scans ORDER BY created_at DESC LIMIT 1"
+    ).fetchone()
+    last_scan = last_scan_row[0] if last_scan_row else None
+    threat_index = round((threats_count / scans_count * 100)) if scans_count > 0 else 0
+    return jsonify({
+        "users": users_count,
+        "scans": scans_count,
+        "threats": threats_count,
+        "safe": safe_count,
+        "suspicious": suspicious_count,
+        "last_scan": last_scan,
+        "threat_index": threat_index
+    })
 
 
 @app.route("/api/scan", methods=["POST"])
