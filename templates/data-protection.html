@@ -494,7 +494,7 @@
 
         function render(){
           const question = quizQuestions[state.idx];
-          questionTitle.textContent = cgTranslate('dp_quiz_question_prefix') + (state.idx + 1);
+          questionTitle.textContent = 'Q' + (state.idx + 1);
           questionEl.textContent = cgTranslate(question.q);
           progressEl.textContent = (state.idx + 1) + '/' + quizQuestions.length;
           explainEl.style.display = 'none';
