@@ -6,7 +6,9 @@
   <title>Browser Security — CyberGuard AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" as="style" onload="this.rel='stylesheet'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet" /></noscript>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}" type="text/javascript"></script>
 
@@ -154,7 +156,7 @@
 
       <!-- Links desktop (cachés < 1000px) -->
       <div class="premium-nav-links" id="desktopNavLinks">
-        <a href="{{ url_for('home') }}" class="nav-link active">Home</a>
+        <a href="{{ url_for('home') }}" class="nav-link active" data-i18n="navbar_home">Home</a>
         <a href="{{ url_for('history') }}" class="nav-link" data-i18n="navbar_history">History</a>
         <a href="{{ url_for('academy') }}" class="nav-link">Academy</a>
       </div>
@@ -171,6 +173,9 @@
               <span class="material-symbols-outlined">person</span>
               <span id="profileEmail">User</span>
               <span class="material-symbols-outlined small-icon">expand_more</span>
+            </button>
+            <button id="profileCircular" class="profile-circular-badge" onclick="toggleProfileDropdown()" type="button">
+              <span class="material-symbols-outlined">account_circle</span>
             </button>
             <div id="profileDropdown" class="profile-dropdown">
   <div class="profile-dropdown-head">
@@ -244,7 +249,7 @@
       </a>
       <a href="{{ url_for('academy') }}" class="burger-link">
         <span class="material-symbols-outlined">school</span>
-        Academy
+        <span data-i18n="academy_title_nav">Academy</span>
       </a>
 
       <div class="burger-settings-section">
