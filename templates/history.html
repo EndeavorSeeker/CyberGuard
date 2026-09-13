@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberGuard AI - Scan History</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" href="{{ material_symbols_url }}" as="style" onload="this.rel='stylesheet'" />
+  <noscript><link href="{{ material_symbols_url }}" rel="stylesheet" /></noscript>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}"></script>
+<style>
+    .scroll-top-btn {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      z-index: 999;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s, transform .3s, background .2s;
+      transform: translateY(12px);
+    }
+    .scroll-top-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    .scroll-top-btn:hover {
+      background: rgba(255,255,255,0.15);
+      transform: translateY(-2px);
+    }
+    .btn-ring { display:none; }
+  </style>
+</head>
+<body class="premium-page stitch-bg">
+  <div class="stars-container" aria-hidden="true">
+    <div class="stars"></div>
+    <div class="stars2"></div>
+    <div class="stars3"></div>
+  </div>
+  <div class="premium-bg" aria-hidden="true">
+    <div class="premium-glow premium-glow-one"></div>
+    <div class="premium-glow premium-glow-two"></div>
+    <div class="premium-noise"></div>
+  </div>
+
+<nav class="navbar premium-navbar">
+  <div class="nav-inner premium-nav-inner">
+
+    <!-- Logo (toujours visible) -->
+    <a href="{{ url_for('home') }}" class="nav-logo premium-logo">
+    <img src="{{ url_for('static', filename='logo.cybergard.webp') }}" alt="CyberGuard AI" height="44" style="object-fit:contain;">
+      <span class="nav-logo-text">CyberGuard <span style="font-weight:900;opacity:0.85;">AI</span></span>
+    </a>
+
+    <!-- Links desktop (cachés < 1000px) -->
+    <div class="premium-nav-links nav-pill" id="desktopNavLinks">
+      <span class="nav-pill-bg" id="navPillBg" aria-hidden="true"></span>
+      <a href="{{ url_for('home') }}" class="nav-link" data-i18n="navbar_home">Home</a>
+      <a href="{{ url_for('history') }}" class="nav-link active" data-i18n="navbar_history">History</a>
+      <a href="{{ url_for('academy') }}" class="nav-link" data-i18n="academy_title_nav">Academy</a>
+    </div>
+
+
+    <!-- Actions droite (toujours visibles) -->
+    <div class="nav-actions premium-actions">
+
+      <!-- Sign In (desktop uniquement) -->
+      <div id="userNav" class="user-nav">
+        <a href="{{ url_for('signin') }}" id="getStartedBtn" class="btn btn-primary" data-i18n="navbar_signin">Sign In</a>
+        <div id="profileMenu" class="profile-menu">
+          <div id="userButton" hidden></div>
+          <button id="profileBtn" class="profile-btn" onclick="toggleProfileDropdown()" type="button">
+            <span class="material-symbols-outlined">person</span>
+            <span id="profileEmail">User</span>
+            <span class="material-symbols-outlined small-icon">expand_more</span>
+          </button>
+          <button id="profileCircular" class="profile-circular-badge" onclick="toggleProfileDropdown()" type="button">
+            <span class="material-symbols-outlined">account_circle</span>
+          </button>
+          <div id="profileDropdown" class="profile-dropdown">
+  <div class="profile-dropdown-head">
+    <div class="profile-label" data-i18n="profile_logged_in">Your Account</div>
+    <div id="profileEmailFull" class="profile-email-full"></div>
+  </div>
+  <a href="{{ url_for('history') }}" class="profile-menu-item" data-i18n="navbar_history">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.6;">history</span>
+    History
+  </a>
+  <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.7;">logout</span>
+    Sign Out
+  </button>
+</div>
+        </div>
+      </div>
+
+      <!-- Theme toggle -->
+      <button id="themeToggleBtn" class="premium-icon-btn theme-toggle-inline" title="Toggle theme" type="button" aria-label="Toggle dark mode">
+        <span class="material-symbols-outlined">light_mode</span>
+      </button>
+
+      <!-- Settings (toujours visible) -->
+      <div id="settings-toggle">
+        <button id="settingsBtn" class="premium-icon-btn" title="Settings" type="button">
+          <span class="material-symbols-outlined">settings</span>
+        </button>
+      </div>
+      <div id="settingsDropdown" class="settings-dropdown" style="display:none;">
+        <div class="settings-group">
+          <p data-i18n="navbar_language">Language</p>
+          <button type="button" data-lang="en" class="lang-btn">English</button>
+          <button type="button" data-lang="fr" class="lang-btn">Francais</button>
+          <button type="button" data-lang="ar" class="lang-btn">Arabic</button>
+        </div>
+        <div class="settings-group">
+          <p data-i18n="navbar_theme">Theme</p>
+          <button type="button" data-theme="dark" class="theme-btn">Dark Mode</button>
+          <button type="button" data-theme="light" class="theme-btn">Light Mode</button>
+        </div>
+        <div id="mobileProfile" class="settings-profile">
+          <div class="profile-label">Logged in as</div>
+          <div id="mobileProfileEmail" class="profile-email-full"></div>
+          <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- Burger (visible < 1000px uniquement) -->
+      <button class="burger-btn premium-icon-btn" id="burgerBtn" type="button" aria-label="Menu" onclick="toggleBurgerMenu()">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Burger dropdown menu -->
+  <div class="burger-menu" id="burgerMenu">
+    <a href="{{ url_for('home') }}" class="burger-link">
+      <span class="material-symbols-outlined">home</span>
+      <span data-i18n="navbar_home">Home</span>
+    </a>
+
+    <a href="{{ url_for('history') }}" class="burger-link active">
+      <span class="material-symbols-outlined">history</span>
+      <span data-i18n="navbar_history">History</span>
+    </a>
+    <a href="{{ url_for('academy') }}" class="burger-link">
+      <span class="material-symbols-outlined">school</span>
+      Academy
+    </a>
+
+    <!-- Langues dans le burger -->
+    <div class="burger-settings-section">
+      <p class="burger-section-label" data-i18n="navbar_language">Language</p>
+      <div class="burger-lang-grid">
+        <button type="button" data-lang="en" class="lang-btn">EN</button>
+        <button type="button" data-lang="fr" class="lang-btn">FR</button>
+        <button type="button" data-lang="ar" class="lang-btn">AR</button>
+      </div>
+    </div>
+
+    <!-- Sign In dans le burger (caché si connecté) -->
+    <div class="burger-auth" id="burgerAuth">
+      <a href="{{ url_for('signin') }}" class="btn btn-primary burger-signin" data-i18n="navbar_signin">Sign In</a>
+    </div>
+  </div>
+</nav>
+
+  <main class="premium-history-main">
+    <header class="premium-history-head">
+      <div>
+        <h1>Scan History</h1>
+        <p>Review past security analyses, threat intelligence reports, and payload evaluations across your account.</p>
+      </div>
+      <div class="premium-history-actions">
+        <button class="premium-secondary-btn light-flat-filter" type="button">
+  <span class="material-symbols-outlined">filter_list</span> <span data-i18n="history_filter">Filter</span></button>
+<a class="premium-primary-btn compact" href="{{ url_for('home') }}#tool-section">
+  <span class="material-symbols-outlined">play_arrow</span> <span data-i18n="history_new_scan">New Scan</span></a>
+      </div>
+    </header>
+
+    <section class="history-card premium-history-card">
+      <div id="history-table-container" class="w-full">
+        <div class="premium-table-wrap">
+          <table class="history-table premium-history-table" id="historyTable" style="display:none;">
+            <thead>
+              <tr>
+  <th class="light-flat-th bg-transparent" data-i18n="history_col_target">Target / Content</th>
+<th class="light-flat-th bg-transparent" data-i18n="history_col_category">Category</th>
+<th class="light-flat-th bg-transparent" data-i18n="history_col_risk">Risk Score</th>
+<th class="light-flat-th bg-transparent" data-i18n="history_col_date">Date Analyzed</th>
+</tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+          </table>
+        </div>
+        <div class="history-empty" id="historyEmpty">
+          <span class="material-symbols-outlined premium-empty-icon">history</span>
+          <p data-i18n="history_empty_title">No scans yet</p>
+          <p data-i18n="history_empty_info">Start by analyzing a URL, image, or message.</p>
+          <a href="{{ url_for('home') }}#tool-section" class="btn btn-primary" data-i18n="history_action">Go to Analyzer</a>
+        </div>
+        <div class="premium-table-footer light-flat-meta bg-transparent">
+          <span data-i18n="history_saved">Saved securely with your Clerk account</span>
+
+          <div><span class="material-symbols-outlined light-flat-page-key">chevron_left</span><span class="material-symbols-outlined light-flat-page-key">chevron_right</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer2">
+    <div class="footer2-inner">
+
+      <!-- Panneau principal : marque + tagline + réseaux -->
+      <div class="footer2-primary">
+        <div>
+          <div class="footer2-primary-top">
+            <span class="material-symbols-outlined fill">shield_lock</span>
+            <span class="footer2-primary-brand">CyberGuard AI</span>
+          </div>
+          <h2 class="footer2-tagline">Detect threats. Protect everything.</h2>
+        </div>
+
+        <div class="footer2-social-row">
+          <span class="footer2-social-text">Connect with us</span>
+          <div class="footer2-social-icons">
+            <a href="#" aria-label="Twitter / X">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23.3 22h-7l-5.5-6.8L4.5 22H1.4l8.1-9.3L1 2h7.2l5 6.3L18.9 2Zm-1.2 18h1.7L7.4 4H5.6l12.1 16Z"/></svg>
+            </a>
+            <a href="#" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5ZM.24 8.25h4.5V23H.24V8.25ZM8.5 8.25h4.31v2.01h.06c.6-1.14 2.07-2.34 4.26-2.34 4.55 0 5.39 3 5.39 6.9V23h-4.5v-6.35c0-1.51-.03-3.46-2.11-3.46-2.11 0-2.43 1.65-2.43 3.35V23H8.5V8.25Z"/></svg>
+            </a>
+            <a href="#" aria-label="GitHub">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 .5C5.6.5.5 5.6.5 12c0 5.1 3.3 9.4 7.9 11 .6.1.8-.3.8-.6v-2.2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.6-1.6 7.9-5.9 7.9-11C23.5 5.6 18.4.5 12 .5Z"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panneau secondaire : liens + newsletter -->
+      <div class="footer2-muted">
+        <span class="material-symbols-outlined fill footer2-floating-icon" aria-hidden="true">shield_lock</span>
+
+        <nav class="footer2-groups" aria-label="Footer navigation">
+          <div class="footer2-group">
+            <h3>Explore</h3>
+            <ul>
+              <li><a href="{{ url_for('home') }}">Home</a></li>
+              <li><a href="#tool-section">Features</a></li>
+              <li><a href="{{ url_for('history') }}">History</a></li>
+              <li><a href="{{ url_for('academy') }}">Academy</a></li>
+            </ul>
+          </div>
+          <div class="footer2-group">
+            <h3>Organization</h3>
+            <ul>
+              <li><a href="mailto:ai.cybergard@gmail.com?subject=Help Center">Help Center</a></li>
+              <li><a href="mailto:ai.cybergard@gmail.com?subject=Contact">Contact</a></li>
+              <li><a href="mailto:ai.cybergard@gmail.com?subject=Privacy Policy">Privacy Policy</a></li>
+              <li><a href="mailto:ai.cybergard@gmail.com?subject=Terms of Service">Terms of Service</a></li>
+            </ul>
+          </div>
+        </nav>
+
+        <div class="footer2-bottom">
+          <p class="footer2-copy">© 2026 CyberGuard AI. Secure Intelligence.</p>
+
+          <div class="footer2-newsletter">
+            <p class="footer2-newsletter-sub">Stay one step ahead of threats.</p>
+            <h3 class="footer2-newsletter-title">Join the CyberGuard AI updates.</h3>
+            <form class="footer2-form" onsubmit="event.preventDefault();">
+              <label for="footer2-email" class="sr-only">Email address</label>
+              <input id="footer2-email" name="email" type="email" placeholder="Enter email address" required>
+              <button type="submit">Subscribe</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Retour en haut">
+    <div class="btn-ring"></div><div class="btn-ring btn-ring-2"></div>
+    <div class="btn-icon-wrap">
+      <svg class="icon-dark" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 16V4" stroke="white" stroke-width="2.2" stroke-linecap="round"/><path d="M4 10l6-6 6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg class="icon-light" width="20" height="20" viewBox="0 0 20 20" fill="none" style="display:none;"><path d="M10 16V4" stroke="#0066ff" stroke-width="2.2" stroke-linecap="round"/><path d="M4 10l6-6 6 6" stroke="#0066ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+  </button>
+
+  <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!window.Clerk) return;
+      await window.Clerk.load();
+      clerkUser = window.Clerk.user;
+      if (!clerkUser) {
+        window.location.href = '{{ url_for("signin") }}';
+        return;
+      }
+      updateNavbar();
+      await syncBackendClerkUser(clerkUser).catch(() => {});
+      loadHistory();
+    });
+  </script>
+</body>
+</html>

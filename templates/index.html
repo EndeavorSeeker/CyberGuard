@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberGuard AI - Premium Cybersecurity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
+  <link rel="stylesheet" href="{{ material_symbols_url }}" media="print" onload="this.media='all'" />
+  <noscript><link href="{{ material_symbols_url }}" rel="stylesheet" /></noscript>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script>
+    window.CG_CLERK_CONFIG = {
+      publishableKey: {{ clerk_publishable_key|tojson }},
+      jsUrl: {{ clerk_js_url|tojson }}
+    };
+  </script>
+</head>
+<body class="premium-page home-page">
+  <div class="stars-container" aria-hidden="true">
+    <div class="stars"></div>
+    <div class="stars2"></div>
+    <div class="stars3"></div>
+  </div>
+  <div class="premium-bg" aria-hidden="true">
+    <div class="premium-glow premium-glow-one"></div>
+    <div class="premium-glow premium-glow-two"></div>
+    <div class="premium-noise"></div>
+  </div>
+
+<nav class="navbar premium-navbar">
+  <div class="nav-inner premium-nav-inner">
+
+    <!-- Logo (toujours visible) -->
+    <a href="{{ url_for('home') }}" class="nav-logo premium-logo">
+    <img src="{{ url_for('static', filename='logo.cybergard.webp') }}" alt="CyberGuard AI" height="44" style="object-fit:contain;">
+      <span class="nav-logo-text">CyberGuard <span style="font-weight:900;opacity:0.85;">AI</span></span>
+    </a>
+
+    <!-- Links desktop (cachés < 1000px) -->
+    <div class="premium-nav-links nav-pill" id="desktopNavLinks">
+      <span class="nav-pill-bg" id="navPillBg" aria-hidden="true"></span>
+      <a href="{{ url_for('home') }}" class="nav-link active" data-i18n="navbar_home">Home</a>
+      <a href="{{ url_for('history') }}" class="nav-link" data-i18n="navbar_history">History</a>
+      <a href="{{ url_for('academy') }}" class="nav-link" data-i18n="academy_title_nav">Academy</a>
+    </div>
+
+
+    <!-- Actions droite (toujours visibles) -->
+    <div class="nav-actions premium-actions">
+
+      <!-- Sign In (desktop uniquement) -->
+      <div id="userNav" class="user-nav">
+        <a href="{{ url_for('signin') }}" id="getStartedBtn" class="btn btn-primary" data-i18n="navbar_signin">Sign In</a>
+        <div id="profileMenu" class="profile-menu">
+          <div id="userButton" hidden></div>
+          <button id="profileBtn" class="profile-btn" onclick="toggleProfileDropdown()" type="button">
+            <span class="material-symbols-outlined">person</span>
+            <span id="profileEmail">User</span>
+            <span class="material-symbols-outlined small-icon">expand_more</span>
+          </button>
+          <button id="profileCircular" class="profile-circular-badge" onclick="toggleProfileDropdown()" type="button">
+            <span class="material-symbols-outlined">account_circle</span>
+          </button>
+          <div id="profileDropdown" class="profile-dropdown">
+  <div class="profile-dropdown-head">
+    <div class="profile-label" data-i18n="profile_logged_in">Your Account</div>
+    <div id="profileEmailFull" class="profile-email-full"></div>
+  </div>
+  <a href="{{ url_for('history') }}" class="profile-menu-item" data-i18n="navbar_history">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.6;">history</span>
+    History
+  </a>
+  <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">
+    <span class="material-symbols-outlined" style="font-size:17px;opacity:0.7;">logout</span>
+    Sign Out
+  </button>
+</div>
+        </div>
+      </div>
+
+      <!-- Theme toggle -->
+      <button id="themeToggleBtn" class="premium-icon-btn theme-toggle-inline" title="Toggle theme" type="button" aria-label="Toggle dark mode">
+        <span class="material-symbols-outlined">light_mode</span>
+      </button>
+
+      <!-- Settings (toujours visible) -->
+      <div id="settings-toggle">
+        <button id="settingsBtn" class="premium-icon-btn" title="Settings" type="button">
+          <span class="material-symbols-outlined">settings</span>
+        </button>
+      </div>
+      <div id="settingsDropdown" class="settings-dropdown" style="display:none;">
+        <div class="settings-group">
+          <p data-i18n="navbar_language">Language</p>
+          <button type="button" data-lang="en" class="lang-btn">English</button>
+          <button type="button" data-lang="fr" class="lang-btn">Francais</button>
+          <button type="button" data-lang="ar" class="lang-btn">Arabic</button>
+        </div>
+        <div class="settings-group">
+          <p data-i18n="navbar_theme">Theme</p>
+          <button type="button" data-theme="dark" class="theme-btn">Dark Mode</button>
+          <button type="button" data-theme="light" class="theme-btn">Light Mode</button>
+        </div>
+        <div id="mobileProfile" class="settings-profile">
+          <div class="profile-label">Logged in as</div>
+          <div id="mobileProfileEmail" class="profile-email-full"></div>
+          <button onclick="signOut()" class="profile-menu-item profile-signout" data-i18n="navbar_signout">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- Burger (visible < 1000px uniquement) -->
+      <button class="burger-btn premium-icon-btn" id="burgerBtn" type="button" aria-label="Menu" onclick="toggleBurgerMenu()">
+        <span class="material-symbols-outlined">menu</span>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Burger dropdown menu -->
+  <div class="burger-menu" id="burgerMenu">
+    <a href="{{ url_for('home') }}" class="burger-link active">
+      <span class="material-symbols-outlined">home</span>
+      <span data-i18n="navbar_home">Home</span>
+    </a>
+
+    <a href="{{ url_for('history') }}" class="burger-link">
+      <span class="material-symbols-outlined">history</span>
+      <span data-i18n="navbar_history">History</span>
+    </a>
+    <a href="{{ url_for('academy') }}" class="burger-link">
+      <span class="material-symbols-outlined">school</span>
+      Academy
+    </a>
+
+    <!-- Langues dans le burger -->
+    <div class="burger-settings-section">
+      <p class="burger-section-label" data-i18n="navbar_language">Language</p>
+      <div class="burger-lang-grid">
+        <button type="button" data-lang="en" class="lang-btn">EN</button>
+        <button type="button" data-lang="fr" class="lang-btn">FR</button>
+        <button type="button" data-lang="ar" class="lang-btn">AR</button>
+      </div>
+    </div>
+
+    <!-- Sign In dans le burger (caché si connecté) -->
+    <div class="burger-auth" id="burgerAuth">
+      <a href="{{ url_for('signin') }}" class="btn btn-primary burger-signin" data-i18n="navbar_signin">Sign In</a>
+    </div>
+  </div>
+</nav>
+
+  <main class="premium-main">
+    <section class="premium-hero reveal-section">
+      <div class="hero-visual-panel" aria-hidden="true">
+        <div id="globe-container" class="hero-visual-3d">
+        <canvas id="globe-canvas"></canvas>
+      </div>
+        <div class="hero-visual-shape"></div>
+        <div class="hero-visual-tint"></div>
+      </div>
+      <div class="premium-badge">
+        <span></span>
+        <span data-i18n="hero_badge">AI-Powered Cybersecurity Platform</span>
+      </div>
+      <h1 class="hero-title premium-title" data-i18n="hero_title">
+        Detect threats.<br/>
+        <span class="hero-gradient">Protect everything.</span>
+      </h1>
+      <p class="hero-sub premium-sub" data-i18n="hero_sub">
+        Scan URLs, images, and messages for phishing, social engineering, and malicious content — powered by AI, in real time.
+      </p>
+        <div class="premium-cta-row">
+        <button class="premium-primary-btn" onclick="scrollToModules()" type="button">
+          Start Scan
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </button>
+        <a class="premium-secondary-btn light-flat-action" href="{{ url_for('history') }}">View History</a>
+      </div>
+
+
+      <div class="hero-stats premium-stats stats3-row">
+        <div class="stat3-card">
+          <span class="material-symbols-outlined stat3-icon stat3-icon-users">group</span>
+          <span class="stat-num" id="userCount" data-target="{{ stats.users|default(0) }}">0</span>
+          <span class="stat-lbl" data-i18n="stats_users">Users</span>
+        </div>
+        <div class="stat3-card">
+          <span class="material-symbols-outlined stat3-icon stat3-icon-scans">search</span>
+          <span class="stat-num" id="scanCount" data-target="{{ stats.scans|default(0) }}">0</span>
+          <span class="stat-lbl" data-i18n="stats_scans">Scans</span>
+        </div>
+        <div class="stat3-card">
+          <span class="stat-num">99.2%</span>
+          <span class="stat-lbl" data-i18n="stats_accuracy">Accuracy</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="premium-section modules-section" id="tool-section">
+      <div class="premium-section-head">
+        <h2 data-i18n="platform_modules">Platform Modules</h2>
+      </div>
+      <div class="modules-inner premium-modules">
+        <button class="module-card premium-module-card" onclick="openModule('url')" type="button">
+          <span class="premium-module-icon text-primary"><span class="material-symbols-outlined">link</span></span>
+          <h3 class="module-card-title" data-i18n="module_url_title">URL Shield</h3>
+          <p class="module-card-desc" data-i18n="module_url_desc">Real-time heuristic analysis of links to prevent phishing and malware before connection.</p>
+          <span class="module-card-cta"><span data-i18n="module_url_cta">Analyze a URL</span><span class="material-symbols-outlined">arrow_right_alt</span></span>
+        </button>
+
+        <button class="module-card premium-module-card" onclick="openModule('image')" type="button">
+          <span class="premium-module-icon text-secondary"><span class="material-symbols-outlined">image_search</span></span>
+          <h3 class="module-card-title" data-i18n="module_image_title">Image Scan</h3>
+          <p class="module-card-desc" data-i18n="module_image_desc">Deep learning models detect manipulated screenshots, QR phishing, and hidden payload signals.</p>
+          <span class="module-card-cta"><span data-i18n="module_image_cta">Scan an image</span><span class="material-symbols-outlined">arrow_right_alt</span></span>
+        </button>
+
+        <button class="module-card premium-module-card" onclick="openModule('msg')" type="button">
+          <span class="premium-module-icon text-tertiary"><span class="material-symbols-outlined">verified_user</span></span>
+          <h3 class="module-card-title" data-i18n="module_msg_title">TrustCheck</h3>
+          <p class="module-card-desc" data-i18n="module_msg_desc">Identify social engineering, fake messages, and manipulation attempts before they spread.</p>
+          <span class="module-card-cta"><span data-i18n="module_msg_cta">Check a message</span><span class="material-symbols-outlined">arrow_right_alt</span></span>
+        </button>
+      </div>
+    </section>
+
+    <section class="premium-academy-card">
+      <div class="premium-academy-content">
+        <span class="premium-pill"><span class="material-symbols-outlined">school</span> <span data-i18n="home_new_module">New Module</span></span>
+        <h2 data-i18n="academy_title_nav">CyberGuard Academy</h2>
+        <p data-i18n="academy_subtext">Level up your team's threat response with focused, interactive simulations based on realistic attacks.</p>
+        <a class="premium-secondary-btn light-flat-action" href="{{ url_for('academy') }}" data-i18n="enter_training_sim">Enter Training Simulator</a>
+      </div>
+      <div class="premium-academy-visual">
+        <img class="academy-screen-image" src="{{ url_for('static', filename='js/screen.webp') }}" alt="CyberGuard Academy screen preview" loading="lazy">
+      </div>
+    </section>
+
+    <section class="how-section premium-how">
+      <div class="how-inner">
+        <h2 class="how-title" data-i18n="home_workflow_header">How it works</h2>
+
+
+        <p class="how-sub" data-i18n="home_workflow_steps_header">Five simple steps to master your protection</p>
+        <p class="how-note" data-i18n="home_workflow_steps_sub">Follow a streamlined process to secure your digital assets with AI-driven intelligence.</p>
+
+        <div class="premium-steps stacked-accordion" style="transform-style:preserve-3d;">
+  <article class="step-item premium-step light-workflow-card">
+    <strong>01</strong>
+    <h3 data-i18n="academy_step_01_title">Select Tool</h3>
+    <p data-i18n="academy_step_01_desc">Choose the right cybersecurity tool. Use URL Shield for suspicious links, Image Scan for uploaded images, and TrustCheck to verify messages and emails.</p>
+    <div class="step-more" role="button" tabindex="0" onclick="scrollToModules()" onkeydown="if(event.key==='Enter'||event.key===' '){scrollToModules();}"><span data-i18n="academy_step_more">En Savoir Plus</span></div>
+  </article>
+
+  <article class="step-item premium-step light-workflow-card" data-step="2">
+
+    <strong>02</strong>
+
+    <h3 data-i18n="academy_step_02_title">Submit Content</h3>
+    <p data-i18n="academy_step_02_desc">Securely provide the content you want to analyze by pasting a suspicious link, uploading an image or file, or entering message text directly into the platform. Our system processes your input safely and prepares it for advanced analysis to ensure fast and accurate threat detection.</p>
+    <div class="step-more" role="button" tabindex="0" onclick="scrollToModules()" onkeydown="if(event.key==='Enter'||event.key===' '){scrollToModules();}"><span data-i18n="academy_step_more">En Savoir Plus</span></div>
+  </article>
+  <article class="step-item premium-step light-workflow-card" data-step="3">
+    <strong>03</strong>
+
+    <h3 data-i18n="academy_step_03_title">Review Results</h3>
+    <p data-i18n="academy_step_03_desc">Within seconds, receive a complete analysis with a clear risk score, threat indicators, detected vulnerabilities, and personalized recommendations. The results help you understand potential risks and guide you toward the safest action to protect your data and devices.</p>
+    <div class="step-more" role="button" tabindex="0" onclick="scrollToModules()" onkeydown="if(event.key==='Enter'||event.key===' '){scrollToModules();}"><span data-i18n="academy_step_more">En Savoir Plus</span></div>
+  </article>
+  <article class="step-item premium-step light-workflow-card">
+    <strong>04</strong>
+    <h3 data-i18n="academy_step_04_title">Academy Training</h3>
+    <p data-i18n="academy_step_04_desc">Strengthen your cybersecurity awareness through interactive lessons, guided simulations, and real-world attack scenarios. Learn how to recognize phishing attempts, suspicious digital behavior, and modern cyberattack strategies while building practical defensive skills.</p>
+    <div class="step-more" role="button" tabindex="0" onclick="window.location.href='/academy'" onkeydown="if(event.key==='Enter'||event.key===' '){window.location.href='/academy';}"><span data-i18n="academy_step_more">En Savoir Plus</span></div>
+  </article>
+  <article class="step-item premium-step light-workflow-card">
+    <strong>05</strong>
+    <h3 data-i18n="academy_step_05_title">Master Security</h3>
+    <p data-i18n="academy_step_05_desc">Apply what you learn to build stronger digital habits every day. Improve your ability to identify risks quickly, respond effectively to suspicious situations, and maintain long-term protection across all your online activities and devices.</p>
+    <div class="step-more" role="button" tabindex="0" onclick="window.location.href='/academy'" onkeydown="if(event.key==='Enter'||event.key===' '){window.location.href='/academy';}"><span data-i18n="academy_step_more">En Savoir Plus</span></div>
+  </article>
+</div>
+
+      </div>
+    </section>
+  </main>
+
+  <div class="tool-overlay" id="toolOverlay" onclick="closeModule()"></div>
+  <div class="tool-panel" id="toolPanel">
+    <div class="tool-panel-header">
+      <div class="tool-panel-title" id="panelTitle" data-i18n="tool_panel_title">Analyze</div>
+      <button class="tool-close-btn" onclick="closeModule()" type="button" aria-label="Close">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="tool-pane" id="pane-url">
+      <label class="input-label" data-i18n="input_url_label">Enter URL to scan</label>
+      <input id="url-input" class="tool-input" type="url" data-i18n-placeholder="input_url_placeholder" autocomplete="off" spellcheck="false"/>
+      <div class="example-chips">
+        <span class="chips-label" data-i18n="chips_try">Try:</span>
+        <button class="chip chip-danger" onclick="loadExample('url','phishing')" data-i18n="chip_phishing_url" type="button">Phishing URL</button>
+        <button class="chip chip-safe" onclick="loadExample('url','safe')" data-i18n="chip_safe_url" type="button">Safe URL</button>
+      </div>
+    </div>
+
+    <div class="tool-pane" id="pane-image">
+      <label class="input-label" data-i18n="input_image_label">Upload or drag an image</label>
+      <div class="drop-zone" id="dropZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onclick="document.getElementById('imageFileInput').click()">
+        <span class="material-symbols-outlined drop-symbol">cloud_upload</span>
+        <p class="drop-title" data-i18n="tool_drop_title">Drag and drop your image here</p>
+        <p class="drop-sub" data-i18n="tool_drop_sub">or browse files</p>
+        <p class="drop-formats" data-i18n="tool_drop_formats">PNG, JPG, WEBP - max 10 MB</p>
+      </div>
+      <input type="file" id="imageFileInput" accept="image/*" style="display:none" onchange="handleFileSelect(event)"/>
+      <div class="image-preview-wrap hidden" id="imagePreviewWrap">
+        <img class="image-preview" id="imagePreview" alt="Preview"/>
+        <div class="image-preview-info">
+          <span class="image-preview-name" id="imageName">-</span>
+          <button class="image-remove-btn" onclick="removeImage()" type="button">Remove</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-pane" id="pane-msg">
+      <label class="input-label" data-i18n="input_msg_label">Paste message or email</label>
+      <textarea id="msg-input" class="tool-textarea" rows="6" data-i18n-placeholder="input_msg_placeholder"></textarea>
+      <div class="example-chips">
+        <span class="chips-label" data-i18n="chips_try">Try:</span>
+        <button class="chip chip-danger" onclick="loadExample('msg','fake')" data-i18n="chip_fake_message" type="button">Fake Message</button>
+        <button class="chip chip-safe" onclick="loadExample('msg','legit')" data-i18n="chip_legit_message" type="button">Legit Message</button>
+      </div>
+    </div>
+
+    <button class="btn-analyze" id="analyzeBtn" onclick="analyzeNow()" type="button">
+      <span id="btnContent" data-i18n="analyze_btn">Analyze Threat</span>
+      <span id="btnSpinner" class="hidden"><span class="spinner-ring"></span></span>
+    </button>
+
+    <div class="error-toast hidden" id="errorToast">
+      <span class="material-symbols-outlined">error</span>
+      <span id="errorMsg" data-i18n="tool_error_generic">Something went wrong.</span>
+    </div>
+
+    <div class="result-card hidden" id="resultCard">
+      <div class="result-card-glow" id="resultGlow"></div>
+      <div class="result-header">
+        <div>
+          <h3 class="result-title" data-i18n="result_title">Analysis Complete</h3>
+          <span class="result-category" id="resultCategory">-</span>
+        </div>
+        <div class="threat-badge" id="threatBadge">
+          <span class="threat-dot" id="threatDot"></span>
+          <span id="threatLabel">-</span>
+        </div>
+      </div>
+      <div class="result-score-section">
+        <div class="score-ring-wrap">
+          <svg class="score-ring" width="110" height="110" viewBox="0 0 110 110">
+            <circle class="ring-track" cx="55" cy="55" r="44"/>
+            <circle class="ring-fill" cx="55" cy="55" r="44" id="ringFill"/>
+          </svg>
+          <div class="ring-center"><span class="ring-number" id="ringNumber">0</span><span class="ring-unit">%</span></div>
+        </div>
+        <div class="score-details">
+          <div class="score-label-row"><span class="score-label" data-i18n="score_label">Risk Score</span><span class="score-value" id="scoreText">0%</span></div>
+          <div class="score-bar-track"><div class="score-bar-fill" id="scoreBar"></div></div>
+          <div class="score-scale"><span data-i18n="scale_safe">Safe</span><span data-i18n="scale_suspicious">Suspicious</span><span data-i18n="scale_dangerous">Dangerous</span></div>
+        </div>
+      </div>
+      <div class="result-explanation">
+        <div class="explain-header">
+          <span class="material-symbols-outlined">psychology</span>
+          <span data-i18n="result_ai_explanation">AI Explanation</span>
+          <button class="explain-toggle" id="explainToggle" onclick="toggleExplanation()" data-i18n="explain_toggle" type="button">Explain like I am human</button>
+        </div>
+        <p class="explain-text" id="explainText">-</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer2">
+    <div class="footer2-inner">
+
+      <!-- Panneau principal : marque + tagline + réseaux -->
+      <div class="footer2-primary">
+        <div>
+          <div class="footer2-primary-top">
+            <span class="material-symbols-outlined fill">shield_lock</span>
+            <span class="footer2-primary-brand">CyberGuard AI</span>
+          </div>
+          <h2 class="footer2-tagline">Detect threats. Protect everything.</h2>
+        </div>
+
+        <div class="footer2-social-row">
+          <span class="footer2-social-text">Connect with us</span>
+          <div class="footer2-social-icons">
+            <a href="#" aria-label="Twitter / X">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M18.9 2H22l-7.6 8.7L23.3 22h-7l-5.5-6.8L4.5 22H1.4l8.1-9.3L1 2h7.2l5 6.3L18.9 2Zm-1.2 18h1.7L7.4 4H5.6l12.1 16Z"/></svg>
+            </a>
+            <a href="#" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5ZM.24 8.25h4.5V23H.24V8.25ZM8.5 8.25h4.31v2.01h.06c.6-1.14 2.07-2.34 4.26-2.34 4.55 0 5.39 3 5.39 6.9V23h-4.5v-6.35c0-1.51-.03-3.46-2.11-3.46-2.11 0-2.43 1.65-2.43 3.35V23H8.5V8.25Z"/></svg>
+            </a>
+            <a href="#" aria-label="GitHub">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 .5C5.6.5.5 5.6.5 12c0 5.1 3.3 9.4 7.9 11 .6.1.8-.3.8-.6v-2.2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.6-1.6 7.9-5.9 7.9-11C23.5 5.6 18.4.5 12 .5Z"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panneau secondaire : liens + newsletter -->
+      <div class="footer2-muted">
+        <span class="material-symbols-outlined fill footer2-floating-icon" aria-hidden="true">shield_lock</span>
+
+        <nav class="footer2-groups" aria-label="Footer navigation">
+          <div class="footer2-group">
+            <h3>Explore</h3>
+            <ul>
+              <li><a href="{{ url_for('home') }}">Home</a></li>
+              <li><a href="#tool-section">Features</a></li>
+              <li><a href="{{ url_for('history') }}">History</a></li>
+              <li><a href="{{ url_for('academy') }}">Academy</a></li>
+            </ul>
+          </div>
+          <div class="footer2-group">
+            <h3>Organization</h3>
+            <ul>
+              <li><a href="mailto:ai.cybergard@gmail.com?subject=Help Center">Help Center</a></li>
+              <li><a href="mailto:ai.cybergard@gmail.com?subject=Contact">Contact</a></li>
+              <li><a href="mailto:ai.cybergard@gmail.com?subject=Privacy Policy">Privacy Policy</a></li>
+              <li><a href="mailto:ai.cybergard@gmail.com?subject=Terms of Service">Terms of Service</a></li>
+            </ul>
+          </div>
+        </nav>
+
+        <div class="footer2-bottom">
+          <p class="footer2-copy">© 2026 CyberGuard AI. Secure Intelligence.</p>
+
+          <div class="footer2-newsletter">
+            <p class="footer2-newsletter-sub">Stay one step ahead of threats.</p>
+            <h3 class="footer2-newsletter-title">Join the CyberGuard AI updates.</h3>
+            <form class="footer2-form" onsubmit="event.preventDefault();">
+              <label for="footer2-email" class="sr-only">Email address</label>
+              <input id="footer2-email" name="email" type="email" placeholder="Enter email address" required>
+              <button type="submit">Subscribe</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- ── Scroll-to-Top: Premium Radial Progress ── -->
+  <div class="stt-container" id="scrollTopBtn" aria-label="Scroll to top" role="button" tabindex="0"
+       onclick="window.scrollTo({top:0,behavior:'smooth'})"
+       onkeydown="if(event.key==='Enter'||event.key===' ')window.scrollTo({top:0,behavior:'smooth'})">
+    <svg class="stt-svg" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle class="stt-track" cx="28" cy="28" r="24" stroke-width="3"/>
+      <circle class="stt-progress" id="sttProgressRing" cx="28" cy="28" r="24"
+              stroke="#ffffff" stroke-width="3"
+              stroke-linecap="round"
+              stroke-dasharray="0 150.796"
+              transform="rotate(-90 28 28)"/>
+    </svg>
+    <div class="stt-icon-wrap" id="sttIconWrap">
+      <svg class="stt-arrow stt-arrow-dark" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <path d="M10 16V4" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M4 10l6-6 6 6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <svg class="stt-arrow stt-arrow-light" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true" style="display:none;">
+        <path d="M10 16V4" stroke="#0055ff" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M4 10l6-6 6 6" stroke="#0055ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="stt-tooltip" data-i18n="scroll_top_label">Back to top</span>
+  </div>
+
+  <script defer src="{{ url_for('static', filename='js/theme.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+  <!-- Globe script loads like any other deferred script now that the actual
+       blocking cause (synchronous dot-grid computation) is fixed inside
+       globe.js itself (see buildDotsAsync there). No artificial delay needed. -->
+  <script defer src="{{ url_for('static', filename='js/globe.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

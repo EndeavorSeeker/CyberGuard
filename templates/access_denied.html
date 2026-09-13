@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accès refusé — CyberGuard AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preload" href="{{ material_symbols_url }}" as="style" onload="this.rel='stylesheet'" />
+  <noscript><link href="{{ material_symbols_url }}" rel="stylesheet" /></noscript>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <style>
+    .denied-wrap {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 32px;
+    }
+    .denied-icon {
+      width: 88px; height: 88px; border-radius: 999px;
+      display: grid; place-items: center; margin-bottom: 26px;
+      background: rgba(239,68,68,0.10);
+      border: 1px solid rgba(239,68,68,0.35);
+      box-shadow: 0 0 40px rgba(239,68,68,0.15);
+    }
+    .denied-icon .material-symbols-outlined { font-size: 44px; color: #f87171; }
+    .denied-wrap h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 10px; }
+    .denied-wrap p { color: var(--text-sub); max-width: 440px; margin: 0 auto 28px; line-height: 1.6; }
+    .denied-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  </style>
+</head>
+<body class="premium-page">
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="{{ url_for('home') }}" class="nav-logo" style="gap:6px;">
+        <img src="{{ url_for('static', filename='logo.cybergard.webp') }}" alt="CyberGuard AI" height="36" style="object-fit:contain;">
+        <span class="nav-logo-text">CyberGuard AI</span>
+      </a>
+      <div class="nav-actions">
+        <a href="{{ url_for('home') }}" class="nav-link">Home</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="denied-wrap">
+    <div class="denied-icon">
+      <span class="material-symbols-outlined">lock_person</span>
+    </div>
+    <h1>Vous n'avez pas la permission d'accéder à cette page</h1>
+    <p>
+      Ce compte ({{ user_email }}) n'est pas autorisé à consulter cette section.
+      Si vous pensez qu'il s'agit d'une erreur, contactez l'administrateur du site.
+    </p>
+    <div class="denied-actions">
+      <a href="{{ url_for('home') }}" class="btn btn-primary">Retour à l'accueil</a>
+    </div>
+  </main>
+</body>
+</html>
