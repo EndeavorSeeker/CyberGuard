@@ -6,20 +6,34 @@ window.addEventListener('dragover', (e) => {
 window.addEventListener('drop', (e) => {
     e.preventDefault();
     const files = e.dataTransfer.files;
+    const fileInput = document.getElementById('file-input');
 
-    if (files.length > 0) {
-        // This line links the dropped file to your hidden input
-        document.getElementById('file-input').files = files;
-        
-        // Optional: Provide visual feedback
-        document.getElementById('status').innerText = "File ready: " + files[0].name;
+    if (files.length > 0 && fileInput) {
+        const dt = new DataTransfer();
+        for (const file of Array.from(files)) {
+            dt.items.add(file);
+        }
+        fileInput.files = dt.files;
+        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+        const status = document.getElementById('status');
+        if (status) {
+            status.innerText = "File ready: " + files[0].name;
+        }
     }
 });
 
 function handleGlobalDrop(file) {
     console.log("File received globally:", file.name);
     
-    // Example: Update your UI to show the file name
+    const fileInput = document.getElementById('file-input');
+    if (fileInput && file) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    
     const status = document.getElementById('status');
     if (status) {
         status.innerText = "Ready to process: " + file.name;

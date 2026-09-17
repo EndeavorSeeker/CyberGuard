@@ -26,6 +26,8 @@ function applyTheme(theme) {
     document.body.classList.add('dark-mode');
     document.body.classList.remove('light-mode');
   }
+
+  window.dispatchEvent(new CustomEvent('cg:themechange', { detail: { theme: effective } }));
 }
 
 function changeTheme(theme) { applyTheme(theme); }

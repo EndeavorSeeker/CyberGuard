@@ -1,4 +1,3 @@
-
 'use strict';
 
 /* ─────────────────────────────────────
@@ -14,6 +13,96 @@ const state = {
 };
 let clerkUser = null;
 let clerkLoaded = false;
+let csrfToken = null;
+let currentAuth = null;
+let clerkInitPromise = null;
+let clerkScriptPromise = null;
+let authStatePromise = null;
+
+function runWhenIdle(callback, timeout = 1800) {
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(callback, { timeout });
+    return;
+  }
+  setTimeout(callback, timeout);
+}
+
+function buildHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  if (csrfToken) {
+    headers['X-CSRF-Token'] = csrfToken;
+  }
+  return headers;
+}
+
+async function loadCsrfToken() {
+  try {
+    const response = await fetch('/api/csrf-token', { credentials: 'same-origin' });
+    if (!response.ok) return;
+    const data = await response.json();
+    csrfToken = data.csrf_token;
+  } catch (err) {
+    console.warn('Unable to load CSRF token:', err);
+  }
+}
+
+async function loadAuthState() {
+  if (authStatePromise) return authStatePromise;
+  authStatePromise = (async () => {
+  try {
+    const response = await fetch('/api/auth/me', { credentials: 'same-origin' });
+    if (!response.ok) return;
+    currentAuth = await response.json();
+  } catch (err) {
+    console.warn('Unable to load auth state:', err);
+    currentAuth = { authenticated: false };
+  } finally {
+    authStatePromise = null;
+  }
+  })();
+  return authStatePromise;
+}
+
+function loadClerkScript() {
+  if (window.Clerk) return Promise.resolve();
+  const config = window.CG_CLERK_CONFIG;
+  if (!config?.jsUrl || !config?.publishableKey) return Promise.resolve();
+  if (clerkScriptPromise) return clerkScriptPromise;
+
+  clerkScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = config.jsUrl;
+    script.async = true;
+    script.crossOrigin = 'anonymous';
+    script.type = 'text/javascript';
+    script.dataset.clerkPublishableKey = config.publishableKey;
+
+    const cleanup = () => {
+      clearTimeout(timer);
+      script.onload = null;
+      script.onerror = null;
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      clerkScriptPromise = null;
+      reject(new Error('Clerk script load timeout'));
+    }, 5000);
+    script.onload = () => {
+      cleanup();
+      window.dispatchEvent(new Event('cg:clerk-ready'));
+      resolve();
+    };
+    script.onerror = () => {
+      cleanup();
+      clerkScriptPromise = null;
+      reject(new Error('Clerk script failed to load'));
+    };
+
+    document.head.appendChild(script);
+  });
+
+  return clerkScriptPromise;
+}
 
 async function syncBackendClerkUser(user) {
   const email = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || user?.email;
@@ -21,7 +110,8 @@ async function syncBackendClerkUser(user) {
 
   await fetch('/api/sync-user', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    headers: buildHeaders(),
     body: JSON.stringify({ user_id: user.id, email }),
   });
 }
@@ -30,27 +120,40 @@ async function syncBackendClerkUser(user) {
    CLERK AUTH
 ───────────────────────────────────── */
 async function initClerk() {
-  if (!window.Clerk) {
-    updateNavbar();
-    return;
-  }
+  if (clerkInitPromise) return clerkInitPromise;
 
-  try {
-    if (!clerkLoaded) {
-      await window.Clerk.load();
-      clerkLoaded = true;
+  clerkInitPromise = (async () => {
+    await Promise.all([loadCsrfToken(), loadAuthState()]);
+    await loadClerkScript().catch((err) => {
+      console.warn('Unable to load Clerk:', err);
+    });
+
+    if (!window.Clerk) {
+      updateNavbar();
+      clerkInitPromise = null;
+      return;
     }
-    clerkUser = window.Clerk.user;
-    if (clerkUser) {
-      await syncBackendClerkUser(clerkUser).catch((err) => {
-        console.warn('Unable to sync Clerk user to backend:', err);
-      });
+
+    try {
+      if (!clerkLoaded) {
+        await window.Clerk.load();
+        clerkLoaded = true;
+      }
+      clerkUser = window.Clerk.user;
+      if (clerkUser) {
+        await syncBackendClerkUser(clerkUser).catch((err) => {
+          console.warn('Unable to sync Clerk user to backend:', err);
+        });
+      }
+    } catch (err) {
+      console.warn('Clerk failed to initialize:', err);
+    } finally {
+      updateNavbar();
+      clerkInitPromise = null;
     }
-  } catch (err) {
-    console.warn('Clerk failed to initialize:', err);
-  } finally {
-    updateNavbar();
-  }
+  })();
+
+  return clerkInitPromise;
 }
 
 function updateNavbar() {
@@ -62,13 +165,16 @@ function updateNavbar() {
   const profileEmailFull = document.getElementById('profileEmailFull');
   const mobileProfile = document.getElementById('mobileProfile');
   const mobileProfileEmail = document.getElementById('mobileProfileEmail');
+  const burgerAuth = document.getElementById('burgerAuth') || document.getElementById('burgerAuthSection');
 
-  const email = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || '';
+  const isAuthenticated = !!(clerkUser || currentAuth?.authenticated);
+  const email = clerkUser?.primaryEmailAddress?.emailAddress || clerkUser?.emailAddresses?.[0]?.emailAddress || currentAuth?.email || '';
   const name = clerkUser?.fullName || clerkUser?.firstName || email.split('@')[0] || 'User';
 
-  if (clerkUser && email) {
+  if (isAuthenticated && email) {
     if (getStartedBtn) getStartedBtn.style.display = 'none';
     if (signInLink) signInLink.style.display = 'none';
+    if (burgerAuth) burgerAuth.style.display = 'none';
     if (profileMenu) profileMenu.style.display = 'flex';
     if (profileBtn) profileBtn.style.display = 'flex';
     if (profileEmail) profileEmail.textContent = name;
@@ -80,16 +186,10 @@ function updateNavbar() {
   } else {
     if (getStartedBtn) getStartedBtn.style.display = 'inline-flex';
     if (signInLink) signInLink.style.display = 'block';
+    if (burgerAuth) burgerAuth.style.display = 'block';
     if (profileMenu) profileMenu.style.display = 'none';
     if (mobileProfile) mobileProfile.style.display = 'none';
   }
-}
-
-async function signOut() {
-  if (window.Clerk) {
-    await window.Clerk.signOut();
-  }
-  window.location.href = '/';
 }
 
 function toggleProfileDropdown() {
@@ -97,10 +197,6 @@ function toggleProfileDropdown() {
   if (!dropdown) return;
   dropdown.classList.toggle('open');
 }
-
-window.addEventListener('load', () => {
-  initClerk();
-});
 
 document.addEventListener('click', (event) => {
   const menu = document.getElementById('profileMenu');
@@ -187,8 +283,27 @@ function scrollToModules() {
   }
 }
 
-function openModule(mod) {
-  if (!clerkUser) {
+function scrollToAcademy() {
+  const academySection = document.getElementById('academy-section');
+  if (academySection) {
+    academySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  // Fallback: section not found, go to academy page
+  window.location.href = '/academy';
+}
+
+
+async function ensureActionAuth() {
+  if (clerkUser || currentAuth?.authenticated) return true;
+  if (!currentAuth) await loadAuthState();
+  if (currentAuth?.authenticated) return true;
+  await initClerk();
+  return !!(clerkUser || currentAuth?.authenticated);
+}
+
+async function openModule(mod) {
+  if (!(await ensureActionAuth())) {
     window.location.href = '/signin';
     return;
   }
@@ -211,6 +326,7 @@ function openModule(mod) {
   // Open overlay + panel
   document.getElementById('toolOverlay').classList.add('active');
   document.getElementById('toolPanel').classList.add('open');
+  document.getElementById('scrollTopBtn')?.classList.remove('stt-visible');
 
   // Scroll panel into view on mobile
   setTimeout(() => {
@@ -219,9 +335,13 @@ function openModule(mod) {
 }
 
 function closeModule() {
-  document.getElementById('toolOverlay').classList.remove('active');
-  document.getElementById('toolPanel').classList.remove('open');
+  document.getElementById('toolOverlay')?.classList.remove('active');
+  document.getElementById('toolPanel')?.classList.remove('open');
   state.currentModule = null;
+  const y = window.scrollY || window.pageYOffset;
+  if (y > 280) {
+    document.getElementById('scrollTopBtn')?.classList.add('stt-visible');
+  }
 }
 
 /* ─────────────────────────────────────
@@ -257,7 +377,7 @@ function handleDrop(e) {
   if (file && file.type.startsWith('image/')) {
     processImageFile(file);
   } else {
-    showError('Please drop a valid image file (PNG, JPG, WEBP).');
+    showError(cgTranslate('tool_error_invalid_image_drop'));
   }
 }
 
@@ -269,7 +389,7 @@ function handleFileSelect(e) {
 function processImageFile(file) {
   // Validate size (10 MB max)
   if (file.size > 10 * 1024 * 1024) {
-    showError('Image is too large. Maximum size is 10 MB.');
+    showError(cgTranslate('tool_error_image_too_large'));
     return;
   }
 
@@ -336,7 +456,10 @@ function validateInput() {
 ───────────────────────────────────── */
 async function analyzeNow() {
   if (state.isLoading) return;
-  if (!clerkUser) {
+  if (!csrfToken) await loadCsrfToken();
+  if (!currentAuth) await loadAuthState();
+  if (!currentAuth?.authenticated && !clerkUser) await initClerk();
+  if (!clerkUser && !currentAuth?.authenticated) {
     window.location.href = '/signin';
     return;
   }
@@ -353,26 +476,23 @@ async function analyzeNow() {
 
     /* ═══ REAL FLASK CALL ═══ */
 
-    let body;
     const mod = state.currentModule;
 
+    let requestBody = { type: mod };
     if (mod === 'url') {
-      body = JSON.stringify({ type: 'url', url: document.getElementById('url-input').value.trim(), user_id: clerkUser ? clerkUser.id : null });
+      requestBody.url = document.getElementById('url-input').value.trim();
     } else if (mod === 'image') {
-      body = JSON.stringify({
-        type: 'image',
-        image_name: state.imageFile?.name || 'Uploaded image',
-        image_size: state.imageFile?.size || 0,
-        user_id: clerkUser.id,
-      });
+      requestBody.image_name = state.imageFile?.name || 'Uploaded image';
+      requestBody.image_size = state.imageFile?.size || 0;
     } else if (mod === 'msg') {
-      body = JSON.stringify({ type: 'msg', text: document.getElementById('msg-input').value.trim(), user_id: clerkUser ? clerkUser.id : null });
+      requestBody.text = document.getElementById('msg-input').value.trim();
     }
 
     const res = await fetch(API.scan, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: buildHeaders(),
+      body: JSON.stringify(requestBody),
     });
 
     if (!res.ok) {
@@ -390,7 +510,7 @@ async function analyzeNow() {
 
   } catch (err) {
     console.error('[CyberGuard]', err);
-    showError('Analysis failed. Please check your connection and try again.');
+    showError(cgTranslate('tool_error_analysis_failed'));
   } finally {
     setLoading(false);
   }
@@ -470,13 +590,17 @@ function renderResult(r) {
   badge.classList.add('level-' + r.level);
   bar.classList.add('level-' + r.level);
 
-  const labels = { safe:'✓ Safe', suspicious:'⚠ Suspicious', dangerous:'✕ Dangerous' };
+  const labels = {
+    safe: `✓ ${cgTranslate('scale_safe')}`,
+    suspicious: `⚠ ${cgTranslate('scale_suspicious')}`,
+    dangerous: `✕ ${cgTranslate('scale_dangerous')}`
+  };
   document.getElementById('threatLabel').textContent   = labels[r.level] || r.level;
   document.getElementById('resultCategory').textContent = r.category;
 
   state.explanationMode = 'technical';
   document.getElementById('explainText').textContent   = r.explanation;
-  document.getElementById('explainToggle').textContent = '🧠 Explain like I\'m human';
+  document.getElementById('explainToggle').textContent = cgTranslate('explain_toggle');
 
   card.classList.remove('hidden');
 
@@ -567,12 +691,12 @@ function toggleExplanation() {
   setTimeout(() => {
     if (state.explanationMode === 'technical') {
       state.explanationMode = 'human';
-      txt.textContent = humanExplanation || 'No simplified explanation available.';
-      btn.textContent = '⚙ Show technical details';
+      txt.textContent = humanExplanation || cgTranslate('explain_no_simple');
+      btn.textContent = cgTranslate('explain_show_technical');
     } else {
       state.explanationMode = 'technical';
       txt.textContent = explanation;
-      btn.textContent = '🧠 Explain like I\'m human';
+      btn.textContent = cgTranslate('explain_toggle');
     }
     txt.style.opacity = '1';
   }, 180);
@@ -604,6 +728,7 @@ function hideResult() { document.getElementById('resultCard').classList.add('hid
 ───────────────────────────────────── */
 async function handleAuthForm(e, endpoint) {
   e.preventDefault();
+  if (!csrfToken) await loadCsrfToken();
   const form    = e.target;
   const submitBtn = form.querySelector('button[type="submit"]');
   const errorEl = document.getElementById('authError');
@@ -615,18 +740,19 @@ async function handleAuthForm(e, endpoint) {
   errorEl.classList.add('hidden');
 
   if (confirm !== undefined && password !== confirm) {
-    errorEl.textContent = 'Passwords do not match.';
+    errorEl.textContent = cgTranslate('auth_passwords_no_match');
     errorEl.classList.remove('hidden');
     return;
   }
 
   submitBtn.disabled    = true;
-  submitBtn.textContent = 'Please wait…';
+  submitBtn.textContent = cgTranslate('auth_please_wait');
 
   try {
     const res  = await fetch(endpoint, {
       method:  'POST',
-      headers: { 'Content-Type':'application/json' },
+      credentials: 'same-origin',
+      headers: buildHeaders(),
       body:    JSON.stringify({ email, password }),
     });
     const data = await res.json();
@@ -635,20 +761,20 @@ async function handleAuthForm(e, endpoint) {
       if (endpoint.includes('signin')) {
         window.location.href = '/';
       } else {
-        errorEl.textContent = data.message || 'Account created! You can now sign in.';
+        errorEl.textContent = data.message || cgTranslate('auth_account_created');
         errorEl.style.color = 'var(--green)';
         errorEl.classList.remove('hidden');
       }
     } else {
-      errorEl.textContent = data.message || 'An error occurred. Please try again.';
+      errorEl.textContent = data.message || cgTranslate('auth_error_generic');
       errorEl.classList.remove('hidden');
     }
   } catch {
-    errorEl.textContent = 'Network error. Check your connection and try again.';
+    errorEl.textContent = cgTranslate('auth_network_error');
     errorEl.classList.remove('hidden');
   } finally {
     submitBtn.disabled    = false;
-    submitBtn.textContent = endpoint.includes('signin') ? 'Sign In' : 'Create Account';
+    submitBtn.textContent = endpoint.includes('signin') ? cgTranslate('navbar_signin') : cgTranslate('auth_create_account');
   }
 }
 
@@ -656,10 +782,22 @@ async function handleAuthForm(e, endpoint) {
    SIGN OUT
 ───────────────────────────────────── */
 async function signOut() {
+  if (!csrfToken) await loadCsrfToken();
+  if (!clerkLoaded && window.CG_CLERK_CONFIG) await initClerk();
+  try {
+    await fetch('/api/auth/signout', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: buildHeaders(),
+    });
+  } catch (err) {
+    console.warn('Error clearing server session on sign out:', err);
+  }
+
   try {
     localStorage.removeItem('cg_currentUser');
-    if (window.Clerk && typeof Clerk.signOut === 'function') {
-      await Clerk.signOut();
+    if (window.Clerk && typeof window.Clerk.signOut === 'function') {
+      await window.Clerk.signOut();
     }
   } catch (err) {
     console.warn('Sign out error:', err);
@@ -670,19 +808,20 @@ async function signOut() {
 /* ─────────────────────────────────────
    HISTORY
 ───────────────────────────────────── */
-async function loadHistory() {
+async function loadHistory(authReady = false) {
+  if (!authReady) await initClerk();
   const table = document.getElementById('historyTable');
   const empty = document.getElementById('historyEmpty');
   const tbody = document.getElementById('historyTableBody') || table?.querySelector('tbody');
   if (!table) return;
 
-  if (!clerkUser) {
+  if (!clerkUser && !currentAuth?.authenticated) {
     window.location.href = '/signin';
     return;
   }
 
   try {
-    const res = await fetch('/api/history?user_id=' + encodeURIComponent(clerkUser.id));
+    const res = await fetch('/api/history', { credentials: 'same-origin' });
     const data = await res.json();
     const list = data.success ? data.history : [];
 
@@ -733,7 +872,7 @@ async function loadHistory() {
     });
   } catch (err) {
     console.error('Error loading history:', err);
-    if (empty) { empty.textContent = 'Failed to load history.'; empty.style.display = 'block'; }
+    if (empty) { empty.textContent = cgTranslate('history_load_failed'); empty.style.display = 'block'; }
     table.style.display = 'none';
   }
 }
@@ -789,6 +928,537 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+const ACADEMY_MODULES = {
+  password: {
+    icon: 'lock',
+    get title() { return cgTranslate('academy_password_strength_title'); },
+    get subtitle() { return cgTranslate('academy_password_strength_subtitle'); },
+  },
+  phishing: {
+    icon: 'phishing',
+    get title() { return cgTranslate('academy_phishing_title'); },
+    get subtitle() { return cgTranslate('academy_phishing_subtitle'); },
+  },
+  quiz: {
+    icon: 'quiz',
+    get title() { return cgTranslate('academy_quiz_title'); },
+    get subtitle() { return cgTranslate('academy_quiz_subtitle'); },
+  },
+  network: {
+    icon: 'security',
+    get title() { return cgTranslate('academy_network_title'); },
+    get subtitle() { return cgTranslate('academy_network_subtitle'); },
+  },
+};
+
+function cgI18n(key) {
+  try {
+    if (typeof cgTranslate === 'function') return cgTranslate(key);
+  } catch (e) {}
+  return key;
+}
+
+
+const academyQuizQuestions = [
+  {
+    questionText: 'You receive a login link from a sender you do not recognize. What is the safest first action?',
+    optionsText: ['Open the link in private mode', 'Verify the sender and domain first', 'Forward it to everyone'],
+    answer: 1,
+    detailText: 'Verifying the sender and domain prevents credential theft before any click happens.',
+  },
+  {
+    questionText: 'Which password is strongest?',
+    optionsText: ['Company2026!', 'blue-car-9', 'Mango!River#72Vault'],
+    answer: 2,
+    detailText: 'Long, mixed, less predictable passphrases are harder to crack.',
+  },
+  {
+    questionText: 'A public Wi-Fi network asks you to install a certificate. What should you do?',
+    optionsText: ['Install it quickly', 'Avoid it unless your organization confirms it', 'Disable your firewall'],
+    answer: 1,
+    detailText: 'Unexpected certificates can let attackers inspect encrypted traffic.',
+  },
+  {
+    questionText: 'What is a zero-day exploit?',
+    optionsText: ['An attack that targets a vulnerability unknown to the vendor', 'A patch released for a known bug', 'A password reused across accounts', 'A type of firewall rule'],
+    answer: 0,
+    detailText: 'A zero-day exploit takes advantage of a flaw the vendor has not patched yet.',
+  },
+  {
+    questionText: 'What does HTTPS ensure?',
+    optionsText: ['Confidentiality and integrity between client and server', 'That the site is always legitimate', 'That the server never gets hacked', 'That passwords are never stored in plaintext'],
+    answer: 0,
+    detailText: 'HTTPS provides encryption (confidentiality) and protects data integrity in transit.',
+  },
+  {
+    questionText: 'What is social engineering?',
+    optionsText: ['Tricking people into revealing credentials or performing unsafe actions', 'Encrypting network traffic with TLS', 'Blocking inbound connections with a firewall', 'Updating antivirus signatures automatically'],
+    answer: 0,
+    detailText: 'Social engineering manipulates humans—not software—to get sensitive info or access.',
+  },
+  {
+    questionText: 'Which is the safest way to store passwords?',
+    optionsText: ['Plaintext in a database', 'Reversible encryption with a shared key', 'Strong salted hashing (e.g., bcrypt/Argon2)', 'Encoding with Base64'],
+    answer: 2,
+    detailText: 'Passwords should be stored as salted hashes using a strong password hashing function.',
+  },
+  {
+    questionText: 'What is a man-in-the-middle attack?',
+    optionsText: ['An attacker secretly relays and/or alters communication between two parties', 'A firewall that blocks malicious IPs', 'A backup system for servers', 'A secure boot process'],
+    answer: 0,
+    detailText: 'In MITM attacks, the attacker intercepts traffic so victims think they’re connected directly.',
+  },
+  {
+    questionText: 'What does a VPN primarily protect?',
+    optionsText: ['Your internet traffic from eavesdropping by creating an encrypted tunnel', 'Your device from malware without any updates', 'Your passwords from phishing links', 'The physical security of your router'],
+    answer: 0,
+    detailText: 'A VPN creates an encrypted tunnel that helps protect data in transit on untrusted networks.',
+  },
+  {
+    questionText: 'What is two-factor authentication?',
+    optionsText: ['Authentication using only one factor (password)', 'Authentication using two separate verification methods', 'Authentication that disables all login attempts', 'A backup for expired passwords'],
+    answer: 1,
+    detailText: '2FA adds an extra verification step (e.g., code/app + password).',
+  },
+  {
+    questionText: 'What is the purpose of a firewall?',
+    optionsText: ['Allow or block network traffic based on security rules', 'Automatically generate strong passwords', 'Encrypt all files on disk', 'Turn a public network into a private one'],
+    answer: 0,
+    detailText: 'Firewalls enforce inbound/outbound traffic policies to reduce the attack surface.',
+  },
+];
+
+
+
+let academyQuizIndex = 0;
+let academyQuizScore = 0;
+let academyNetworkScore = 0;
+
+function initAcademy() {
+  const body = document.getElementById('academySimBody');
+  if (!body) return;
+
+  document.querySelectorAll('[data-academy-module]').forEach((card) => {
+    // Prevent double-binding if initAcademy() is ever called again.
+    if (card.dataset.academyBound === '1') return;
+    card.dataset.academyBound = '1';
+    card.addEventListener('click', () => setAcademyModule(card.dataset.academyModule));
+    // Optional debug: if `localStorage.cg_debug_icons === '1'`, log computed styles
+    card.addEventListener('click', (e) => {
+      try {
+        if (localStorage.getItem('cg_debug_icons') !== '1') return;
+        const icon = card.querySelector('.material-symbols-outlined');
+        if (!icon) return;
+        const cs = window.getComputedStyle(icon);
+        console.groupCollapsed('CG: academy icon debug —', card.dataset.academyModule || card.textContent.trim().slice(0,24));
+        console.log('computed:', {
+          opacity: cs.opacity,
+          visibility: cs.visibility,
+          display: cs.display,
+          color: cs.color,
+          transform: cs.transform,
+          filter: cs.filter,
+        });
+        console.log('classes:', icon.className, 'parent classes:', card.className);
+        console.trace();
+        console.groupEnd();
+      } catch (err) { console.warn('cg debug error', err); }
+    });
+  });
+
+  // Only set default module if nothing is active yet.
+  const active = document.querySelector('[data-academy-module].active');
+  if (!active) setAcademyModule('password');
+}
+
+
+
+
+
+
+function setAcademyModule(moduleName) {
+  const config = ACADEMY_MODULES[moduleName] || ACADEMY_MODULES.password;
+  document.querySelectorAll('[data-academy-module]').forEach((card) => {
+    card.classList.toggle('active', card.dataset.academyModule === moduleName);
+  });
+
+  const icon = document.getElementById('academySimIcon');
+  const title = document.getElementById('academySimTitle');
+  const subtitle = document.getElementById('academySimSubtitle');
+  if (icon) icon.textContent = config.icon;
+  if (title) title.textContent = config.title;
+  if (subtitle) subtitle.textContent = config.subtitle;
+
+  if (moduleName === 'phishing') renderPhishingTrainer();
+  else if (moduleName === 'quiz') renderSecurityQuiz();
+  else if (moduleName === 'network') renderNetworkDefense();
+  else renderPasswordTrainer();
+}
+
+function renderPasswordTrainer() {
+  const body = document.getElementById('academySimBody');
+  body.innerHTML = `
+    <div class="password-field">
+      <input id="academyPassword" type="password" value="CyberSec2026!" aria-label="Password payload" />
+      <button type="button" id="academyPasswordToggle"><span class="material-symbols-outlined">visibility</span></button>
+    </div>
+    <div class="strength-row"><span>${cgTranslate('academy_password_strength_label')}</span><strong id="academyStrengthLabel">${cgTranslate('academy_password_strength_strong') || 'Strong'}</strong></div>
+    <div class="strength-meter" id="academyStrengthMeter"><span></span><span></span><span></span><span class="empty"></span></div>
+    <div class="academy-score-line"><span id="academyPasswordScore">${cgTranslate('academy_password_strength_score_label')}: 0/100</span></div>
+    <div class="feedback-chips" id="academyPasswordFeedback"></div>
+  `;
+
+  const input = document.getElementById('academyPassword');
+  const toggle = document.getElementById('academyPasswordToggle');
+  toggle.addEventListener('click', () => {
+    input.type = input.type === 'password' ? 'text' : 'password';
+    toggle.querySelector('.material-symbols-outlined').textContent = input.type === 'password' ? 'visibility' : 'visibility_off';
+  });
+  input.addEventListener('input', updatePasswordTrainer);
+  updatePasswordTrainer();
+}
+
+function updatePasswordTrainer() {
+  const value = document.getElementById('academyPassword')?.value || '';
+  const checks = [
+    { ok: value.length >= 12, label: cgTranslate('academy_rule_length') },
+    { ok: /[A-Z]/.test(value) && /[a-z]/.test(value), label: cgTranslate('academy_rule_upper_lower') },
+    { ok: /\d/.test(value), label: cgTranslate('academy_rule_number') },
+    { ok: /[^A-Za-z0-9]/.test(value), label: cgTranslate('academy_rule_special') },
+    { ok: !/(password|admin|cyber|qwerty|1234)/i.test(value), label: cgTranslate('academy_rule_no_dict_word') },
+  ];
+  const score = Math.min(100, checks.filter(check => check.ok).length * 20 + Math.min(10, Math.max(0, value.length - 12)));
+  const level = score >= 85
+    ? cgTranslate('academy_password_strength_excellent')
+    : score >= 65
+      ? cgTranslate('academy_password_strength_strong')
+      : score >= 40
+        ? cgTranslate('academy_password_strength_medium')
+        : cgTranslate('academy_password_strength_weak');
+  const bars = score >= 85 ? 4 : score >= 65 ? 3 : score >= 40 ? 2 : 1;
+
+  document.getElementById('academyStrengthLabel').textContent = level;
+  document.getElementById('academyPasswordScore').textContent = `${cgTranslate('academy_password_strength_score_label')}: ${score}/100`;
+  document.getElementById('academyStrengthMeter').innerHTML = [0, 1, 2, 3]
+    .map(index => `<span class="${index >= bars ? 'empty' : ''}"></span>`)
+    .join('');
+  document.getElementById('academyPasswordFeedback').innerHTML = checks.map(check => `
+    <span><span class="material-symbols-outlined ${check.ok ? '' : 'warn'}">${check.ok ? 'check_circle' : 'cancel'}</span>${check.label}</span>
+  `).join('');
+}
+
+function renderPhishingTrainer() {
+  const body = document.getElementById('academySimBody');
+
+  const phishingScenarios = [
+  {
+    prompt: cgTranslate('academy_phishing_s1_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s1_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s1_wrong')
+  },
+  {
+    prompt: cgTranslate('academy_phishing_s2_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s2_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s2_wrong')
+  },
+  {
+    prompt: cgTranslate('academy_phishing_s3_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s3_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s3_wrong')
+  },
+  {
+    prompt: cgTranslate('academy_phishing_s4_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s4_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s4_wrong')
+  },
+  {
+    prompt: cgTranslate('academy_phishing_s5_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s5_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s5_wrong')
+  },
+  {
+    prompt: cgTranslate('academy_phishing_s6_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s6_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s6_wrong')
+  },
+  {
+    prompt: cgTranslate('academy_phishing_s7_prompt'),
+    correctAnswer: 'phishing',
+    correctDetail: cgTranslate('academy_phishing_s7_correct'),
+    wrongDetail: cgTranslate('academy_phishing_s7_wrong')
+  }
+];
+
+  if (typeof renderPhishingTrainer.currentScenarioIndex !== 'number') {
+    renderPhishingTrainer.currentScenarioIndex = Math.floor(Math.random() * phishingScenarios.length);
+  }
+
+  const scenario = phishingScenarios[renderPhishingTrainer.currentScenarioIndex];
+
+  function rerenderScenario() {
+    const nextIndex = phishingScenarios.length > 1
+      ? (() => {
+          let idx = renderPhishingTrainer.currentScenarioIndex;
+          while (idx === renderPhishingTrainer.currentScenarioIndex) {
+            idx = Math.floor(Math.random() * phishingScenarios.length);
+          }
+          return idx;
+        })()
+      : renderPhishingTrainer.currentScenarioIndex;
+
+    renderPhishingTrainer.currentScenarioIndex = nextIndex;
+    const nextScenario = phishingScenarios[renderPhishingTrainer.currentScenarioIndex];
+
+    document.getElementById('academySimBody').innerHTML = `
+      <div class="academy-challenge" style="position:relative;">
+        <button type="button" class="premium-primary-btn compact" id="academyNewPhishingScenarioBtn" disabled style="display:flex;align-items:center;gap:6px;margin-top:16px;margin-left:auto;padding:8px 20px;font-size:0.82rem;opacity:0.35;border-radius:10px;cursor:not-allowed;transition:opacity 0.2s ease;">${cgTranslate('common_next')} <span class="material-symbols-outlined" style="font-size:18px;">navigate_next</span></button>
+        <div class="message-card">
+          <strong>${cgTranslate('academy_phishing_notice_title')}</strong>
+          <p>${escapeHtml(nextScenario.prompt)}</p>
+        </div>
+        <div class="academy-options">
+          <button type="button" data-phishing-answer="safe">${cgTranslate('academy_phishing_choice_safe')}</button>
+          <button type="button" data-phishing-answer="phishing">${cgTranslate('academy_phishing_choice_phishing')}</button>
+        </div>
+        <div class="academy-result" id="academyPhishingResult">${cgTranslate('academy_phishing_result_choose')}</div>
+      </div>
+    `;
+
+    document.querySelectorAll('[data-phishing-answer]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const correct = button.dataset.phishingAnswer === nextScenario.correctAnswer;
+        renderAcademyResult(
+          'academyPhishingResult',
+          correct,
+          correct ? nextScenario.correctDetail : nextScenario.wrongDetail
+        );
+        const nextBtn = document.getElementById('academyNewPhishingScenarioBtn');
+        if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '0.65'; nextBtn.style.cursor = 'pointer'; }
+        document.querySelectorAll('[data-phishing-answer]').forEach(b => b.disabled = true);
+      });
+    });
+
+    const btn = document.getElementById('academyNewPhishingScenarioBtn');
+    if (btn) btn.addEventListener('click', rerenderScenario);
+  }
+
+  body.innerHTML = `
+    <div class="academy-challenge" style="position:relative;">
+      <button type="button" class="premium-primary-btn compact" id="academyNewPhishingScenarioBtn" disabled style="display:flex;align-items:center;gap:6px;margin-top:16px;margin-left:auto;padding:8px 20px;font-size:0.82rem;opacity:0.35;border-radius:10px;cursor:not-allowed;transition:opacity 0.2s ease;">${cgTranslate('common_next')} <span class="material-symbols-outlined" style="font-size:18px;">navigate_next</span></button>
+      <div class="message-card">
+        <strong>${cgTranslate('academy_phishing_notice_title')}</strong>
+        <p>${escapeHtml(scenario.prompt)}</p>
+      </div>
+      <div class="academy-options">
+        <button type="button" data-phishing-answer="safe">${cgTranslate('academy_phishing_choice_safe')}</button>
+        <button type="button" data-phishing-answer="phishing">${cgTranslate('academy_phishing_choice_phishing')}</button>
+      </div>
+      <div class="academy-result" id="academyPhishingResult">${cgTranslate('academy_phishing_result_choose')}</div>
+    </div>
+  `;
+
+  document.querySelectorAll('[data-phishing-answer]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const correct = button.dataset.phishingAnswer === scenario.correctAnswer;
+      renderAcademyResult('academyPhishingResult', correct, correct
+        ? scenario.correctDetail
+        : scenario.wrongDetail);
+      const nextBtn = document.getElementById('academyNewPhishingScenarioBtn');
+      if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '0.65'; nextBtn.style.cursor = 'pointer'; }
+      document.querySelectorAll('[data-phishing-answer]').forEach(b => b.disabled = true);
+    });
+  });
+
+  const btn = document.getElementById('academyNewPhishingScenarioBtn');
+  if (btn) btn.addEventListener('click', rerenderScenario);
+}
+
+function renderSecurityQuiz() {
+  academyQuizIndex = 0;
+  academyQuizScore = 0;
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion() {
+  const body = document.getElementById('academySimBody');
+  const item = academyQuizQuestions[academyQuizIndex];
+
+  // Quiz is translated via i18n keys stored in static/js/i18n.js
+  const q = cgTranslate(`academy_quiz_q${academyQuizIndex + 1}`) || '';
+  const options = [0, 1, 2, 3].map((idx) => {
+    const letter = ['a','b','c','d'][idx];
+    return cgTranslate(`academy_quiz_q${academyQuizIndex + 1}_${letter}`) || '';
+  }).filter(Boolean);
+  const detail = cgTranslate(`academy_quiz_q${academyQuizIndex + 1}_explain`) || '';
+
+  // Keep consistent: question/options are translated, but scoring uses item.answer.
+
+
+
+
+
+  body.innerHTML = `
+    <div class="academy-challenge">
+      <div class="academy-score-line">${academyQuizIndex + 1}/${academyQuizQuestions.length} · ${cgTranslate('academy_password_strength_score_label')} ${academyQuizScore}</div>
+      <h3>${escapeHtml(q)}</h3>
+      <div class="academy-options">
+        ${options.map((option, index) => `<button type="button" data-quiz-answer="${index}">${escapeHtml(option)}</button>`).join('')}
+      </div>
+      <div class="academy-result" id="academyQuizResult">${cgTranslate('academy_quiz_result_choose')}</div>
+    </div>
+  `;
+
+
+  document.querySelectorAll('[data-quiz-answer]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const selected = Number(button.dataset.quizAnswer);
+      const correct = selected === item.answer;
+      if (correct) academyQuizScore += 1;
+      renderAcademyResult('academyQuizResult', correct, detail);
+      document.querySelectorAll('[data-quiz-answer]').forEach(btn => btn.disabled = true);
+      setTimeout(() => {
+        academyQuizIndex += 1;
+        if (academyQuizIndex >= academyQuizQuestions.length) renderQuizSummary();
+        else renderQuizQuestion();
+      }, 1100);
+    });
+  });
+}
+
+
+function renderQuizSummary() {
+  document.getElementById('academySimBody').innerHTML = `
+    <div class="academy-challenge">
+      <h3>${cgTranslate('academy_quiz_complete_title')}</h3>
+      <p class="academy-score-line">${cgTranslate('academy_quiz_final_score_label')}: ${academyQuizScore}/${academyQuizQuestions.length}</p>
+      <button class="premium-primary-btn compact" type="button" onclick="renderSecurityQuiz()">${cgTranslate('academy_quiz_restart')}</button>
+    </div>
+  `;
+}
+
+function renderNetworkDefense() {
+  academyNetworkScore = 0;
+  const body = document.getElementById('academySimBody');
+
+  const networkScenarios = [
+  { prompt: cgTranslate('academy_network_s1_prompt'), correctAnswer: 'isolate' },
+  { prompt: cgTranslate('academy_network_s2_prompt'), correctAnswer: 'isolate' },
+  { prompt: cgTranslate('academy_network_s3_prompt'), correctAnswer: 'isolate' },
+  { prompt: cgTranslate('academy_network_s4_prompt'), correctAnswer: 'isolate' },
+  { prompt: cgTranslate('academy_network_s5_prompt'), correctAnswer: 'isolate' },
+  { prompt: cgTranslate('academy_network_s6_prompt'), correctAnswer: 'isolate' },
+];
+
+  if (typeof renderNetworkDefense.currentScenarioIndex !== 'number') {
+    renderNetworkDefense.currentScenarioIndex = Math.floor(Math.random() * networkScenarios.length);
+  }
+
+  const scenario = networkScenarios[renderNetworkDefense.currentScenarioIndex];
+
+  function rerenderScenario() {
+    const nextIndex = networkScenarios.length > 1
+      ? (() => {
+          let idx = renderNetworkDefense.currentScenarioIndex;
+          while (idx === renderNetworkDefense.currentScenarioIndex) {
+            idx = Math.floor(Math.random() * networkScenarios.length);
+          }
+          return idx;
+        })()
+      : renderNetworkDefense.currentScenarioIndex;
+
+    renderNetworkDefense.currentScenarioIndex = nextIndex;
+    const nextScenario = networkScenarios[renderNetworkDefense.currentScenarioIndex];
+
+    document.getElementById('academySimBody').innerHTML = `
+      <div class="academy-challenge" style="position:relative;">
+        <button type="button" class="premium-primary-btn compact" id="academyNewNetworkScenarioBtn" disabled style="display:flex;align-items:center;gap:6px;margin-top:16px;margin-left:auto;padding:8px 20px;font-size:0.82rem;opacity:0.35;border-radius:10px;cursor:not-allowed;transition:opacity 0.2s ease;">${cgTranslate('common_next')} <span class="material-symbols-outlined" style="font-size:18px;">navigate_next</span></button>
+        <div class="message-card">
+          <strong>${cgTranslate('academy_network_incident_title')}</strong>
+          <p>${escapeHtml(nextScenario.prompt)}</p>
+        </div>
+        <div class="academy-options">
+          <button type="button" data-network-answer="ignore">${cgTranslate('academy_network_choice_ignore')}</button>
+          <button type="button" data-network-answer="isolate">${cgTranslate('academy_network_choice_isolate')}</button>
+          <button type="button" data-network-answer="wipe">${cgTranslate('academy_network_choice_wipe')}</button>
+        </div>
+        <div class="academy-result" id="academyNetworkResult">${cgTranslate('academy_network_result_choose')}</div>
+      </div>
+    `;
+
+    document.querySelectorAll('[data-network-answer]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const correct = button.dataset.networkAnswer === nextScenario.correctAnswer;
+        academyNetworkScore = correct ? 100 : 35;
+        renderAcademyResult(
+          'academyNetworkResult',
+          correct,
+          correct
+            ? `${cgTranslate('academy_network_result_correct_prefix')} ${academyNetworkScore}/100${cgTranslate('academy_network_result_correct_suffix')}`
+            : `${cgTranslate('academy_network_result_risky_prefix')} ${academyNetworkScore}/100${cgTranslate('academy_network_result_risky_suffix')}`
+        );
+
+        const nextBtn = document.getElementById('academyNewNetworkScenarioBtn');
+        if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '0.65'; nextBtn.style.cursor = 'pointer'; }
+        document.querySelectorAll('[data-network-answer]').forEach(b => b.disabled = true);
+      });
+    });
+
+    const btn = document.getElementById('academyNewNetworkScenarioBtn');
+    if (btn) btn.addEventListener('click', rerenderScenario);
+  }
+
+  body.innerHTML = `
+    <div class="academy-challenge" style="position:relative;">
+      <button type="button" class="premium-primary-btn compact" id="academyNewNetworkScenarioBtn" disabled style="display:flex;align-items:center;gap:6px;margin-top:16px;margin-left:auto;padding:8px 20px;font-size:0.82rem;opacity:0.35;border-radius:10px;cursor:not-allowed;transition:opacity 0.2s ease;">${cgTranslate('common_next')} <span class="material-symbols-outlined" style="font-size:18px;">navigate_next</span></button>
+      <div class="message-card">
+        <strong>${cgTranslate('academy_network_incident_title')}</strong>
+        <p>${escapeHtml(scenario.prompt)}</p>
+      </div>
+      <div class="academy-options">
+        <button type="button" data-network-answer="ignore">${cgTranslate('academy_network_choice_ignore')}</button>
+        <button type="button" data-network-answer="isolate">${cgTranslate('academy_network_choice_isolate')}</button>
+        <button type="button" data-network-answer="wipe">${cgTranslate('academy_network_choice_wipe')}</button>
+      </div>
+      <div class="academy-result" id="academyNetworkResult">${cgTranslate('academy_network_result_choose')}</div>
+    </div>
+  `;
+
+  document.querySelectorAll('[data-network-answer]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const correct = button.dataset.networkAnswer === scenario.correctAnswer;
+      academyNetworkScore = correct ? 100 : 35;
+      renderAcademyResult(
+        'academyNetworkResult',
+        correct,
+        correct
+          ? `${cgTranslate('academy_network_result_correct_prefix')} ${academyNetworkScore}/100${cgTranslate('academy_network_result_correct_suffix')}`
+          : `${cgTranslate('academy_network_result_risky_prefix')} ${academyNetworkScore}/100${cgTranslate('academy_network_result_risky_suffix')}`
+      );
+
+      const nextBtn = document.getElementById('academyNewNetworkScenarioBtn');
+      if (nextBtn) { nextBtn.disabled = false; nextBtn.style.opacity = '0.65'; nextBtn.style.cursor = 'pointer'; }
+      document.querySelectorAll('[data-network-answer]').forEach(b => b.disabled = true);
+    });
+  });
+
+  const btn = document.getElementById('academyNewNetworkScenarioBtn');
+  if (btn) btn.addEventListener('click', rerenderScenario);
+}
+
+function renderAcademyResult(id, correct, message) {
+  const result = document.getElementById(id);
+  if (!result) return;
+  result.classList.toggle('success', correct);
+  result.classList.toggle('danger', !correct);
+  result.textContent = message;
+}
+
 /* ─────────────────────────────────────
    INIT
 ───────────────────────────────────── */
@@ -796,14 +1466,28 @@ async function syncClerkUser() {
   await initClerk();
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  await initClerk();
+document.addEventListener('DOMContentLoaded', () => {
+  const isHomePage = document.body?.classList.contains('home-page');
+  const isHistoryPage = !!document.getElementById('historyTable');
 
-  // Stats counter
-  setTimeout(loadStats, 400);
+  // Stats are nice-to-have; keep them out of the first render/network burst.
+  if (!isHomePage && (document.getElementById('userCount') || document.getElementById('scanCount'))) {
+    runWhenIdle(loadStats, 1800);
+  } else if (isHomePage) {
+    animateCounters();
+  }
 
   // History page
-  if (document.getElementById('historyTable')) loadHistory();
+  if (isHistoryPage) {
+    initClerk().then(() => loadHistory(true));
+  } else {
+    // NOTE: this used to be `else if (!isHomePage)`, which meant the home
+    // page never called initClerk() on load. That's why the navbar kept
+    // showing "Sign In" after a successful sign-in redirect back to "/":
+    // updateNavbar() was simply never triggered. Home page now runs it
+    // sooner (600ms) since it's the page users land on right after signing in.
+    runWhenIdle(() => initClerk(), isHomePage ? 600 : 2200);
+  }
 
   // Auth forms
   const authForm = document.getElementById('authForm');
@@ -814,12 +1498,111 @@ document.addEventListener('DOMContentLoaded', async () => {
     authForm.addEventListener('submit', e => handleAuthForm(e, ep));
   }
 
+  // Initialize hero animations
+  initializeHeroAnimations();
+
+  // Initialize stats scroll animation
+  initializeStatsScrollAnimation();
+  initializeThemeToggleButton();
+  initAcademy();
+
   console.log('%c🛡️ CyberGuard AI ready', 'color:#3B82F6;font-weight:bold;font-size:14px');
 });
 
-window.addEventListener('load', async () => {
+window.addEventListener('cg:clerk-ready', async () => {
   await initClerk();
 });
+
+/* ─────────────────────────────────────
+   HERO ANIMATIONS
+───────────────────────────────────── */
+function initializeHeroAnimations() {
+  const heroTitle = document.querySelector('.hero-title');
+  const heroBadge = document.querySelector('.hero-badge');
+  const heroSub = document.querySelector('.hero-sub');
+  
+  // Fade animation for badge
+  if (heroBadge) {
+    heroBadge.style.animation = 'fade 2s ease-out both';
+  }
+  
+  if (heroTitle) {
+    prepareHeroTitleLines(heroTitle);
+  }
+
+  if (heroSub) {
+    heroSub.style.animation = 'slideUpFade 1.4s cubic-bezier(0.22,1,0.36,1) 0.4s both';
+  }
+}
+
+function prepareHeroTitleLines(element) {
+  const originalHTML = element.innerHTML.trim();
+  const parts = originalHTML.split(/<br\s*\/?>/i);
+  element.innerHTML = '';
+
+  parts.forEach((part, index) => {
+    const lineWrapper = document.createElement('span');
+    lineWrapper.className = 'hero-line';
+    lineWrapper.style.setProperty('--delay', `${index * 0.18}s`);
+
+    const inner = document.createElement('span');
+    inner.className = 'hero-line-inner';
+    inner.innerHTML = part.trim();
+
+    lineWrapper.appendChild(inner);
+    element.appendChild(lineWrapper);
+  });
+
+  const lineItems = element.querySelectorAll('.hero-line-inner');
+
+  if (window.gsap?.to) {
+    window.gsap.set(lineItems, {
+      y: 28,
+      opacity: 0,
+      filter: 'blur(16px)'
+    });
+
+    window.gsap.to(lineItems, {
+      y: 0,
+      opacity: 1,
+      filter: 'blur(0px)',
+      duration: 1.2,
+      ease: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      stagger: 0.18
+    });
+  } else {
+    requestAnimationFrame(() => {
+      setTimeout(() => element.classList.add('hero-title-animated'), 100);
+    });
+  }
+}
+
+function initializeStatsScrollAnimation() {
+  const statsElement = document.querySelector('.hero-stats');
+  if (!statsElement) return;
+
+  // Create intersection observer for stats pop-up animation on scroll
+  const observerOptions = {
+    threshold: 0.3,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  // NOTE UX: animations doivent démarrer quand on arrive proche du bloc,
+  // et ne pas “pousser” le rendu en haut de page.
+  // On anime au moment où .hero-stats est à 80% visible.
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && !entry.target.classList.contains('stats-animated')) {
+        entry.target.classList.add('stats-animated');
+        entry.target.style.animation = 'popScale 1.8s cubic-bezier(0.22,1,0.36,1) forwards';
+        entry.target.style.opacity = '1';
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { ...observerOptions, threshold: 0.8 });
+
+  observer.observe(statsElement);
+}
 
 /* ─────────────────────────────────────
    UPDATE USER PROFILE
@@ -828,40 +1611,117 @@ function updateUserProfile() {
   updateNavbar();
 }
 
+function initializeThemeToggleButton() {
+  const button = document.getElementById('themeToggleBtn');
+  if (!button) return;
+
+  button.addEventListener('click', () => {
+    const btn = document.getElementById('themeToggleBtn');
+    const icon = btn?.querySelector('.material-symbols-outlined');
+    if (!btn) return;
+
+    // Anti double-click during morph
+    if (btn.dataset.themeMorphing === '1') return;
+    btn.dataset.themeMorphing = '1';
+
+    // Morph sun ↔ moon illusion
+    btn.classList.remove('theme-morph-complete');
+    btn.classList.add('theme-morph');
+    if (icon) icon.style.willChange = 'transform, filter, opacity';
+
+    // Apply theme change while morph is playing
+    if (typeof toggleTheme === 'function') toggleTheme();
+
+    // Next frame: finish morph
+    requestAnimationFrame(() => {
+      updateThemeToggleIcon();
+      btn.classList.add('theme-morph-complete');
+
+      // Cleanup after animation
+      setTimeout(() => {
+        btn.classList.remove('theme-morph');
+        btn.classList.remove('theme-morph-complete');
+        btn.dataset.themeMorphing = '0';
+        if (icon) icon.style.willChange = '';
+      }, 520);
+    });
+
+    updateScrollBtnIcon?.();
+    updateSettingsHighlights();
+  });
+
+  updateThemeToggleIcon();
+}
+
+function updateThemeToggleIcon() {
+  const button = document.getElementById('themeToggleBtn');
+  const icon = button?.querySelector('.material-symbols-outlined');
+  if (!button || !icon) return;
+
+  const isLight = document.body.classList.contains('light-mode')
+    || document.documentElement.getAttribute('data-theme') === 'light';
+  icon.textContent = isLight ? 'dark_mode' : 'light_mode';
+  button.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+  button.setAttribute('title', isLight ? 'Dark mode' : 'Light mode');
+}
+
 /* ─────────────────────────────────────
    SETTINGS MENU (Language / Theme)
 ───────────────────────────────────── */
-(function initializeSettings() {
+function initializeSettings() {
   const settingsBtn = document.getElementById('settingsBtn');
   const settingsDropdown = document.getElementById('settingsDropdown');
 
-  if (!settingsBtn || !settingsDropdown) return;
+  if (settingsBtn && settingsDropdown) {
+    /* ── Sortir le dropdown du conteneur relatif
+          et l'attacher directement au body ── */
+    document.body.appendChild(settingsDropdown);
 
-  // Toggle dropdown on settings button click
+    function positionDropdown() {
+    const rect = settingsBtn.getBoundingClientRect();
+    settingsDropdown.style.position   = 'fixed';
+    /* APRÈS */
+    settingsDropdown.style.top        = (rect.bottom + 8) + 'px';
+    settingsDropdown.style.right      = (window.innerWidth - rect.right) + 'px';
+    settingsDropdown.style.left       = 'auto';
+    settingsDropdown.style.width      = 'auto';
+    settingsDropdown.style.minWidth   = '238px';
+    settingsDropdown.style.zIndex     = '99999';
+
+    /* Sur petit écran → pleine largeur sous la navbar */
+    if (window.innerWidth <= 768) {
+      settingsDropdown.style.left   = '0';
+      settingsDropdown.style.right  = '0';
+      settingsDropdown.style.width  = '100%';
+      settingsDropdown.style.borderRadius = '0';
+    } else {
+      settingsDropdown.style.borderRadius = '14px';
+    }
+  }
+
   settingsBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    const isVisible = settingsDropdown.style.display === 'none';
-    settingsDropdown.style.display = isVisible ? 'block' : 'none';
-    if (isVisible) {
+    e.preventDefault();
+    const isOpen = settingsDropdown.style.display === 'block';
+    if (isOpen) {
+      settingsDropdown.style.display = 'none';
+    } else {
+      positionDropdown();
+      settingsDropdown.style.display = 'block';
       updateSettingsHighlights();
     }
   });
 
-  // Close dropdown when clicking outside
   document.addEventListener('click', (e) => {
     if (!settingsBtn.contains(e.target) && !settingsDropdown.contains(e.target)) {
       settingsDropdown.style.display = 'none';
     }
   });
 
-  // Close when a language button is clicked - removed to allow seeing language changes
-  // document.querySelectorAll('.lang-btn').forEach(btn => {
-  //   btn.addEventListener('click', () => {
-  //     setTimeout(() => {
-  //       settingsDropdown.style.display = 'none';
-  //     }, 800);
-  //   });
-  // });
+  window.addEventListener('resize', () => {
+    if (settingsDropdown.style.display === 'block') positionDropdown();
+  });
+  }
 
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -878,14 +1738,14 @@ function updateUserProfile() {
       if (!theme) return;
       changeTheme(theme);
       updateSettingsHighlights();
-      setTimeout(() => {
-        settingsDropdown.style.display = 'none';
-      }, 400);
+      if (settingsDropdown) {
+        setTimeout(() => { settingsDropdown.style.display = 'none'; }, 400);
+      }
     });
   });
 
   updateSettingsHighlights();
-})();
+}
 
 function updateSettingsHighlights() {
   const currentLang = localStorage.getItem('cg_language') || 'en';
@@ -899,3 +1759,328 @@ function updateSettingsHighlights() {
     btn.classList.toggle('active', btn.dataset.theme === currentTheme);
   });
 }
+
+/* ─────────────────────────────────────
+   FOOTER — Parallax "pop" au scroll
+───────────────────────────────────── */
+function initFooterParallax() {
+  const heroImg = document.querySelector('.footer13-hero-img');
+  const heroWrap = document.querySelector('.footer13-hero');
+  if (!heroImg || !heroWrap) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  let ticking = false;
+
+  function update() {
+    const rect = heroWrap.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    // progress: 0 quand le haut du footer touche le bas de l'écran, 1 quand il atteint le haut
+    let progress = 1 - rect.top / vh;
+    progress = Math.max(0, Math.min(1, progress));
+
+    const translateY = 26 - progress * 42;   // descend légèrement puis remonte tout seul
+    const scale = 1.07 - progress * 0.07;    // léger zoom-out : effet "pop"
+    heroImg.style.transform = `translateY(${translateY}px) scale(${scale})`;
+    ticking = false;
+  }
+
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(update);
+      ticking = true;
+    }
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  update();
+}
+
+/* ─────────────────────────────────────
+   SCROLL REVEAL — SITE-WIDE (textes, cartes, icônes)
+───────────────────────────────────── */
+const revealTargets = document.querySelectorAll(
+  '.how-title, .how-sub, .how-note, .step-item,' +
+  '.page-title, .page-sub,' +
+  '.academy-hero h1, .academy-hero p, .academy-mark,' +
+  '.module-card, .premium-module-card,' +
+  '.academy-card, .knowledge-grid a,' +
+  '.history-card, .premium-history-card,' +
+  '.sim-header,' +
+  '.premium-history-head h1, .premium-history-head p,' +
+  '.premium-academy-card,' +
+  '.footer2-primary, .footer2-group, .footer2-newsletter, .footer2-copy'
+);
+
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('in-view');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+
+revealTargets.forEach(el => revealObserver.observe(el));
+
+/* ── Scroll-to-Top: Radial Progress Engine ── */
+(function () {
+  'use strict';
+  var CIRC = 2 * Math.PI * 24; // ≈ 150.796 (circumference of r=24)
+  var _btn, _ring, _arrowD, _arrowL, _rafId, _lastScroll = -1;
+
+  function _getDocHeight() {
+    return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
+  }
+  function _updateRing(y) {
+    if (!_ring) return;
+    var pct = Math.min(y / (_getDocHeight() || 1), 1);
+    var filled = Math.round(pct * CIRC * 100) / 100;
+    _ring.setAttribute('stroke-dasharray', filled + ' ' + Math.round((CIRC - filled) * 100) / 100);
+  }
+  function _updateVisibility(y) {
+    if (!_btn) return;
+    const panelOpen = document.getElementById('toolPanel')?.classList.contains('open');
+    if (y > 280 && !panelOpen) {
+      _btn.classList.add('stt-visible');
+    } else {
+      _btn.classList.remove('stt-visible');
+    }
+  }
+  function _onScroll() {
+    var y = window.scrollY || window.pageYOffset;
+    if (y === _lastScroll) return;
+    _lastScroll = y;
+    if (_rafId) cancelAnimationFrame(_rafId);
+    _rafId = requestAnimationFrame(function () { _updateVisibility(y); _updateRing(y); });
+  }
+  function _updateArrows() {
+    if (!_arrowD || !_arrowL) return;
+    var light = document.body.classList.contains('light-mode');
+    _arrowD.style.display = light ? 'none' : '';
+    _arrowL.style.display = light ? ''     : 'none';
+  }
+  function _init() {
+    _btn    = document.getElementById('scrollTopBtn');
+    _ring   = document.getElementById('sttProgressRing');
+    _arrowD = document.querySelector('.stt-arrow-dark');
+    _arrowL = document.querySelector('.stt-arrow-light');
+    if (!_btn) return;
+    var tip = _btn.querySelector('.stt-tooltip');
+    if (tip && typeof cgTranslate === 'function') tip.textContent = cgTranslate('scroll_top_label') || 'Back to top';
+    window.addEventListener('scroll', _onScroll, { passive: true });
+    _updateArrows();
+  }
+  var _orig = window.applyTheme;
+  window.applyTheme = function (t) {
+    if (typeof _orig === 'function') _orig(t);
+    if (typeof updateThemeToggleIcon === 'function') updateThemeToggleIcon();
+    _updateArrows();
+  };
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', _init) : _init();
+})();
+
+/* Home page: float the desktop navbar only after it begins leaving its original spot. */
+(function () {
+  'use strict';
+  var _nav, _media, _rafId, _triggerY = 0;
+
+  function _isHomePage() {
+    return document.body && document.body.classList.contains('home-page');
+  }
+
+  function _sync() {
+    if (!_nav) return;
+    var isDesktop = !_media || _media.matches;
+    var y = window.scrollY || window.pageYOffset;
+    _nav.classList.toggle('home-nav-floating', isDesktop && y > _triggerY);
+  }
+
+  function _requestSync() {
+    if (_rafId) cancelAnimationFrame(_rafId);
+    _rafId = requestAnimationFrame(_sync);
+  }
+
+  function _measure() {
+    if (!_nav) return;
+    var wasFloating = _nav.classList.contains('home-nav-floating');
+    _nav.classList.remove('home-nav-floating');
+    var height = _nav.offsetHeight || 76;
+    _triggerY = Math.max(16, _nav.offsetTop + (height * 0.55));
+    if (wasFloating) _nav.classList.add('home-nav-floating');
+    _sync();
+  }
+
+  function _init() {
+    if (!_isHomePage()) return;
+    _nav = document.querySelector('.navbar.premium-navbar');
+    if (!_nav) return;
+
+    _media = window.matchMedia('(min-width: 601px)');
+    window.addEventListener('scroll', _requestSync, { passive: true });
+    window.addEventListener('resize', _measure, { passive: true });
+
+    if (_media.addEventListener) {
+      _media.addEventListener('change', _measure);
+    } else if (_media.addListener) {
+      _media.addListener(_measure);
+    }
+
+    _measure();
+  }
+
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', _init) : _init();
+})();
+
+/* Hide navbar on scroll down, show it as soon as the user scrolls up. */
+(function () {
+  'use strict';
+  var _nav, _lastY = 0, _rafId;
+
+  function _sync() {
+    if (!_nav) return;
+    var y = window.scrollY || window.pageYOffset || 0;
+
+    if (y === 0 || y < _lastY) {
+      _nav.classList.remove('nav-hidden');
+    } else if (y > _lastY) {
+      _nav.classList.add('nav-hidden');
+    }
+
+    _lastY = y;
+  }
+
+  function _requestSync() {
+    if (_rafId) cancelAnimationFrame(_rafId);
+    _rafId = requestAnimationFrame(_sync);
+  }
+
+  function _init() {
+    _nav = document.querySelector('.navbar');
+    if (!_nav) return;
+    _lastY = window.scrollY || window.pageYOffset || 0;
+    _sync();
+    window.addEventListener('scroll', _requestSync, { passive: true });
+  }
+
+  document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', _init) : _init();
+})();
+
+function safeInitSettings() {
+  if (document.getElementById('settingsBtn')) {
+    initializeSettings();
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', safeInitSettings);
+} else {
+  safeInitSettings();
+}
+
+function toggleBurgerMenu() {
+  const menu       = document.getElementById('burgerMenu');
+  const btn        = document.getElementById('burgerBtn');
+  const burgerAuth = document.getElementById('burgerAuth');
+  const isOpen     = menu.classList.toggle('open');
+
+  btn.querySelector('.material-symbols-outlined').textContent = isOpen ? 'close' : 'menu';
+
+  // Cache le bouton Sign In si l'utilisateur est connecté
+  if (burgerAuth) {
+    const isLoggedIn = document.getElementById('profileMenu') &&
+                       document.getElementById('profileMenu').style.display !== 'none' &&
+                       document.getElementById('getStartedBtn') &&
+                       document.getElementById('getStartedBtn').style.display === 'none';
+    burgerAuth.style.display = isLoggedIn ? 'none' : 'block';
+  }
+}
+
+// Ferme le burger si on clique ailleurs
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('burgerMenu');
+  const btn  = document.getElementById('burgerBtn');
+  if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.classList.remove('open');
+    btn.querySelector('.material-symbols-outlined').textContent = 'menu';
+  }
+});
+
+/* ═══════════════════════════════════════
+   PRÉCHARGEMENT DES PAGES PRINCIPALES
+   (Home, History, Academy, Games)
+   But : quand l'utilisateur navigue vers l'une de ces pages, le HTML est
+   déjà dans le cache du navigateur -> transition quasi instantanée, sans
+   flash blanc ni à-coup, même s'il arrive directement sur une page (ex:
+   Academy) puis va sur une autre (ex: Home) juste après.
+═══════════════════════════════════════ */
+(function () {
+  'use strict';
+
+  var MAIN_PAGES = ['/', '/history', '/academy', '/academy/games'];
+  var prefetched = new Set();
+
+  function alreadyPrefetchedOrCurrent(path) {
+    if (path === window.location.pathname) return true;
+    if (prefetched.has(path)) return true;
+    // Si un <link rel="prefetch"> (ou preload/prerender) existe déjà pour
+    // cette URL (ajouté par nous ou par autre chose), on ne double pas.
+    return !!document.querySelector(
+      'link[rel="prefetch"][href="' + path + '"]'
+    );
+  }
+
+  function isSlowConnection() {
+    var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (!c) return false;
+    if (c.saveData) return true;
+    return /2g/.test(c.effectiveType || '');
+  }
+
+  function prefetchPage(path) {
+    if (isSlowConnection() || alreadyPrefetchedOrCurrent(path)) return;
+    var link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = path;
+    link.as = 'document';
+    document.head.appendChild(link);
+    prefetched.add(path);
+  }
+
+  function prefetchOtherMainPages() {
+    if (isSlowConnection()) return;
+    MAIN_PAGES.forEach(function (path) {
+      if (path !== window.location.pathname) prefetchPage(path);
+    });
+  }
+
+  // Préchargement "au repos" : une fois que la page courante a fini de
+  // charger et que le navigateur est disponible, on précharge discrètement
+  // les 3 autres pages principales en arrière-plan (priorité basse, ne
+  // concurrence pas le chargement de la page actuelle).
+  runWhenIdle(prefetchOtherMainPages, 2500);
+
+  // Bonus : dès que l'utilisateur survole (ou touche/tabule, sur mobile ou
+  // au clavier) un lien vers une de ces pages, on la précharge immédiatement
+  // si ce n'est pas déjà fait — au cas où il clique avant le préchargement
+  // "au repos". On utilise une délégation d'événements sur `document` avec
+  // 'mouseover'/'focusin' (qui remontent dans le DOM, contrairement à
+  // 'mouseenter'/'focus') : la navbar est réécrite dynamiquement après la
+  // connexion Clerk, ce qui aurait détruit des listeners attachés
+  // directement sur les liens présents au chargement initial.
+  function handlePointerOrFocus(e) {
+    var a = e.target.closest && e.target.closest('a[href]');
+    if (!a) return;
+    var url;
+    try {
+      url = new URL(a.href, window.location.origin);
+    } catch (err) {
+      return;
+    }
+    if (url.origin !== window.location.origin) return;
+    if (MAIN_PAGES.indexOf(url.pathname) !== -1) prefetchPage(url.pathname);
+  }
+  document.addEventListener('mouseover', handlePointerOrFocus);
+  document.addEventListener('touchstart', handlePointerOrFocus, { passive: true });
+  document.addEventListener('focusin', handlePointerOrFocus);
+})();

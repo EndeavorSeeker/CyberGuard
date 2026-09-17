@@ -3,46 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CyberGuard AI - Scan History</title>
+  <title>CyberGuard Academy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" href="{{ material_symbols_url }}" as="style" onload="this.rel='stylesheet'" />
   <noscript><link href="{{ material_symbols_url }}" rel="stylesheet" /></noscript>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}"></script>
-<style>
-    .scroll-top-btn {
-      position: fixed;
-      bottom: 32px;
-      right: 32px;
-      z-index: 999;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.15);
-      backdrop-filter: blur(10px);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .3s, transform .3s, background .2s;
-      transform: translateY(12px);
-    }
-    .scroll-top-btn.visible {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-    .scroll-top-btn:hover {
-      background: rgba(255,255,255,0.15);
-      transform: translateY(-2px);
-    }
-    .btn-ring { display:none; }
-  </style>
+  <script defer crossorigin="anonymous" data-clerk-publishable-key="{{ clerk_publishable_key }}" src="{{ clerk_js_url }}" type="text/javascript"></script>
 </head>
 <body class="premium-page stitch-bg">
   <div class="stars-container" aria-hidden="true">
@@ -69,8 +37,8 @@
     <div class="premium-nav-links nav-pill" id="desktopNavLinks">
       <span class="nav-pill-bg" id="navPillBg" aria-hidden="true"></span>
       <a href="{{ url_for('home') }}" class="nav-link" data-i18n="navbar_home">Home</a>
-      <a href="{{ url_for('history') }}" class="nav-link active" data-i18n="navbar_history">History</a>
-      <a href="{{ url_for('academy') }}" class="nav-link" data-i18n="academy_title_nav">Academy</a>
+      <a href="{{ url_for('history') }}" class="nav-link" data-i18n="navbar_history">History</a>
+      <a href="{{ url_for('academy') }}" class="nav-link active" data-i18n="academy_title_nav">Academy</a>
     </div>
 
 
@@ -152,11 +120,11 @@
       <span data-i18n="navbar_home">Home</span>
     </a>
 
-    <a href="{{ url_for('history') }}" class="burger-link active">
+    <a href="{{ url_for('history') }}" class="burger-link">
       <span class="material-symbols-outlined">history</span>
       <span data-i18n="navbar_history">History</span>
     </a>
-    <a href="{{ url_for('academy') }}" class="burger-link">
+    <a href="{{ url_for('academy') }}" class="burger-link active">
       <span class="material-symbols-outlined">school</span>
       Academy
     </a>
@@ -178,46 +146,90 @@
   </div>
 </nav>
 
-  <main class="premium-history-main">
-    <header class="premium-history-head">
-      <div>
-        <h1>Scan History</h1>
-        <p>Review past security analyses, threat intelligence reports, and payload evaluations across your account.</p>
+  <main class="academy-main">
+    <header class="academy-hero">
+      <div class="academy-mark">
+          <img class="academy-mark-logo" src="{{ url_for('static', filename='logo.cybergard.webp') }}" alt="CyberGuard AI logo" loading="lazy">
       </div>
-      <div class="premium-history-actions">
-        <button class="premium-secondary-btn light-flat-filter" type="button">
-  <span class="material-symbols-outlined">filter_list</span> <span data-i18n="history_filter">Filter</span></button>
-<a class="premium-primary-btn compact" href="{{ url_for('home') }}#tool-section">
-  <span class="material-symbols-outlined">play_arrow</span> <span data-i18n="history_new_scan">New Scan</span></a>
-      </div>
+      <h1 data-i18n="academy_title_nav">CyberGuard Academy</h1>
+      <p data-i18n="academy_subtext">Learn to protect your digital life through immersive, high-fidelity security simulations.</p>
     </header>
 
-    <section class="history-card premium-history-card">
-      <div id="history-table-container" class="w-full">
-        <div class="premium-table-wrap">
-          <table class="history-table premium-history-table" id="historyTable" style="display:none;">
-            <thead>
-              <tr>
-  <th class="light-flat-th bg-transparent" data-i18n="history_col_target">Target / Content</th>
-<th class="light-flat-th bg-transparent" data-i18n="history_col_category">Category</th>
-<th class="light-flat-th bg-transparent" data-i18n="history_col_risk">Risk Score</th>
-<th class="light-flat-th bg-transparent" data-i18n="history_col_date">Date Analyzed</th>
-</tr>
-            </thead>
-            <tbody id="historyTableBody"></tbody>
-          </table>
-        </div>
-        <div class="history-empty" id="historyEmpty">
-          <span class="material-symbols-outlined premium-empty-icon">history</span>
-          <p data-i18n="history_empty_title">No scans yet</p>
-          <p data-i18n="history_empty_info">Start by analyzing a URL, image, or message.</p>
-          <a href="{{ url_for('home') }}#tool-section" class="btn btn-primary" data-i18n="history_action">Go to Analyzer</a>
-        </div>
-        <div class="premium-table-footer light-flat-meta bg-transparent">
-          <span data-i18n="history_saved">Saved securely with your Clerk account</span>
+    <section class="academy-modules">
+      <div class="premium-section-head compact-head">
+        <span class="material-symbols-outlined">extension</span>
+        <h2 data-i18n="academy_interactive_modules_title">Interactive Modules</h2>
+      </div>
+      <div class="academy-grid" onclick="document.getElementById('academySimulator').scrollIntoView({ behavior: 'smooth' })">
+        
+        <button class="academy-card active" data-academy-module="password" type="button">
+          <span class="material-symbols-outlined">lock</span>
+          <h3 data-i18n="academy_password_strength_title">Password Strength</h3>
+          <p data-i18n="academy_password_strength_subtitle">Analyze cryptographic resistance.</p>
+        </button>
+        <button class="academy-card" data-academy-module="phishing" type="button">
+          <span class="material-symbols-outlined">phishing</span>
+          <h3 data-i18n="academy_phishing_title">Spot Phishing</h3>
+          <p data-i18n="academy_phishing_subtitle">Identify deceptive vectors.</p>
+        </button>
+        <button class="academy-card" data-academy-module="quiz" type="button">
+          <span class="material-symbols-outlined">quiz</span>
+          <h3 data-i18n="academy_quiz_title">Security Quiz</h3>
+          <p data-i18n="academy_quiz_subtitle">Test your threat intelligence.</p>
+        </button>
+        <button class="academy-card" data-academy-module="network" type="button">
+          <span class="material-symbols-outlined">security</span>
+          <h3 data-i18n="academy_network_title">Defend Network</h3>
+          <p data-i18n="academy_network_subtitle">Practice active intrusion response.</p>
+        </button>
+      </div>
+    </section>
 
-          <div><span class="material-symbols-outlined light-flat-page-key">chevron_left</span><span class="material-symbols-outlined light-flat-page-key">chevron_right</span></div>
+    <section class="academy-simulator" id="academySimulator">
+      <div class="sim-header">
+        <div><span class="material-symbols-outlined" id="academySimIcon">lock</span></div>
+        <div>
+          <h2 id="academySimTitle" data-i18n="academy_password_strength_title">Password Strength Checker</h2>
+          <p id="academySimSubtitle" data-i18n="academy_password_strength_subtitle">Enter a key string to evaluate its cryptographic resilience.</p>
         </div>
+        <span class="sim-status" data-i18n="academy_sim_status_active">Active Simulator</span>
+      </div>
+      <div class="sim-body" id="academySimBody"></div>
+    </section>
+
+    <section class="knowledge-section">
+      <h2 data-i18n="academy_knowledge_domains_title">Core Knowledge Domains</h2>
+      <div class="knowledge-grid">
+        <a class="knowledge-app" href="{{ url_for('academy_topic', page='phone-security.html') }}">
+          <span class="knowledge-app-icon material-symbols-outlined">smartphone</span>
+          <strong data-i18n="academy_domain_phone">Phone Security</strong>
+          <small data-i18n="academy_knowledge_open_app">Open app</small>
+        </a>
+        <a class="knowledge-app" href="{{ url_for('academy_topic', page='browser-security.html') }}">
+          <span class="knowledge-app-icon material-symbols-outlined">public</span>
+          <strong data-i18n="academy_domain_browser">Browser Safety</strong>
+          <small data-i18n="academy_knowledge_open_app">Open app</small>
+        </a>
+        <a class="knowledge-app" href="{{ url_for('academy_topic', page='pc-security.html') }}">
+          <span class="knowledge-app-icon material-symbols-outlined">computer</span>
+          <strong data-i18n="academy_domain_pc">PC Defense</strong>
+          <small data-i18n="academy_knowledge_open_app">Open app</small>
+        </a>
+        <a class="knowledge-app" href="{{ url_for('academy_topic', page='password-security.html') }}">
+          <span class="knowledge-app-icon material-symbols-outlined">key</span>
+          <strong data-i18n="academy_domain_passwords">Passwords</strong>
+          <small data-i18n="academy_knowledge_open_app">Open app</small>
+        </a>
+        <a class="knowledge-app" href="{{ url_for('academy_topic', page='phishing-prevention.html') }}">
+          <span class="knowledge-app-icon material-symbols-outlined">book</span>
+          <strong data-i18n="academy_domain_phishing">Phishing</strong>
+          <small data-i18n="academy_knowledge_open_app">Open app</small>
+        </a>
+        <a class="knowledge-app" href="{{ url_for('academy_topic', page='data-protection.html') }}">
+          <span class="knowledge-app-icon material-symbols-outlined">database</span>
+          <strong data-i18n="academy_domain_data_protection">Data Protection</strong>
+          <small data-i18n="academy_knowledge_open_app">Open app</small>
+        </a>
       </div>
     </section>
   </main>
@@ -294,30 +306,30 @@
     </div>
   </footer>
 
-  <button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Retour en haut">
-    <div class="btn-ring"></div><div class="btn-ring btn-ring-2"></div>
-    <div class="btn-icon-wrap">
-      <svg class="icon-dark" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 16V4" stroke="white" stroke-width="2.2" stroke-linecap="round"/><path d="M4 10l6-6 6 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <svg class="icon-light" width="20" height="20" viewBox="0 0 20 20" fill="none" style="display:none;"><path d="M10 16V4" stroke="#0066ff" stroke-width="2.2" stroke-linecap="round"/><path d="M4 10l6-6 6 6" stroke="#0066ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-  </button>
+  <div class="stt-container" id="scrollTopBtn" aria-label="Scroll to top" role="button" tabindex="0"
+     onclick="window.scrollTo({top:0,behavior:'smooth'})"
+     onkeydown="if(event.key==='Enter'||event.key===' ')window.scrollTo({top:0,behavior:'smooth'})">
+  <svg class="stt-svg" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle class="stt-track" cx="28" cy="28" r="24" stroke-width="3"/>
+    <circle class="stt-progress" id="sttProgressRing" cx="28" cy="28" r="24"
+            stroke="#ffffff" stroke-width="3" stroke-linecap="round"
+            stroke-dasharray="0 150.796" transform="rotate(-90 28 28)"/>
+  </svg>
+  <div class="stt-icon-wrap">
+    <svg class="stt-arrow stt-arrow-dark" width="18" height="18" viewBox="0 0 20 20" fill="none">
+      <path d="M10 16V4" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M4 10l6-6 6 6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <svg class="stt-arrow stt-arrow-light" width="18" height="18" viewBox="0 0 20 20" fill="none" style="display:none;">
+      <path d="M10 16V4" stroke="#0055ff" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M4 10l6-6 6 6" stroke="#0055ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <span class="stt-tooltip" data-i18n="scroll_top_label">Back to top</span>
+</div>
 
   <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
   <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
   <script src="{{ url_for('static', filename='script.js') }}"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      if (!window.Clerk) return;
-      await window.Clerk.load();
-      clerkUser = window.Clerk.user;
-      if (!clerkUser) {
-        window.location.href = '{{ url_for("signin") }}';
-        return;
-      }
-      updateNavbar();
-      await syncBackendClerkUser(clerkUser).catch(() => {});
-      loadHistory();
-    });
-  </script>
 </body>
 </html>
